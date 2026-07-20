@@ -1,0 +1,27 @@
+name: cantonese_dictionary_app
+description: >
+  A fully-local, offline Cantonese character dictionary app. No servers,
+  no cloud accounts, no internet access required at any point.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+# Deliberately minimal dependency footprint:
+#   - path_provider: the ONLY third-party package, used solely to locate a
+#     writable, per-platform app-data directory (see lib/data/storage_service.dart).
+# Everything else (persistence, state management) is hand-rolled with
+# dart:io / dart:convert / ChangeNotifier so there is nothing else to add.
+dependencies:
+  flutter:
+    sdk: flutter
+  path_provider: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
