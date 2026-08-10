@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_colors.dart';
 
 /// Flashcard practice: a "Hard" toggle at the top switches the pool between
 /// all active characters (the default, on every fresh entry into this
@@ -145,11 +146,19 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () => _answer(false),
                 child: const Text('Incorrect'),
               ),
               const SizedBox(width: 16),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () => _answer(true),
                 child: const Text('Correct'),
               ),

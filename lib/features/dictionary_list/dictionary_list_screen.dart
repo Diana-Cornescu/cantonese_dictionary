@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_colors.dart';
 import '../add_character/add_character_screen.dart';
 import '../character_detail/character_detail_screen.dart';
 import '../export/export_service.dart';
@@ -101,7 +102,12 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                     ),
                     IconButton(
                       tooltip: 'Flashcard mode',
-                      icon: const Icon(Icons.style_outlined),
+                      // Rotated 90° clockwise per feedback on the icon's
+                      // orientation.
+                      icon: const RotatedBox(
+                        quarterTurns: 1,
+                        child: Icon(Icons.style_outlined),
+                      ),
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -193,7 +199,7 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                                         ? Icons.star
                                         : Icons.star_border,
                                     color: entry.isStarred
-                                        ? Colors.amber
+                                        ? AppColors.star
                                         : null,
                                   ),
                                   onPressed: () =>
@@ -207,7 +213,8 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                                   visualDensity: VisualDensity.compact,
                                   icon: Icon(
                                     Icons.priority_high,
-                                    color: entry.isHard ? Colors.red : null,
+                                    color:
+                                        entry.isHard ? AppColors.danger : null,
                                   ),
                                   onPressed: () =>
                                       widget.store.toggleHard(entry.id),

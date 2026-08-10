@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/tag_chip.dart';
@@ -66,6 +67,24 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _editTypedCharacter(CharacterEntry entry) async {
+    final newValue = await _promptForText('Edit character', entry.typedCharacter);
+    if (newValue == null) return;
+    final trimmed = newValue.trim();
+    // Same "?" fallback as the add-character screen: the typed text is the
+    // row-list preview, so it's never allowed to end up blank.
+    final finalValue = trimmed.isEmpty ? '?' : trimmed;
+    final confirmed = await confirmAction(
+      context,
+      title: 'Save character?',
+      message: "Save changes to the typed character for '${entry.typedCharacter}'?",
+    );
+    if (confirmed) {
+      await widget.store
+          .updateCharacter(entry.copyWith(typedCharacter: finalValue));
+    }
   }
 
   Future<void> _editDefinition(CharacterEntry entry) async {
@@ -215,35 +234,45 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
               ),
             ],
           ),
-          body: SingleChildScrollView(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final characterWindow = _buildCharacterWindow(current);
-                final translationWindow = _buildTranslationWindow(current);
-                final bottomActions = _buildBottomActions(current);
-                if (constraints.maxWidth >= 600) {
+          // SafeArea (rather than a fixed bottom padding number) insets the
+          // scrollable content by whatever the current device's system UI
+          // actually needs — a 3-button nav bar, a gesture-navigation
+          // indicator, or none at all on desktop/web — so the archive/
+          // delete row at the very bottom never ends up hidden behind it.
+          // `top: false` because the AppBar already accounts for the status
+          // bar/notch; without that this would double-pad the top.
+          body: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final characterWindow = _buildCharacterWindow(current);
+                  final translationWindow = _buildTranslationWindow(current);
+                  final bottomActions = _buildBottomActions(current);
+                  if (constraints.maxWidth >= 600) {
+                    return Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: characterWindow),
+                            Expanded(child: translationWindow),
+                          ],
+                        ),
+                        bottomActions,
+                      ],
+                    );
+                  }
                   return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: characterWindow),
-                          Expanded(child: translationWindow),
-                        ],
-                      ),
+                      characterWindow,
+                      translationWindow,
                       bottomActions,
                     ],
                   );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    characterWindow,
-                    translationWindow,
-                    bottomActions,
-                  ],
-                );
-              },
+                },
+              ),
             ),
           ),
         );
@@ -314,6 +343,11 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
               onPressed: () => _redrawHandwriting(entry),
               child: const Text('Redraw'),
             ),
+          if (!_showHandwritten)
+            TextButton(
+              onPressed: () => _editTypedCharacter(entry),
+              child: const Text('Edit character'),
+            ),
         ],
       ),
     );
@@ -329,11 +363,11 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     if (totalAnswered > 0) {
       final pct = stats.timesCorrect / totalAnswered * 100;
       if (pct < 40) {
-        accuracyColor = Colors.red;
+        accuracyColor = AppColors.danger;
       } else if (pct < 70) {
-        accuracyColor = Colors.amber.shade800;
+        accuracyColor = AppColors.warning;
       } else {
-        accuracyColor = Colors.green;
+        accuracyColor = AppColors.success;
       }
     }
     final referenced = entry.referencedCharacterIds
@@ -506,8 +540,8 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
+                    foregroundColor: AppColors.danger,
+                    side: const BorderSide(color: AppColors.danger),
                   ),
                   onPressed: () => _handleDelete(entry),
                   icon: const Icon(Icons.delete_outline),

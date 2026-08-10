@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'data/dictionary_store.dart';
 import 'data/storage_service.dart';
 import 'features/dictionary_list/dictionary_list_screen.dart';
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,7 @@ class CantoneseDictionaryApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Cantonese Dictionary',
+      theme: AppTheme.light,
       home: DictionaryListScreen(store: store),
     );
   }

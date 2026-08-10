@@ -95,7 +95,14 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
       color: widget.strokeColor,
       strokeWidth: widget.strokeWidth,
     );
-    final canvas = CustomPaint(painter: painter, size: Size.infinite);
+    // Clipped to its own bounds: on desktop a drag can carry the pointer
+    // past the widget's edge while still held down, which would otherwise
+    // let the stroke paint outside the box into whatever sits next to it.
+    // The underlying point data is unaffected — only the on-screen paint is
+    // constrained.
+    final canvas = ClipRect(
+      child: CustomPaint(painter: painter, size: Size.infinite),
+    );
     if (widget.readOnly) {
       return canvas;
     }

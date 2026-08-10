@@ -7,6 +7,11 @@ import '../../widgets/handwriting_canvas.dart';
 /// Screen for creating a brand-new character: draw it, type it, define it.
 /// There is deliberately NO handwriting-recognition/auto-suggestion step —
 /// the user always types or pastes the character directly.
+///
+/// The handwritten sample is the only mandatory field (it's what makes the
+/// row "a character" at all); the typed text is optional and defaults to
+/// `"?"` if left blank, since the row-list screen uses the typed text as
+/// its preview and needs something to show.
 class AddCharacterScreen extends StatefulWidget {
   const AddCharacterScreen({super.key, required this.store});
 
@@ -30,14 +35,18 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
     super.dispose();
   }
 
-  bool get _canSave => _typedController.text.trim().isNotEmpty;
+  bool get _canSave =>
+      _capturedStrokes != null && _capturedStrokes!.isNotEmpty;
 
   Future<void> _save() async {
     if (!_canSave) return;
     final now = DateTime.now(); // overwritten by addCharacter, but required here
+    final typedText = _typedController.text.trim();
     final draft = CharacterEntry(
       id: -1,
-      typedCharacter: _typedController.text.trim(),
+      // Defaults to "?" rather than staying blank, since the row-list
+      // screen previews entries by typed character.
+      typedCharacter: typedText.isEmpty ? '?' : typedText,
       handwrittenSample: _capturedStrokes,
       definition: _definitionController.text,
       notes: '',
@@ -76,7 +85,7 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Draw the character (optional):'),
+            const Text('Draw the character *'),
             const SizedBox(height: 8),
             SizedBox(
               height: 240,
@@ -85,7 +94,8 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
                     BoxDecoration(border: Border.all(color: Colors.grey)),
                 child: HandwritingCanvas(
                   readOnly: false,
-                  onStrokesChanged: (strokes) => _capturedStrokes = strokes,
+                  onStrokesChanged: (strokes) =>
+                      setState(() => _capturedStrokes = strokes),
                 ),
               ),
             ),
@@ -93,10 +103,10 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
             TextField(
               controller: _typedController,
               decoration: const InputDecoration(
-                labelText: 'Typed character *',
+                labelText: 'Typed character (optional)',
                 border: OutlineInputBorder(),
+                helperText: 'Defaults to "?" if left blank',
               ),
-              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
             TextField(
