@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'data/app_database.dart';
 import 'data/dictionary_store.dart';
-import 'data/storage_service.dart';
 import 'features/dictionary_list/dictionary_list_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final storage = await StorageService.createDefault();
-  final store = DictionaryStore(storage);
+  final store = DictionaryStore(AppDatabase());
   await store.load();
   runApp(CantoneseDictionaryApp(store: store));
 }

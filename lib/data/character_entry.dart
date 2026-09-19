@@ -1,8 +1,26 @@
-/// Plain-Dart data models for the dictionary, plus their JSON
-/// (de)serialization. No Flutter imports on purpose: this file should be
-/// usable from pure `dart:core` code and from tests without pulling in the
-/// widget layer.
+/// Plain-Dart data models for the dictionary. No Flutter imports on
+/// purpose: this file should be usable from pure `dart:core` code and from
+/// tests without pulling in the widget layer.
+///
+/// Since the move to SQLite + Drift (see
+/// `docs/decisions_log_sqlite_drift.md`), these classes are what the rest of
+/// the app sees; `app_database.dart` converts them to and from database
+/// rows. The `toJson`/`fromJson` methods are no longer used for storage and
+/// are kept only as a starting point for the future backup/restore feature.
 library;
+
+/// Splits a comma-separated tag string (as typed by the user, and as held
+/// in [CharacterEntry.tags]) into trimmed, non-empty, de-duplicated tag
+/// names, keeping the order they were typed in.
+List<String> parseTags(String raw) {
+  final seen = <String>{};
+  final result = <String>[];
+  for (final part in raw.split(',')) {
+    final tag = part.trim();
+    if (tag.isNotEmpty && seen.add(tag)) result.add(tag);
+  }
+  return result;
+}
 
 /// A single recorded point of a handwriting stroke, in canvas-local
 /// coordinates, with a millisecond timestamp `t` (used to distinguish
@@ -120,9 +138,11 @@ class CharacterEntry {
   final String definition;
   final String notes;
 
-  /// Comma-separated free text (e.g. `"food,verb"`). Deliberately not
-  /// normalized or split into a structured list at the model layer — see
-  /// `widgets/tag_chip.dart` for the display-time parser.
+  /// Tags as one comma-separated string (e.g. `"food, verb"`), which is
+  /// what the screens display and edit. In the database they are stored
+  /// properly in the `tags` + `character_tags` tables; [DictionaryStore]
+  /// splits this string with [parseTags] on save and re-joins it with
+  /// `", "` on load.
   final String tags;
 
   final bool isStarred;

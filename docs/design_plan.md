@@ -8,7 +8,7 @@ Status: v1 implemented (see `docs/decisions_log.md` for the build's dated histor
 
 Supporting choices:
 
-- **Local storage:** a single hand-written JSON file (read/written via Dart's built-in `dart:io`/`dart:convert`, atomically via a temp-file-then-rename so an interrupted write can never corrupt existing data), located via `path_provider`. No SQL, no codegen.
+- **Local storage (since 2026-09-19):** a local SQLite database through Drift (`lib/data/app_database.dart`), stored inside the project folder (`local_data/`, git-ignored) when run on the Windows laptop, and in app-private storage on Android. Tables: `characters` (including handwriting as a packed binary blob and the flashcard counters), `tags`, `character_tags`, `character_references`, `character_photos`. See `docs/decisions_log_sqlite_drift.md`. *(v1 used a single hand-written JSON file; the sections below that describe the JSON layout are kept for history.)*
 - **State management:** a single `ChangeNotifier` (Flutter's own built-in class, not a package), consumed by widgets via `ListenableBuilder`.
 - **Handwriting canvas:** built directly with Flutter's `CustomPainter` + `GestureDetector`/`Listener` APIs — no third-party drawing package needed. This also gives full control over capturing raw stroke point data (with timestamps), which supports things like stroke-order playback later.
 - **No network permissions requested at all** in the Android manifest — the app cannot reach the internet even if it wanted to, so "fully local" is enforced at the OS permission level, not just by convention.
@@ -80,7 +80,8 @@ lib/
   main.dart
   data/
     character_entry.dart    # CharacterEntry + FlashcardStats models, toJson/fromJson
-    storage_service.dart    # low-level atomic JSON file read/write
+    app_database.dart       # Drift tables + database (SQLite); app_database.g.dart is generated
+    stroke_codec.dart       # packs/unpacks handwriting strokes to a binary blob
     dictionary_store.dart   # ChangeNotifier: in-memory list + all CRUD/reference/flashcard/query methods
   features/
     dictionary_list/

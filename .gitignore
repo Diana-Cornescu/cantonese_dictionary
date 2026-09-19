@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local SQLite library used only by `flutter test` on Windows (see docs/setup_manual.md)
+/sqlite3.dll
+
+# The app's local SQLite database when run on the laptop (see lib/data/app_database.dart).
+# Personal data: never committed.
+/local_data/

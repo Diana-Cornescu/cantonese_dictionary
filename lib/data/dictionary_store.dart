@@ -2,16 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'app_database.dart';
 import 'character_entry.dart';
-import 'storage_service.dart';
+import 'stroke_codec.dart';
 
-/// Central in-memory store for all dictionary data, backed by a single
-/// JSON file on disk via [StorageService]. This is a [ChangeNotifier]:
-/// widgets should read from it with `ListenableBuilder`/`AnimatedBuilder`.
+/// Central store for all dictionary data. Screens read from its in-memory
+/// list; every change is written to the SQLite database ([AppDatabase])
+/// first and only then applied in memory, so memory never shows something
+/// that failed to save. This is a [ChangeNotifier]: widgets should read
+/// from it with `ListenableBuilder`/`AnimatedBuilder`.
+///
+/// "Storage swap only" (decision 6 in
+/// `docs/decisions_log_sqlite_drift.md`): the public API below is exactly
+/// what it was when this class was backed by a JSON file, so no screen had
+/// to change.
 ///
 /// This is the ONLY place that is allowed to mutate [CharacterEntry] data.
-/// Phase 2 UI screens (list, detail, add, flashcard, export) are expected
-/// to treat everything below as a stable public API:
+/// Screens are expected to treat everything below as a stable public API:
 ///   - read with [characters] / [activeCharacters] / [archivedCharacters] /
 ///     [hardCharacters]
 ///   - write only through the methods on this class, never by constructing
@@ -22,11 +29,10 @@ import 'storage_service.dart';
 /// (see [updateCharacter]) rather than merely documenting it, so the two
 /// sides of a reference can never drift out of sync.
 class DictionaryStore extends ChangeNotifier {
-  DictionaryStore(this._storage);
+  DictionaryStore(this._db);
 
-  final StorageService _storage;
+  final AppDatabase _db;
   final List<CharacterEntry> _characters = [];
-  int _nextId = 1;
   bool _isLoaded = false;
 
   /// Whether [load] has completed at least once.
@@ -49,31 +55,73 @@ class DictionaryStore extends ChangeNotifier {
   List<CharacterEntry> get hardCharacters => List.unmodifiable(
       _characters.where((c) => c.isHard && !c.isArchived));
 
-  /// Loads from disk, seeding exactly one example character if no JSON
-  /// file exists yet (first run). Safe to call once at app startup; must
-  /// complete before any other method is called.
+  /// Loads everything from the database into memory, seeding exactly one
+  /// example character the very first time the database is created. Safe
+  /// to call once at app startup; must complete before any other method is
+  /// called.
   Future<void> load() async {
-    final raw = await _storage.readJson();
-    _characters.clear();
-    if (raw == null) {
-      _nextId = 1;
-      _seedExampleCharacter();
-      await _save();
-    } else {
-      _nextId = (raw['nextId'] as num?)?.toInt() ?? 1;
-      final rawList = raw['characters'] as List<dynamic>? ?? const [];
-      _characters.addAll(
-        rawList.map((e) => CharacterEntry.fromJson(e as Map<String, dynamic>)),
-      );
+    final rows = await _db.allCharacterRows();
+    final tagsById = await _db.tagNamesByCharacter();
+    final pairs = await _db.allReferencePairs();
+
+    final refsById = <int, List<int>>{};
+    for (final (a, b) in pairs) {
+      refsById.putIfAbsent(a, () => []).add(b);
+      refsById.putIfAbsent(b, () => []).add(a);
     }
+
+    _characters
+      ..clear()
+      ..addAll(rows.map((row) => _entryFromRow(
+            row,
+            tags: tagsById[row.id] ?? const [],
+            references: refsById[row.id] ?? const [],
+          )));
+
+    // Checked after the first query on purpose: Drift opens (and, on first
+    // launch, creates) the database lazily on that first query.
+    if (_db.wasCreatedThisRun && _characters.isEmpty) {
+      await addCharacter(_exampleCharacter(), notify: false);
+    }
+
     _isLoaded = true;
     notifyListeners();
   }
 
-  void _seedExampleCharacter() {
+  /// Closes the database connection. Only needed in tests.
+  Future<void> close() => _db.close();
+
+  CharacterEntry _entryFromRow(
+    CharacterRow row, {
+    required List<String> tags,
+    required List<int> references,
+  }) {
+    return CharacterEntry(
+      id: row.id,
+      typedCharacter: row.typedCharacter,
+      handwrittenSample: StrokeCodec.decode(row.handwriting),
+      definition: row.definition,
+      notes: row.notes,
+      tags: tags.join(', '),
+      isStarred: row.isStarred,
+      isHard: row.isHard,
+      isArchived: row.isArchived,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      flashcardStats: FlashcardStats(
+        timesSeen: row.timesSeen,
+        timesCorrect: row.timesCorrect,
+        timesIncorrect: row.timesIncorrect,
+        lastReviewedAt: row.lastReviewedAt,
+      ),
+      referencedCharacterIds: List<int>.of(references),
+    );
+  }
+
+  CharacterEntry _exampleCharacter() {
     final now = DateTime.now();
-    _characters.add(CharacterEntry(
-      id: _nextId++,
+    return CharacterEntry(
+      id: -1, // replaced by the id the database assigns
       typedCharacter: '愛',
       handwrittenSample: null,
       definition: "This is an example row — tap it to see how the detail "
@@ -90,14 +138,18 @@ class DictionaryStore extends ChangeNotifier {
       updatedAt: now,
       flashcardStats: FlashcardStats.zero,
       referencedCharacterIds: const [],
-    ));
+    );
   }
 
-  Future<void> _save() {
-    return _storage.writeJson({
-      'nextId': _nextId,
-      'characters': _characters.map((c) => c.toJson()).toList(),
-    });
+  /// Writes [entry]'s own row (not tags or references) to the database,
+  /// then swaps it into the in-memory list. The list position is looked up
+  /// again after the write, in case another change landed in between.
+  Future<void> _saveRow(CharacterEntry entry) async {
+    await _db.updateCharacterRow(entry);
+    final index = _indexOf(entry.id);
+    if (index == -1) return;
+    _characters[index] = entry;
+    notifyListeners();
   }
 
   int _indexOf(int id) => _characters.indexWhere((c) => c.id == id);
@@ -107,17 +159,26 @@ class DictionaryStore extends ChangeNotifier {
   /// character always starts with no references — use [addReference]
   /// afterwards) and replaced with freshly assigned values. Returns the
   /// entry actually stored, including its real id.
-  Future<CharacterEntry> addCharacter(CharacterEntry draft) async {
+  Future<CharacterEntry> addCharacter(
+    CharacterEntry draft, {
+    bool notify = true,
+  }) async {
     final now = DateTime.now();
-    final entry = draft.copyWith(
-      id: _nextId++,
+    final tagNames = parseTags(draft.tags);
+    final pending = draft.copyWith(
       createdAt: now,
       updatedAt: now,
+      tags: tagNames.join(', '),
       referencedCharacterIds: const [],
     );
+    final id = await _db.transaction(() async {
+      final newId = await _db.insertCharacter(pending);
+      await _db.replaceTags(newId, tagNames);
+      return newId;
+    });
+    final entry = pending.copyWith(id: id);
     _characters.add(entry);
-    await _save();
-    notifyListeners();
+    if (notify) notifyListeners();
     return entry;
   }
 
@@ -130,11 +191,21 @@ class DictionaryStore extends ChangeNotifier {
     final index = _indexOf(updated.id);
     if (index == -1) return;
     final existing = _characters[index];
-    _characters[index] = updated.copyWith(
+    final tagNames = parseTags(updated.tags);
+    final entry = updated.copyWith(
+      tags: tagNames.join(', '),
       referencedCharacterIds: existing.referencedCharacterIds,
       updatedAt: DateTime.now(),
     );
-    await _save();
+    await _db.transaction(() async {
+      await _db.updateCharacterRow(entry);
+      if (entry.tags != existing.tags) {
+        await _db.replaceTags(entry.id, tagNames);
+      }
+    });
+    final newIndex = _indexOf(entry.id);
+    if (newIndex == -1) return;
+    _characters[newIndex] = entry;
     notifyListeners();
   }
 
@@ -142,9 +213,11 @@ class DictionaryStore extends ChangeNotifier {
   /// character's `referencedCharacterIds`, so no dangling ids remain.
   /// No-op if no character with that id exists.
   Future<void> deleteCharacter(int id) async {
-    final index = _indexOf(id);
-    if (index == -1) return;
-    _characters.removeAt(index);
+    if (_indexOf(id) == -1) return;
+    // The database removes the character's tag links, references and photo
+    // rows itself (cascade); the loop below mirrors that in memory.
+    await _db.deleteCharacter(id);
+    _characters.removeWhere((c) => c.id == id);
     for (var i = 0; i < _characters.length; i++) {
       final entry = _characters[i];
       if (entry.referencedCharacterIds.contains(id)) {
@@ -154,7 +227,6 @@ class DictionaryStore extends ChangeNotifier {
         );
       }
     }
-    await _save();
     notifyListeners();
   }
 
@@ -163,10 +235,8 @@ class DictionaryStore extends ChangeNotifier {
     final index = _indexOf(id);
     if (index == -1) return;
     final c = _characters[index];
-    _characters[index] =
-        c.copyWith(isStarred: !c.isStarred, updatedAt: DateTime.now());
-    await _save();
-    notifyListeners();
+    await _saveRow(
+        c.copyWith(isStarred: !c.isStarred, updatedAt: DateTime.now()));
   }
 
   /// Flips `isHard` on character [id]. No-op if it doesn't exist.
@@ -174,10 +244,8 @@ class DictionaryStore extends ChangeNotifier {
     final index = _indexOf(id);
     if (index == -1) return;
     final c = _characters[index];
-    _characters[index] =
-        c.copyWith(isHard: !c.isHard, updatedAt: DateTime.now());
-    await _save();
-    notifyListeners();
+    await _saveRow(
+        c.copyWith(isHard: !c.isHard, updatedAt: DateTime.now()));
   }
 
   /// Flips `isArchived` on character [id]. No-op if it doesn't exist.
@@ -185,10 +253,8 @@ class DictionaryStore extends ChangeNotifier {
     final index = _indexOf(id);
     if (index == -1) return;
     final c = _characters[index];
-    _characters[index] =
-        c.copyWith(isArchived: !c.isArchived, updatedAt: DateTime.now());
-    await _save();
-    notifyListeners();
+    await _saveRow(
+        c.copyWith(isArchived: !c.isArchived, updatedAt: DateTime.now()));
   }
 
   /// Records one flashcard review outcome for [id]: always increments
@@ -199,17 +265,16 @@ class DictionaryStore extends ChangeNotifier {
     if (index == -1) return;
     final c = _characters[index];
     final stats = c.flashcardStats;
-    _characters[index] = c.copyWith(
+    final now = DateTime.now();
+    await _saveRow(c.copyWith(
       flashcardStats: stats.copyWith(
         timesSeen: stats.timesSeen + 1,
         timesCorrect: correct ? stats.timesCorrect + 1 : null,
         timesIncorrect: correct ? null : stats.timesIncorrect + 1,
-        lastReviewedAt: DateTime.now(),
+        lastReviewedAt: now,
       ),
-      updatedAt: DateTime.now(),
-    );
-    await _save();
-    notifyListeners();
+      updatedAt: now,
+    ));
   }
 
   /// Adds a symmetric/undirected reference between two characters: [idB]
@@ -218,6 +283,8 @@ class DictionaryStore extends ChangeNotifier {
   /// they're equal, or if the reference already exists on both sides.
   Future<void> addReference(int idA, int idB) async {
     if (idA == idB) return;
+    if (_indexOf(idA) == -1 || _indexOf(idB) == -1) return;
+    await _db.addReferencePair(idA, idB);
     final indexA = _indexOf(idA);
     final indexB = _indexOf(idB);
     if (indexA == -1 || indexB == -1) return;
@@ -233,7 +300,6 @@ class DictionaryStore extends ChangeNotifier {
         referencedCharacterIds: [...b.referencedCharacterIds, idA],
       );
     }
-    await _save();
     notifyListeners();
   }
 
@@ -242,6 +308,7 @@ class DictionaryStore extends ChangeNotifier {
   /// that id doesn't exist or the reference wasn't present.
   Future<void> removeReference(int idA, int idB) async {
     if (idA == idB) return;
+    await _db.removeReferencePair(idA, idB);
     final indexA = _indexOf(idA);
     final indexB = _indexOf(idB);
     if (indexA != -1) {
@@ -258,7 +325,6 @@ class DictionaryStore extends ChangeNotifier {
             b.referencedCharacterIds.where((r) => r != idA).toList(),
       );
     }
-    await _save();
     notifyListeners();
   }
 }

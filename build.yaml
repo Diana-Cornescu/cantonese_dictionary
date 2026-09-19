@@ -1,0 +1,10 @@
+# Options for Drift's code generator (build_runner).
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # Store dates as ISO-8601 text (e.g. 2026-09-19T14:03:22.123)
+          # instead of whole seconds: keeps millisecond precision and makes
+          # the database readable in a DB browser.
+          store_date_time_values_as_text: true

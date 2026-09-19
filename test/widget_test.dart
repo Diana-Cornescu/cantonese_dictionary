@@ -1,35 +1,26 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
-import 'package:cantonese_dictionary_app/data/storage_service.dart';
+import 'package:cantonese_dictionary_app/data/app_database.dart';
 import 'package:cantonese_dictionary_app/data/dictionary_store.dart';
 import 'package:cantonese_dictionary_app/main.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 
+/// Smoke test: the app starts on a fresh (in-memory) database and shows the
+/// seeded example character in the list.
+///
+/// (Replaces Flutter's default "counter" template test, which never matched
+/// this app.)
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    final storage = await StorageService.createDefault();
-    final store = DictionaryStore(storage);
-    await store.load();
-    await tester.pumpWidget(CantoneseDictionaryApp(store: store)); 
+  testWidgets('app starts and shows the seeded example row',
+      (WidgetTester tester) async {
+    final store = DictionaryStore(AppDatabase(NativeDatabase.memory()));
+    // Real database work runs outside the test's fake clock.
+    await tester.runAsync(() => store.load());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpWidget(CantoneseDictionaryApp(store: store));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('愛'), findsWidgets);
+
+    await tester.runAsync(() => store.close());
   });
 }

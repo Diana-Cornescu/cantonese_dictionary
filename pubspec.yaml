@@ -8,20 +8,30 @@ version: 0.1.0
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
-# Deliberately minimal dependency footprint:
-#   - path_provider: the ONLY third-party package, used solely to locate a
-#     writable, per-platform app-data directory (see lib/data/storage_service.dart).
-# Everything else (persistence, state management) is hand-rolled with
-# dart:io / dart:convert / ChangeNotifier so there is nothing else to add.
+# Dependencies, kept deliberately small:
+#   - path_provider: locates the per-platform app folders (database file,
+#     exports).
+#   - drift + drift_flutter: SQLite database (see lib/data/app_database.dart
+#     and docs/decisions_log_sqlite_drift.md). drift_flutter bundles SQLite
+#     itself into the app, so nothing needs installing on the phone.
+# State management is still a plain ChangeNotifier (no package).
 dependencies:
   flutter:
     sdk: flutter
   path_provider: ^2.1.0
+  drift: ^2.20.0
+  drift_flutter: ^0.2.0
 
+# Dev-only tools (never shipped in the app):
+#   - drift_dev + build_runner: generate lib/data/app_database.g.dart from
+#     the table definitions. Run after changing any table:
+#       dart run build_runner build --delete-conflicting-outputs
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  drift_dev: ^2.20.0
+  build_runner: ^2.4.0
 
 flutter:
   uses-material-design: true
