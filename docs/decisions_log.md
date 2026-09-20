@@ -132,3 +132,9 @@ No open questions remain from the initial planning round. Ready to move into imp
 - **Where it's saved:** a new **`app_settings`** table (key/value) in the database. That's **schema version 3**, and existing data upgrades automatically. It's also included in backups, so a restore brings back your theme. The table can hold future settings too (e.g. the "save camera photos to gallery" idea in the backlog).
 - **Side effect:** the theme code now uses `withValues(alpha: …)` instead of the deprecated `withOpacity`, which removes 5 of the old "info" hints.
 - ⚠️ **Tables changed:** run `dart run build_runner build` before building.
+
+## 2026-09-20 — Tags became a real feature (no schema change)
+
+- The 2026-07-19 decision "tags stay free-text for v1, a managed tag list is parked" is now **superseded**. Tags have their own screen, a picker instead of a free-text field, and rename/merge/delete.
+- **No tables changed** — the `tags` / `character_tags` tables from decision 2 already held everything; nothing had ever read the tag list as a whole. **No `build_runner` run needed.**
+- Full reasoning in **`decisions_log_tags.md`**.

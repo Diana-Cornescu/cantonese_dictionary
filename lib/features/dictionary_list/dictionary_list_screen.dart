@@ -8,11 +8,12 @@ import '../character_detail/character_detail_screen.dart';
 import '../flashcards/flashcard_mode_screen.dart';
 import '../photos/gallery_screen.dart';
 import '../settings/settings_screen.dart';
+import '../tags/tags_screen.dart';
 
 /// The dictionary list screen, used both as the app's home/row-view screen
 /// (active characters, with search, and entry points into flashcard mode,
-/// photos, settings (backup & restore), adding a new character, and the
-/// archive) and — when
+/// photos, tags, settings (backup & restore), adding a new character, and
+/// the archive) and — when
 /// [isArchiveView] is true — as a pushed "Archived characters" screen with
 /// its own back arrow and title, reached via the archive icon rather than
 /// an in-place toggle.
@@ -90,6 +91,11 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Photos'),
               onTap: () => _openFromMenu(GalleryScreen(store: widget.store)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.sell_outlined),
+              title: const Text('Tags'),
+              onTap: () => _openFromMenu(TagsScreen(store: widget.store)),
             ),
             ListTile(
               leading: const Icon(Icons.archive_outlined),

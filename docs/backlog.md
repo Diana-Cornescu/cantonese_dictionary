@@ -18,7 +18,10 @@ _Nothing left. Everything below moves up._
 
 ## Priority 3
 
-_Nothing left. Everything below moves up._
+| Item | Notes | Source |
+|------|-------|--------|
+| **Photo + references while adding a character** | The Add character screen should be able to attach a photo and link references to other characters, instead of having to save first and then edit. | You, 2026-09-20 (phone note) |
+| **"Add character" in its own fixed bar at the bottom** | Today it's a small floating square in the bottom-right corner that sits on top of the character rows and hides them. Make it a proper bottom section of the home screen, frozen in place, with the list scrolling independently above it. | You, 2026-09-20 (phone note) |
 
 ## Priority 4
 
@@ -26,17 +29,31 @@ _Nothing left. Everything below moves up._
 |------|-------|--------|
 | **Delete several photos at once** | For tidying up stale unlinked photos: select several in the gallery and delete them together. For now, filter "Unlinked only" and delete one at a time from each photo's screen. | You, 2026-09-20 (suggested) |
 | **Restyle flashcard stats as boxes** | Move below the definition. A centered "last reviewed" line, then a row of boxes (Seen, Accuracy), then a row of boxes (Correct, Incorrect). | Personal_notes |
-| **Move the photo delete button away from home button** | Easy to miss click trash icon instead of home button after clicking into a photo |  You, 2026-09-20 (suggested) |
 | **Add filter Icon to photos and Home row screen** | To be able to filter for hard, starred, or tags along wiht the unlinked option |  You, 2026-09-20 (suggested) |
+| **Star / hard from the character screen** | Blocks of buttons for marking a character hard or starred, and the same options selectable on the character screen itself (today they're only on the list). | You, 2026-09-20 (phone note) |
+| **Enter in the definition field saves and closes the keyboard** | Pressing Enter while typing a definition should dismiss the keyboard and save, instead of adding a newline. | You, 2026-09-20 (phone note) |
+| **Flashcards: toggle text-only vs text + handwriting** | A switch for whether the character side shows only the typed character or the drawing too. Recognising your own handwriting is a way of cheating — it doesn't generalise to characters seen in the wild. | You, 2026-09-20 (phone note) |
+| **Narrow the app-wide rebuild in `main.dart`** | **Context for a fresh session:** `main.dart` wraps the entire `MaterialApp` in `ListenableBuilder(listenable: store)`. That was done for color themes (2026-09-20) so a new palette applies instantly. The side effect is that **every** `notifyListeners()` on `DictionaryStore` — any character save, any tag edit, a restore — rebuilds the whole app including the `Navigator` and its overlay. Nothing is visibly wrong, but it makes the app fragile: a rebuild landing while a dialog route is still animating out is what turned one disposed `TextEditingController` into a ten-exception cascade during the tags testing round (duplicate GlobalKeys, detached render boxes, overlay assertions — see "Bugs found while testing" in `decisions_log_tags.md`). It also means a loop of saves repaints the app once per item. **Fix:** let `MaterialApp` listen only to the theme — a small `ValueNotifier<String>` for the palette id, or read it from an `InheritedWidget` — and leave each screen listening to the store as they already do. **How to check it worked:** Settings → Color theme still recolors the whole app immediately, restoring a backup still repaints, and every screen still updates on a change. | 2026-09-20 debugging session |
 | **Watch for a `file_picker` update (Kotlin warning)** | The build warns that `file_picker` uses the old Kotlin Gradle Plugin, and that future Flutter versions will refuse to build with it. Nothing's broken today. When a newer `file_picker` supports "Built-in Kotlin", run `flutter pub upgrade file_picker`. | Build output, 2026-09-20 |
 | **Clean up "info" lint hints** | `use_build_context_synchronously` (character detail screen), `prefer_const`. (The `withOpacity` ones were fixed with the color themes, 2026-09-20.) Harmless style hints. | `flutter analyze`, 2026-09-19 |
+
+## Priority 5
+
+| Item | Notes | Source |
+|------|-------|--------|
+| **Dark mode** | A dark theme for the whole app, alongside the 8 color themes already in Settings. | You, 2026-09-20 (phone note) |
+
+## Priority 6
+
+| Item | Notes | Source |
+|------|-------|--------|
+| **Reminder notifications to practice** | A scheduled notification nudging you to do a flashcard round. Needs a notifications package and Android permission handling. | You, 2026-09-20 (phone note) |
 
 ## Not prioritized yet
 
 | Item | Notes | Source |
 |------|-------|--------|
 | **Setting: save camera photos to the phone's gallery** | A switch in Settings to also save photos taken in the app to the phone's gallery. **Default off** (today's behaviour: photos stay only in the app). Needs a small extra package. The setting itself can go in the `app_settings` table (added 2026-09-20 for color themes). | You, 2026-09-20 |
-| **Tag picker / managed tags UI** | Pick existing tags, rename once, filter by tag. The storage already exists. | `future_ideas.md`; decision 2 |
 | **Handwriting recognition** | Designed and parked. | `future_ideas.md` |
 
 ---
@@ -46,6 +63,10 @@ _Nothing left. Everything below moves up._
 - **Remove the debug banner** (2026-09-19): not needed. The "DEBUG" corner banner only appears in debug builds, and release builds never show it. If it ever showed up in a release build, it would come back here as Priority 2.
 
 ## Done
+
+- **Tags screen / managed tags** (Priority 3, 2026-09-20): **Tags** in the ☰ side menu — every tag with its character count, orphans greyed at 0. A tag's own screen lists its characters, adds or removes them in one checklist, renames (merging if the name exists) and deletes. Tags are now chosen with a picker on the Add and character screens instead of typed as free text, and tag chips open the tag. No database change. See `decisions_log_tags.md`. Not released yet.
+
+- **Photo delete button moved away from Home** (Priority 4, 2026-09-20): on a photo's screen, **Delete photo** left the app bar and became a labelled button at the bottom, below the linked characters, next to a new **Unlink all** button. The app bar now holds only Home. See `decisions_log_photo_gallery.md`. Not released yet.
 
 - **Released 1.2.0** (2026-09-20): photo gallery (with feedback round), side menu, "Go to character screen" in flashcards (shown after revealing), drawing on both flashcard sides, a Home button in the gallery, redesigned flashcard options (card dropdown: All / Hard only / Favorites only; direction dropdown with Bidirectional), 🔥 fire icon for hard, color themes in Settings (8 palettes, schema version 3).
 

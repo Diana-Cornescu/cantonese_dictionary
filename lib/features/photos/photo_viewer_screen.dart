@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
+import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../../widgets/text_prompt_dialog.dart';
 import '../character_detail/character_detail_screen.dart';
-import 'character_picker_dialog.dart';
 import 'photo_image.dart';
 
 /// One photo, full size (pinch or scroll to zoom), with its date, note and
@@ -13,7 +14,7 @@ import 'photo_image.dart';
 /// delete the photo. Tapping a linked character opens its screen; Back
 /// returns here.
 ///
-/// Unlink and Delete live at the bottom of the screen, below the linked
+/// Unlink all and Delete live at the bottom of the screen, below the linked
 /// characters, deliberately well away from the Home button in the app bar
 /// (2026-09-20): deleting a photo used to be one mis-tap away from going
 /// home.
@@ -41,32 +42,13 @@ class PhotoViewerScreen extends StatelessWidget {
   }
 
   Future<void> _editNote(BuildContext context, PhotoEntry photo) async {
-    final controller = TextEditingController(text: photo.note);
-    final newNote = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Photo note'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: "e.g. where you saw it: 'menu at Tim Ho Wan'",
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+    final newNote = await promptForText(
+      context,
+      title: 'Photo note',
+      initialValue: photo.note,
+      maxLines: 3,
+      hintText: "e.g. where you saw it: 'menu at Tim Ho Wan'",
     );
-    controller.dispose();
     if (newNote == null) return;
     await store.updatePhotoNote(photo.id, newNote);
   }

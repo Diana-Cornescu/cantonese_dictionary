@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
-import 'character_picker_dialog.dart';
+import '../../widgets/character_picker_dialog.dart';
 import 'photo_image.dart';
 import 'photo_picking.dart';
 import 'photo_viewer_screen.dart';

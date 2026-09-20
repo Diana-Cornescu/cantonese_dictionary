@@ -51,6 +51,9 @@ class DictionaryStore extends ChangeNotifier {
   final List<PhotoEntry> _photos = [];
   final Map<String, String> _settings = {};
   final List<CharacterEntry> _characters = [];
+  /// Every tag name the database knows, orphans included. Kept in step with
+  /// the `tags` table so the Tags screen can list tags nobody uses.
+  final List<String> _tagNames = [];
   bool _isLoaded = false;
 
   /// Whether [load] has completed at least once.
@@ -67,6 +70,23 @@ class DictionaryStore extends ChangeNotifier {
   List<CharacterEntry> get archivedCharacters =>
       List.unmodifiable(_characters.where((c) => c.isArchived));
 
+  /// Every tag name the app knows, including tags that no character
+  /// carries right now (an "orphan", e.g. after its last character was
+  /// deleted or untagged). Sorted case-insensitively, which is how the
+  /// Tags screen lists them.
+  List<String> get allTags {
+    final names = [..._tagNames];
+    names.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return List.unmodifiable(names);
+  }
+
+  /// Characters carrying [tag] (exact match, archived ones included).
+  List<CharacterEntry> charactersWithTag(String tag) => List.unmodifiable(
+      _characters.where((c) => parseTags(c.tags).contains(tag)));
+
+  /// How many characters carry [tag]. 0 means it's an orphan tag.
+  int tagCount(String tag) => charactersWithTag(tag).length;
+
   /// Characters flagged hard, excluding archived ones. Archiving is treated
   /// as "put away", so an archived-and-hard character drops out of this
   /// study shortlist until it's unarchived again.
@@ -80,6 +100,7 @@ class DictionaryStore extends ChangeNotifier {
   Future<void> load() async {
     final rows = await _db.allCharacterRows();
     final tagsById = await _db.tagNamesByCharacter();
+    final allTagNames = await _db.allTagNames();
     final pairs = await _db.allReferencePairs();
     final photoRows = await _db.allPhotoRows();
     final photoLinks = await _db.allPhotoLinks();
@@ -98,6 +119,10 @@ class DictionaryStore extends ChangeNotifier {
             tags: tagsById[row.id] ?? const [],
             references: refsById[row.id] ?? const [],
           )));
+
+    _tagNames
+      ..clear()
+      ..addAll(allTagNames);
 
     _settings
       ..clear()
@@ -241,6 +266,7 @@ class DictionaryStore extends ChangeNotifier {
     });
     final entry = pending.copyWith(id: id);
     _characters.add(entry);
+    _rememberTags(tagNames);
     if (notify) notifyListeners();
     return entry;
   }
@@ -269,6 +295,7 @@ class DictionaryStore extends ChangeNotifier {
     final newIndex = _indexOf(entry.id);
     if (newIndex == -1) return;
     _characters[newIndex] = entry;
+    _rememberTags(tagNames);
     notifyListeners();
   }
 
@@ -401,6 +428,151 @@ class DictionaryStore extends ChangeNotifier {
   }
 
   // ---- Photos ---------------------------------------------------------------
+
+  // ---- Tags ---------------------------------------------------------------
+  //
+  // Added 2026-09-20 with the Tags screen.
+  //
+  // A character's tags exist twice: as the `tags`/`character_tags` rows
+  // (linked by tag ID) and as `CharacterEntry.tags`, one comma-separated
+  // string keyed by NAME. The string is NOT a column on the characters
+  // table — `load` rebuilds it from the tag tables — so it is a display
+  // copy, not storage. Both must always agree.
+  //
+  // That shapes the split below. Editing a character's own tag list goes
+  // through [updateCharacter], the single writer that keeps string and rows
+  // in step. Editing the TAG (rename, delete) does not: it changes no
+  // column on any character, so it does its work on the tag rows and then
+  // refreshes the display copies with [_rewriteTagsInMemory]. Pushing those
+  // through [updateCharacter] would write nothing but a new `updatedAt`,
+  // marking characters as edited that nobody edited (fixed 2026-09-20).
+
+  /// Notes tag names that a character write may just have created, so
+  /// [allTags] lists them without a reload.
+  void _rememberTags(Iterable<String> names) {
+    for (final name in names) {
+      if (!_tagNames.contains(name)) _tagNames.add(name);
+    }
+  }
+
+  /// Applies [change] to every character's tag list IN MEMORY ONLY, to
+  /// bring the display copies back in line with tag rows the caller has
+  /// already changed in the database.
+  ///
+  /// Characters whose list is unaffected are left alone, so their
+  /// `updatedAt` is untouched. The caller notifies.
+  void _rewriteTagsInMemory(List<String> Function(List<String> names) change) {
+    for (var i = 0; i < _characters.length; i++) {
+      final entry = _characters[i];
+      final next = change(parseTags(entry.tags)).join(', ');
+      if (next == entry.tags) continue;
+      _characters[i] = entry.copyWith(tags: next);
+    }
+  }
+
+  /// Creates [name] as an empty tag, carried by no character yet.
+  ///
+  /// Returns false (changing nothing) if the name isn't usable or a tag
+  /// with that exact name already exists.
+  Future<bool> createTag(String name) async {
+    final clean = name.trim();
+    if (!isValidTagName(clean)) return false;
+    if (_tagNames.contains(clean)) return false;
+    await _db.ensureTag(clean);
+    _tagNames.add(clean);
+    notifyListeners();
+    return true;
+  }
+
+  /// Replaces the set of characters carrying [tag]: every id in
+  /// [characterIds] gets it (appended at the end of its tag list), and
+  /// every character that has it but isn't listed loses it.
+  ///
+  /// The tag itself is kept even when the result is that nobody carries
+  /// it, so it stays pickable.
+  ///
+  /// Unlike [renameTag] and [deleteTag], this DOES go through
+  /// [updateCharacter] and so bumps `updatedAt`: adding or removing a tag
+  /// changes what those characters are tagged with, which is an edit to
+  /// them, not to the tag.
+  Future<void> setTagCharacters(String tag, List<int> characterIds) async {
+    if (!isValidTagName(tag)) return;
+    final wanted = characterIds.toSet();
+    await _db.ensureTag(tag);
+    _rememberTags([tag]);
+    // Iterated over a copy: updateCharacter replaces entries in _characters.
+    for (final entry in [..._characters]) {
+      final names = parseTags(entry.tags);
+      final has = names.contains(tag);
+      final should = wanted.contains(entry.id);
+      if (has == should) continue;
+      final next = should
+          ? [...names, tag]
+          : names.where((t) => t != tag).toList();
+      await updateCharacter(entry.copyWith(tags: next.join(', ')));
+    }
+    notifyListeners();
+  }
+
+  /// Renames [from] to [to] on every character that carries it.
+  ///
+  /// If a tag called [to] already exists the two are MERGED: characters
+  /// that had either end up with [to] once, and [from] is gone. Returns
+  /// false (changing nothing) if [to] isn't a usable tag name.
+  ///
+  /// No character's `updatedAt` moves: renaming a tag relabels it, it
+  /// doesn't edit the characters wearing it.
+  Future<bool> renameTag(String from, String to) async {
+    final clean = to.trim();
+    if (!isValidTagName(clean)) return false;
+    if (clean == from) return true;
+    if (!_tagNames.contains(from)) return false;
+
+    /// [from] swapped for [clean] in one character's tag list, keeping the
+    /// order and collapsing the duplicate a merge can create.
+    List<String> renamed(List<String> names) {
+      final next = <String>[];
+      for (final name in names) {
+        final replaced = name == from ? clean : name;
+        if (!next.contains(replaced)) next.add(replaced);
+      }
+      return next;
+    }
+
+    if (_tagNames.contains(clean)) {
+      // Merging. Two rows have to become one, so the links really do move:
+      // each affected character is re-linked to the surviving row, and only
+      // then can the emptied row go.
+      for (final entry in [..._characters]) {
+        final names = parseTags(entry.tags);
+        if (!names.contains(from)) continue;
+        await _db.replaceTags(entry.id, renamed(names));
+      }
+      await _db.deleteTagByName(from);
+    } else {
+      // Nothing to merge with, so nothing moves. The row keeps its id and
+      // every link to it; only its name changes. One statement.
+      await _db.renameTagRow(from, clean);
+    }
+
+    _rewriteTagsInMemory(renamed);
+    _tagNames.remove(from);
+    _rememberTags([clean]);
+    notifyListeners();
+    return true;
+  }
+
+  /// Removes [tag] from every character and forgets the tag itself.
+  /// The characters are kept, of course, and their `updatedAt` doesn't
+  /// move — deleting a tag is an edit to the tag.
+  Future<void> deleteTag(String tag) async {
+    // One statement: deleteTagByName drops the tag's links along with its
+    // row, so there is nothing to write per character.
+    await _db.deleteTagByName(tag);
+    _rewriteTagsInMemory((names) => names.where((t) => t != tag).toList());
+    _tagNames.remove(tag);
+    notifyListeners();
+  }
 
   /// All photos, newest first.
   List<PhotoEntry> get photos => List.unmodifiable(_photos);

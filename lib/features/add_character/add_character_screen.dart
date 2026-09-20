@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../widgets/handwriting_canvas.dart';
+import '../../widgets/tag_chip.dart';
+import '../../widgets/tag_picker_dialog.dart';
 
 /// Screen for creating a brand-new character: draw it, type it, define it.
 /// There is deliberately NO handwriting-recognition/auto-suggestion step —
@@ -24,15 +26,28 @@ class AddCharacterScreen extends StatefulWidget {
 class _AddCharacterScreenState extends State<AddCharacterScreen> {
   final _typedController = TextEditingController();
   final _definitionController = TextEditingController();
-  final _tagsController = TextEditingController();
+  /// Chosen tags, in the order they were picked. Set through the tag
+  /// picker rather than typed as one comma-separated string (2026-09-20),
+  /// so existing tags get reused instead of near-duplicated.
+  List<String> _tags = [];
   List<List<StrokePoint>>? _capturedStrokes;
 
   @override
   void dispose() {
     _typedController.dispose();
     _definitionController.dispose();
-    _tagsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _editTags() async {
+    final chosen = await pickTags(
+      context,
+      widget.store,
+      initial: _tags,
+      title: 'Tags for this character',
+    );
+    if (chosen == null) return;
+    setState(() => _tags = chosen);
   }
 
   /// A drawing and a definition are both required (definition required
@@ -55,7 +70,7 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
       handwrittenSample: _capturedStrokes,
       definition: _definitionController.text.trim(),
       notes: '',
-      tags: _tagsController.text,
+      tags: _tags.join(', '),
       isStarred: false,
       isHard: false,
       isArchived: false,
@@ -125,13 +140,26 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: _tagsController,
-              decoration: const InputDecoration(
-                labelText: 'Tags (comma-separated)',
-                border: OutlineInputBorder(),
-                helperText: 'e.g. food, verb',
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Tags',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _editTags,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Choose tags'),
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _tags.isEmpty
+                  ? const Text('(no tags)')
+                  : TagChips(tags: _tags.join(', ')),
             ),
             const SizedBox(height: 24),
             Row(

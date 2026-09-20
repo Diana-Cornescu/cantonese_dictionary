@@ -425,6 +425,51 @@ class AppDatabase extends _$AppDatabase {
     return into(dbTags).insert(DbTagsCompanion.insert(name: name));
   }
 
+  // ---- Tags ---------------------------------------------------------------
+  //
+  // Added 2026-09-20 for the Tags screen. Tags were already stored in their
+  // own table (decision 2), but nothing ever read the table as a whole:
+  // [tagNamesByCharacter] only returns tags that some character carries.
+  // The methods below let the app see and edit the tag list itself,
+  // including tags no character uses ("orphans"), which [replaceTags]
+  // deliberately leaves behind.
+
+  /// Every tag name in the database, orphans included, in insertion order.
+  Future<List<String>> allTagNames() async {
+    final rows = await (select(dbTags)..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
+    return [for (final r in rows) r.name];
+  }
+
+  /// Creates [name] if no tag with that exact name exists. Returns its id.
+  /// Used to make an empty tag from the Tags screen.
+  Future<int> ensureTag(String name) => _tagIdFor(name);
+
+  /// Renames the tag row [from] to [to], keeping its id (and therefore all
+  /// its character links).
+  ///
+  /// `name` is UNIQUE, so this only works when no tag is called [to] yet;
+  /// merging two tags is done by moving the characters over and then
+  /// calling [deleteTagByName] on the empty one. [DictionaryStore.renameTag]
+  /// picks between the two.
+  Future<void> renameTagRow(String from, String to) async {
+    await (update(dbTags)..where((t) => t.name.equals(from)))
+        .write(DbTagsCompanion(name: Value(to)));
+  }
+
+  /// Deletes the tag [name] and every character link to it. No-op if no
+  /// such tag exists.
+  Future<void> deleteTagByName(String name) async {
+    await transaction(() async {
+      final row = await (select(dbTags)..where((t) => t.name.equals(name)))
+          .getSingleOrNull();
+      if (row == null) return;
+      await (delete(dbCharacterTags)..where((t) => t.tagId.equals(row.id)))
+          .go();
+      await (delete(dbTags)..where((t) => t.id.equals(row.id))).go();
+    });
+  }
+
   /// Deletes a character, together with its tag links, references and
   /// photo links. The photos themselves are kept (they may show other
   /// characters, and stay visible in the gallery); delete a photo

@@ -6,9 +6,12 @@ import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/tag_chip.dart';
+import '../../widgets/tag_picker_dialog.dart';
+import '../../widgets/text_prompt_dialog.dart';
 import '../photos/photo_image.dart';
 import '../photos/photo_picking.dart';
 import '../photos/photo_viewer_screen.dart';
+import '../tags/tag_detail_screen.dart';
 
 /// Detail screen for one character: a character window (typed/handwritten
 /// toggle) and a translation window (definition, flashcard stats, notes,
@@ -51,26 +54,10 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  Future<String?> _promptForText(String title, String initialValue) {
-    final controller = TextEditingController(text: initialValue);
-    return showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: TextField(controller: controller, maxLines: 5, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
+  /// Delegates to the shared dialog, which owns (and disposes) its own
+  /// controller — see `widgets/text_prompt_dialog.dart`.
+  Future<String?> _promptForText(String title, String initialValue) =>
+      promptForText(context, title: title, initialValue: initialValue);
 
   Future<void> _editTypedCharacter(CharacterEntry entry) async {
     final newValue = await _promptForText('Edit character', entry.typedCharacter);
@@ -126,9 +113,20 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     }
   }
 
+  /// Tags are chosen from the ones that already exist (2026-09-20), rather
+  /// than retyped as free text, so "food" doesn't end up alongside "Food".
+  /// The picker can still create a new tag by typing it.
   Future<void> _editTags(CharacterEntry entry) async {
-    final newValue = await _promptForText('Edit tags', entry.tags);
-    if (newValue == null) return;
+    final chosen = await pickTags(
+      context,
+      widget.store,
+      initial: parseTags(entry.tags),
+      title: "Tags for '${entry.typedCharacter}'",
+    );
+    if (chosen == null) return;
+    final newValue = chosen.join(', ');
+    if (newValue == entry.tags) return;
+    if (!mounted) return;
     final confirmed = await confirmAction(
       context,
       title: 'Save tags?',
@@ -137,6 +135,17 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     if (confirmed) {
       await widget.store.updateCharacter(entry.copyWith(tags: newValue));
     }
+  }
+
+  /// Opens the tag's own screen, the way a photo's linked characters open
+  /// theirs.
+  void _openTag(String tag) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TagDetailScreen(store: widget.store, tag: tag),
+      ),
+    );
   }
 
   Future<void> _redrawHandwriting(CharacterEntry entry) async {
@@ -468,7 +477,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           ),
           entry.tags.trim().isEmpty
               ? const Text('(no tags)')
-              : TagChips(tags: entry.tags),
+              : TagChips(tags: entry.tags, onTagTap: _openTag),
           const Divider(height: 24),
           Text('References', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),

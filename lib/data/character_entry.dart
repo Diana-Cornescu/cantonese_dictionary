@@ -12,6 +12,17 @@ library;
 /// Splits a comma-separated tag string (as typed by the user, and as held
 /// in [CharacterEntry.tags]) into trimmed, non-empty, de-duplicated tag
 /// names, keeping the order they were typed in.
+/// Whether [name] is usable as a tag.
+///
+/// Tags are held on a character as ONE comma-separated string, so a comma
+/// inside a tag name would silently split it into two tags; a blank name
+/// would vanish on the next [parseTags]. The Tags screen and the tag
+/// picker both check with this before writing anything.
+bool isValidTagName(String name) {
+  final clean = name.trim();
+  return clean.isNotEmpty && !clean.contains(',');
+}
+
 List<String> parseTags(String raw) {
   final seen = <String>{};
   final result = <String>[];
