@@ -45,7 +45,7 @@ One JSON file, containing a list of character records (each shaped like the "tab
 
 **Flashcard mode.** Two sub-modes selected up front: Normal (random cycle through the entire non-archived pool) and Hard (random cycle through only characters flagged `isHard`). A card shows only the typed character; tapping it flips to reveal the definition; you then mark yourself correct or incorrect, which updates that character's `flashcard_stats` row immediately.
 
-**Export.** A single action that produces one output file (see §5).
+**Settings → Backup & restore** (since 2026-09-19; replaced the old JSON export). A gear icon on the home screen opens Settings. Back up saves one `.zip` (database + photos + info) through the system Save window. Restore replaces everything with a chosen backup, after saving an automatic safety copy (with an "Undo last restore" option). See §5.
 
 **Confirmation dialogs.** A single reusable confirmation dialog component is triggered before committing any edit — this includes editing the definition, editing notes, changing tags, archiving, and deleting. Star/hard toggles are confirmed as the one exception: they stay instant with no popup, since they're trivially reversible with one more tap and would otherwise add real friction to something you'll likely do often and casually.
 
@@ -55,11 +55,14 @@ One JSON file, containing a list of character records (each shaped like the "tab
 
 The search bar in the reference section runs a simple case-insensitive substring match over every character's `definition` field (plain in-memory filtering — fully adequate at the scale of a personal dictionary, no search index needed) and returns matching rows as candidates to link. The link is written onto both characters' `referencedCharacterIds` in one operation and displayed from both linked rows.
 
-## 5. Export format
+## 5. Backup format (replaced the JSON export on 2026-09-19)
 
-**JSON** is the export format, since it's the most "universal" representation that still faithfully captures this data's structure (a character can have an arbitrary number of tags and an arbitrary number of references, which don't flatten cleanly into spreadsheet columns). Each exported character record contains: typed character (handwriting drawings themselves are intentionally excluded, per your request — only the typed version goes in the export), definition, tags, star/hard/archived flags, flashcard stats (times seen, correct, incorrect, computed percentage), and the list of referenced characters (by their typed form, so the export is human-readable on its own).
+One `.zip` file, named like `cantonese_dictionary_backup_2026-09-19_1432.zip`:
+- `backup_info.json`: format name and version, database schema version, creation date, character and photo counts.
+- `database.sqlite`: a complete, clean copy of the database (made with SQLite's `VACUUM INTO`).
+- `photos/`: every character photo file.
 
-(A flattened CSV export was considered as a second option but skipped — JSON alone represents the data cleanly without maintaining a second, lossier export path.)
+Restore checks the file first (is it one of ours? is it from a newer app version?) and only then replaces all data. The old human-readable JSON export was removed, because backups cover the real need (moving phones, surviving an uninstall). See `docs/decisions_log_backup_and_release.md`.
 
 ## 6. Example row
 
@@ -83,16 +86,18 @@ lib/
     app_database.dart       # Drift tables + database (SQLite); app_database.g.dart is generated
     stroke_codec.dart       # packs/unpacks handwriting strokes to a binary blob
     dictionary_store.dart   # ChangeNotifier: in-memory list + all CRUD/reference/flashcard/query methods
+    backup_service.dart     # creates/restores the backup .zip
   features/
     dictionary_list/
     character_detail/
     add_character/
     flashcards/
-    export/            # export_service.dart
+    settings/          # settings_screen.dart (backup & restore)
   widgets/          # reusable: confirm dialog, handwriting canvas, tag chip
 test/
   dictionary_store_test.dart
-  export_service_test.dart
+  backup_service_test.dart
+  stroke_codec_test.dart
 ```
 
 ## 8. Documentation to be produced alongside the app

@@ -29,9 +29,13 @@ import 'stroke_codec.dart';
 /// (see [updateCharacter]) rather than merely documenting it, so the two
 /// sides of a reference can never drift out of sync.
 class DictionaryStore extends ChangeNotifier {
-  DictionaryStore(this._db);
+  /// [reopen] creates a fresh [AppDatabase] on the same file. It's only
+  /// needed for [replaceDatabase] (restoring a backup).
+  DictionaryStore(this._db, {AppDatabase Function()? reopen})
+      : _reopen = reopen;
 
-  final AppDatabase _db;
+  AppDatabase _db;
+  final AppDatabase Function()? _reopen;
   final List<CharacterEntry> _characters = [];
   bool _isLoaded = false;
 
@@ -90,6 +94,29 @@ class DictionaryStore extends ChangeNotifier {
 
   /// Closes the database connection. Only needed in tests.
   Future<void> close() => _db.close();
+
+  /// Writes a complete copy of the database to [path]. Used by backups.
+  Future<void> snapshotDatabaseTo(String path) => _db.copyTo(path);
+
+  /// File names of all stored photos. Used by backups.
+  Future<List<String>> photoFileNames() => _db.allPhotoFileNames();
+
+  /// Closes the database, runs [swapFiles] (which replaces the database
+  /// file on disk, e.g. with a restored backup), then reopens it and
+  /// reloads everything. Screens refresh automatically afterwards.
+  Future<void> replaceDatabase(Future<void> Function() swapFiles) async {
+    final reopen = _reopen;
+    if (reopen == null) {
+      throw StateError('DictionaryStore was created without `reopen`.');
+    }
+    await _db.close();
+    try {
+      await swapFiles();
+    } finally {
+      _db = reopen();
+      await load();
+    }
+  }
 
   CharacterEntry _entryFromRow(
     CharacterRow row, {

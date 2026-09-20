@@ -3,17 +3,22 @@ description: >
   A fully-local, offline Cantonese character dictionary app. No servers,
   no cloud accounts, no internet access required at any point.
 publish_to: 'none'
-version: 0.1.0
+# Version: MAJOR.MINOR.PATCH only (no "+N"). See "Versioning & releasing"
+# in docs/setup_manual.md (Phase 6). Android's internal build number is
+# calculated from this automatically in android/app/build.gradle.kts.
+version: 1.0.0
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
 # Dependencies, kept deliberately small:
 #   - path_provider: locates the per-platform app folders (database file,
-#     exports).
+#     temp files).
 #   - drift + drift_flutter: SQLite database (see lib/data/app_database.dart
 #     and docs/decisions_log_sqlite_drift.md). drift_flutter bundles SQLite
 #     itself into the app, so nothing needs installing on the phone.
+#   - archive: builds/reads the backup .zip file.
+#   - file_picker: the system "Save as" / "Open" window for backups.
 # State management is still a plain ChangeNotifier (no package).
 dependencies:
   flutter:
@@ -21,11 +26,13 @@ dependencies:
   path_provider: ^2.1.0
   drift: ^2.20.0
   drift_flutter: ^0.2.0
+  archive: ^4.0.0
+  file_picker: ^10.0.0
 
 # Dev-only tools (never shipped in the app):
 #   - drift_dev + build_runner: generate lib/data/app_database.g.dart from
 #     the table definitions. Run after changing any table:
-#       dart run build_runner build --delete-conflicting-outputs
+#       dart run build_runner build
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -7,7 +7,7 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final store = DictionaryStore(AppDatabase());
+  final store = DictionaryStore(AppDatabase(), reopen: AppDatabase.new);
   await store.load();
   runApp(CantoneseDictionaryApp(store: store));
 }

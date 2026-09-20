@@ -20,7 +20,7 @@ One important thing to know going in (this applies again to the 2026-09-19 SQLit
    flutter create --platforms=android,windows --org com.cantonesedictionary --project-name cantonese_dictionary .
    ```
    This is a one-time step. The environment this app was built in couldn't run the real Flutter tool, so the `android/` and `windows/` platform folders (Gradle files, app icons, the Windows CMake/runner files, etc.) don't exist yet — this command generates them for you. It's safe to run on top of the existing project: it fills in the missing platform folders without touching `lib/`, `test/`, or your `pubspec.yaml` dependencies. If it ever prompts about overwriting a file you don't recognize, it's fine to accept — just don't accept an overwrite of anything under `lib/` or `test/` (it shouldn't ask to).
-8. Run `flutter pub get` to fetch dependencies (`path_provider`, `drift`, `drift_flutter`, plus the dev-only tools `drift_dev` and `build_runner`).
+8. Run `flutter pub get` to fetch dependencies (`path_provider`, `drift`, `drift_flutter`, `archive`, `file_picker`, plus the dev-only tools `drift_dev` and `build_runner`).
    - Then run `dart run build_runner build` to generate `lib/data/app_database.g.dart`. See "Database code generation" below.
 9. Run `flutter analyze`. This is the code's first real compile-level check — see the note at the top of this document.
 10. Run `flutter test` to run the test suite.
@@ -32,12 +32,12 @@ The app stores its data in SQLite through Drift (see `docs/decisions_log_sqlite_
 - **When:** the first time, and again **every time a table in `app_database.dart` changes**. It isn't needed for ordinary builds.
 - **Command** (from the project folder): `dart run build_runner build`
 - **Commit** the generated `app_database.g.dart` to git, so a fresh clone builds without this step.
-- **If `flutter pub get` can't resolve versions:** run `flutter pub add drift drift_flutter dev:drift_dev dev:build_runner`. It picks the newest versions that work together and rewrites `pubspec.yaml` to match.
+- **If `flutter pub get` can't resolve versions:** run `flutter pub add drift drift_flutter archive file_picker dev:drift_dev dev:build_runner`. It picks the newest versions that work together and rewrites `pubspec.yaml` to match.
 - **If `flutter test` fails with something like `Failed to load dynamic library 'sqlite3.dll'`:** the tests use SQLite on your PC, not a phone. Depending on the package versions, Windows may need a copy of SQLite: download the "Precompiled Binaries for Windows" 64-bit DLL zip from sqlite.org and put `sqlite3.dll` in the project folder (it's git-ignored), or anywhere on your PATH. The app itself doesn't need this; `drift_flutter` bundles SQLite into the APK and the Windows build.
 - **Where the database lives:**
   - **Windows (laptop):** inside the project, at `local_data\cantonese_dictionary.sqlite` (next to `pubspec.yaml`). The folder is git-ignored so your data never gets committed. Back it up by copying that folder. You can open the file with the free "DB Browser for SQLite"; close the app first so the two don't fight over the file.
   - If the app is run from somewhere the project folder can't be found (for example a release `.exe` copied elsewhere), it falls back to `Documents\Cantonese Dictionary\`.
-  - **Android:** the app's private storage, which is deleted if the app is uninstalled. Getting data off the phone is the job of the planned backup/export feature.
+  - **Android:** the app's private storage, which is deleted if the app is uninstalled. Get data off the phone with Settings → Back up.
 - **Leftover from before:** the old JSON file (`cantonese_dictionary_entries.json`, in your Documents folder on Windows) is no longer read. It only held test data, so it's safe to delete.
 
 ## Phase 3 — Desktop build target (optional — skip straight to Phase 4 if you just want to try the app on your phone and don't need mouse-based desktop testing right now)
@@ -64,9 +64,65 @@ The app stores its data in SQLite through Drift (see `docs/decisions_log_sqlite_
 23. Run `flutter devices` to confirm the phone shows up.
 24. Run `flutter run`, targeting the phone, to install a debug build directly onto it.
 
-## Phase 6 — Release build (for daily use without a dev environment attached)
+## Phase 6 — Release build on your phone (added 2026-09-19)
 
-To be filled in once we reach this stage — will cover generating a signing keystore, configuring release signing, and building/installing a release APK (`flutter build apk --release`) so the app runs standalone on your phone without staying tethered to a development machine.
+A release build runs on its own, with no laptop, cable or debug banner, and it's faster. It's installed locally over USB, not through the Play Store.
+
+### 6a. One-time: create your release signing key
+
+Android only installs an update over an existing app if both are signed with the **same key**. Your key lives in a `signing/` folder at the project root, which is **git-ignored** because the repo is public.
+
+1. Create the folder: `mkdir signing` (in the project folder).
+2. Find `keytool`. It comes with Android Studio's Java: `"C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"`. (`flutter doctor -v` shows the Java path if yours is elsewhere.)
+3. Run this from the project folder (one line):
+   ```
+   "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkey -v -keystore signing\release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias release
+   ```
+   It asks for a password and some name fields. The name fields can be anything, and your first name is enough.
+4. Create `signing\key.properties` containing (use your password):
+   ```
+   storeFile=release.jks
+   storePassword=YOUR_PASSWORD
+   keyAlias=release
+   keyPassword=YOUR_PASSWORD
+   ```
+   (keytool may use the same password for both; if it asked for a separate key password, use that one for `keyPassword`.)
+5. Check git ignores it: `git status` must **not** list `signing/`.
+6. **Back up the `signing` folder somewhere private** (a password manager, or a private cloud folder). It isn't in GitHub, so if the laptop dies this copy is the only one.
+   - If the key is ever lost, you can recover: in the app, Settings → Back up; then uninstall; install with a new key; Settings → Restore.
+
+If `signing/key.properties` is missing, the build prints a WARNING and signs with the debug key instead.
+
+### 6b. One-time: switch the phone from the debug app to the release app
+
+The app on your phone now is signed with Flutter's debug key, so the release version can't install over it. You have to go through one uninstall:
+
+1. `flutter run` to the phone (debug) so it has the new Settings screen, then **Settings → Back up** and save to Downloads or Google Drive.
+2. Uninstall the app on the phone.
+3. Build and install the release (6c below).
+4. Open the app → **Settings → Restore** → pick the backup.
+
+After this, future releases install over the top and keep your data.
+
+### 6c. Every release: build, install, record
+
+1. **Bump the version** in `pubspec.yaml`, e.g. `1.0.0` → `1.1.0`. Use MAJOR.MINOR.PATCH only, never `+N`:
+   - **PATCH** (1.0.**1**) for bug fixes.
+   - **MINOR** (1.**1**.0) for new features.
+   - **MAJOR** (**2**.0.0) for big changes.
+   - The version must always go **up**. Android's internal build number is calculated from it automatically (`1.2.3` → `10203`, in `android/app/build.gradle.kts`), so a lower version won't install over a higher one. Keep MINOR and PATCH below 100.
+2. **Write what changed** at the top of `CHANGELOG.md`.
+3. **Test:** `flutter analyze` and `flutter test`.
+4. **Build:** `flutter build apk --release`. The file is `build\app\outputs\flutter-apk\app-release.apk`.
+5. **Install:** phone plugged in, `flutter install --release`. It installs over the existing app and keeps the data. (Or copy the `.apk` to the phone and open it; Android asks to allow installing from that source.)
+6. **Record it in git:**
+   ```
+   git add -A
+   git commit -m "Release 1.1.0"
+   git tag v1.1.0
+   git push --tags
+   ```
+   The tag marks exactly which code is on your phone.
 
 ---
 

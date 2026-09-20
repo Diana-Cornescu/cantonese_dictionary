@@ -5,12 +5,12 @@ import '../../data/dictionary_store.dart';
 import '../../theme/app_colors.dart';
 import '../add_character/add_character_screen.dart';
 import '../character_detail/character_detail_screen.dart';
-import '../export/export_service.dart';
 import '../flashcards/flashcard_mode_screen.dart';
+import '../settings/settings_screen.dart';
 
 /// The dictionary list screen, used both as the app's home/row-view screen
 /// (active characters, with search, and entry points into flashcard mode,
-/// export, adding a new character, and the archive) and — when
+/// settings (backup & restore), adding a new character, and the archive) and — when
 /// [isArchiveView] is true — as a pushed "Archived characters" screen with
 /// its own back arrow and title, reached via the archive icon rather than
 /// an in-place toggle.
@@ -48,19 +48,6 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
           c.definition.toLowerCase().contains(query) ||
           c.tags.toLowerCase().contains(query);
     }).toList();
-  }
-
-  Future<void> _handleExport() async {
-    try {
-      final path = await exportToAppDocuments(widget.store.characters);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Exported to $path')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Export failed: $e')));
-    }
   }
 
   void _goHome() {
@@ -117,9 +104,14 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Export',
-                      icon: const Icon(Icons.download),
-                      onPressed: _handleExport,
+                      tooltip: 'Settings',
+                      icon: const Icon(Icons.settings_outlined),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SettingsScreen(store: widget.store),
+                        ),
+                      ),
                     ),
                   ],
           ),

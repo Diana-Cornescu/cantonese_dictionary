@@ -34,3 +34,8 @@ No open questions remain from the initial planning round. Ready to move into imp
 
 - The JSON file storage was replaced with a local SQLite database through Drift, the setup the original plan had called for. Screens are unchanged; only `lib/data/` was rewritten.
 - The full decisions, reasoning and TL;DR are in their own file: **`docs/decisions_log_sqlite_drift.md`**.
+
+## 2026-09-19 — Backup & restore, first release build
+
+- Settings screen with backup/restore (one `.zip`) replaced the JSON export. Release signing and versioning were set up.
+- Full decisions and reasoning: **`docs/decisions_log_backup_and_release.md`**.

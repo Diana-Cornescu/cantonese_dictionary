@@ -118,8 +118,10 @@ class DbCharacterReferences extends Table {
 }
 
 /// Photos of a character seen "out and about" (decision 5). Created now,
-/// screens built later. The image itself is a normal file in the app's
-/// support folder; this row only stores where that file is.
+/// screens built later. The image itself is a normal file in
+/// [AppDatabase.photosDirectory]; this row only stores its **file name**
+/// (not a full path), so photos still resolve after a backup is restored
+/// on a different device.
 @DataClassName('CharacterPhotoRow')
 class DbCharacterPhotos extends Table {
   @override
@@ -127,6 +129,7 @@ class DbCharacterPhotos extends Table {
 
   IntColumn get id => integer().autoIncrement()();
   IntColumn get characterId => integer()();
+  /// File name inside [AppDatabase.photosDirectory], e.g. `12_1726750000.jpg`.
   TextColumn get filePath => text()();
   DateTimeColumn get createdAt => dateTime()();
 
@@ -240,7 +243,31 @@ class AppDatabase extends _$AppDatabase {
   /// Bump this whenever a table changes, and add a matching step in
   /// [migration]'s `onUpgrade`, so existing installs keep their data.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => currentSchemaVersion;
+
+  /// The schema version this build of the app creates and understands.
+  /// Also written into backups, so a backup from a newer app version can
+  /// be refused instead of half-loaded.
+  static const int currentSchemaVersion = 1;
+
+  /// The actual database file used by the real app (not tests).
+  static Future<File> databaseFile() async {
+    final dir = await databaseDirectory();
+    return File('${dir.path}${Platform.pathSeparator}$fileName.sqlite');
+  }
+
+  /// Folder holding character photo files (decision 5), next to the
+  /// database.
+  static Future<Directory> photosDirectory() async {
+    final dir = await databaseDirectory();
+    return Directory('${dir.path}${Platform.pathSeparator}photos');
+  }
+
+  /// Folder for the automatic "before restore" safety copies.
+  static Future<Directory> safetyBackupsDirectory() async {
+    final dir = await databaseDirectory();
+    return Directory('${dir.path}${Platform.pathSeparator}safety_backups');
+  }
 
   /// True if the database file was created fresh during this app run
   /// (first launch). Only meaningful after the first query has run, since
@@ -353,10 +380,27 @@ class AppDatabase extends _$AppDatabase {
           .go();
       await (delete(dbCharacters)..where((c) => c.id.equals(id))).go();
     });
+    if (photos.isEmpty) return;
+    final photoDir = await photosDirectory();
     for (final photo in photos) {
-      final file = File(photo.filePath);
+      final file =
+          File('${photoDir.path}${Platform.pathSeparator}${photo.filePath}');
       if (await file.exists()) await file.delete();
     }
+  }
+
+  /// Writes a clean, self-contained copy of the whole database to [path]
+  /// (SQLite's `VACUUM INTO`). Safe to run while the app is using the
+  /// database. Used by backups.
+  Future<void> copyTo(String path) async {
+    final escaped = path.replaceAll("'", "''");
+    await customStatement("VACUUM INTO '$escaped'");
+  }
+
+  /// File names of every stored photo (see [DbCharacterPhotos]).
+  Future<List<String>> allPhotoFileNames() async {
+    final rows = await select(dbCharacterPhotos).get();
+    return [for (final r in rows) r.filePath];
   }
 
   /// Stores the undirected link a <-> b. No-op if it already exists.
