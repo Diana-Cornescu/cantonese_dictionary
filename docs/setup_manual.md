@@ -70,28 +70,27 @@ A release build runs on its own, with no laptop, cable or debug banner, and it's
 
 ### 6a. One-time: create your release signing key
 
-Android only installs an update over an existing app if both are signed with the **same key**. Your key lives in a `signing/` folder at the project root, which is **git-ignored** because the repo is public.
+Android only installs an update over an existing app if both are signed with the **same key**. Your key lives in the **`android_release_key_private`** folder at the project root. It's **git-ignored** because the repo is public, and the name is meant to remind you of both facts.
 
-1. Create the folder: `mkdir signing` (in the project folder).
-2. Find `keytool`. It comes with Android Studio's Java: `"C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"`. (`flutter doctor -v` shows the Java path if yours is elsewhere.)
-3. Run this from the project folder (one line):
+1. In the project folder (PowerShell): `mkdir android_release_key_private`
+2. Find `keytool.exe`. It's in the `jbr\bin\` folder of Android Studio. `flutter doctor -v` shows a line like `Java binary at: ...\jbr\bin\java`. That `java` is the Java program itself, so `keytool.exe` sits **next to it** in the same `bin` folder. On this laptop that's `C:\Users\Personal\app_making\android_studio\jbr\bin\keytool.exe`.
+3. Run this as one line. The **`&`** at the start is needed in PowerShell to run a program whose path is in quotes:
    ```
-   "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkey -v -keystore signing\release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias release
+   & "C:\Users\Personal\app_making\android_studio\jbr\bin\keytool.exe" -genkey -v -keystore android_release_key_private\release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias release
    ```
-   It asks for a password and some name fields. The name fields can be anything, and your first name is enough.
-4. Create `signing\key.properties` containing (use your password):
+   It asks for a password (write it down) and some name fields (anything is fine).
+4. Create `android_release_key_private\key.properties` containing (use your password):
    ```
    storeFile=release.jks
    storePassword=YOUR_PASSWORD
    keyAlias=release
    keyPassword=YOUR_PASSWORD
    ```
-   (keytool may use the same password for both; if it asked for a separate key password, use that one for `keyPassword`.)
-5. Check git ignores it: `git status` must **not** list `signing/`.
-6. **Back up the `signing` folder somewhere private** (a password manager, or a private cloud folder). It isn't in GitHub, so if the laptop dies this copy is the only one.
+5. Check git ignores it: `git status` must **not** list `android_release_key_private/`.
+6. **Back up the `android_release_key_private` folder somewhere private** (a password manager, or a private cloud folder). It isn't in GitHub, so if the laptop dies this copy is the only one.
    - If the key is ever lost, you can recover: in the app, Settings → Back up; then uninstall; install with a new key; Settings → Restore.
 
-If `signing/key.properties` is missing, the build prints a WARNING and signs with the debug key instead.
+If `android_release_key_private/key.properties` is missing, the build prints a WARNING and signs with the debug key instead.
 
 ### 6b. One-time: switch the phone from the debug app to the release app
 

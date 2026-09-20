@@ -1,7 +1,7 @@
 # Decisions Log — Backup & Restore, and First Release Build
 
 **Started:** 2026-09-19
-**Status:** Code written 2026-09-19, **not yet compiled or run**. Next: test on the laptop, then the first release to the phone.
+**Status:** ✅ Backup & restore verified on the laptop 2026-09-19 (analyze, tests, manual test on Windows). Next: first release to the phone (Phase 6).
 
 This file is separate from the other decision logs on purpose, so these decisions are easy to find. Add a new dated section whenever a decision here changes.
 
@@ -75,3 +75,11 @@ This file is separate from the other decision logs on purpose, so these decision
 - **Why:** it's cleaner and easier to read. 1.0.0 fits a first release.
 - **How Android still gets an increasing build number:** `android/app/build.gradle.kts` calculates it from the version, `MAJOR*10000 + MINOR*100 + PATCH` (1.0.0 → 10000, 1.2.3 → 10203). So a higher version always installs as an update. The one rule is to keep MINOR and PATCH below 100; the build stops with a clear error otherwise.
 - **Cleanup:** the empty `lib/features/export/` folder can be deleted along with its file.
+
+---
+
+## 2026-09-19 — Verified on the laptop ✅
+
+- `flutter pub get`, `flutter analyze` and `flutter test` (including the 4 backup tests) pass. Back up, Restore and Undo work on Windows.
+- The `lib/features/export/` folder and the export test were deleted.
+- Next: `setup_manual.md` Phase 6 (signing key → switch the phone to the release app → release 1.0.0).

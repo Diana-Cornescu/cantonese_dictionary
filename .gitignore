@@ -53,4 +53,4 @@ app.*.map.json
 
 # Release signing key + passwords (see docs/setup_manual.md). NEVER commit:
 # the repo is public. Back this folder up somewhere private instead.
-/signing/
+/android_release_key_private/
