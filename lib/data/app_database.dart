@@ -117,24 +117,43 @@ class DbCharacterReferences extends Table {
       ];
 }
 
-/// Photos of a character seen "out and about" (decision 5). Created now,
-/// screens built later. The image itself is a normal file in
-/// [AppDatabase.photosDirectory]; this row only stores its **file name**
-/// (not a full path), so photos still resolve after a backup is restored
-/// on a different device.
-@DataClassName('CharacterPhotoRow')
-class DbCharacterPhotos extends Table {
+/// Photos of characters seen "out and about" (schema version 2, see
+/// docs/decisions_log_photo_gallery.md). The image itself is a normal file
+/// in [AppDatabase.photosDirectory]; this row only stores its **file
+/// name** (not a full path), so photos still resolve after a backup is
+/// restored on a different device. Which characters a photo shows is in
+/// [DbPhotoCharacters], since one photo can show several characters.
+@DataClassName('PhotoRow')
+class DbPhotos extends Table {
   @override
-  String get tableName => 'character_photos';
+  String get tableName => 'photos';
 
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get characterId => integer()();
-  /// File name inside [AppDatabase.photosDirectory], e.g. `12_1726750000.jpg`.
-  TextColumn get filePath => text()();
+
+  /// File name inside [AppDatabase.photosDirectory], e.g.
+  /// `1789879146039_48213.jpg`.
+  TextColumn get fileName => text()();
+
+  /// Optional note, e.g. where the photo was taken.
+  TextColumn get note => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime()();
+}
+
+/// Links photos to the characters they show (many-to-many).
+@DataClassName('PhotoCharacterRow')
+class DbPhotoCharacters extends Table {
+  @override
+  String get tableName => 'photo_characters';
+
+  IntColumn get photoId => integer()();
+  IntColumn get characterId => integer()();
+
+  @override
+  Set<Column> get primaryKey => {photoId, characterId};
 
   @override
   List<String> get customConstraints => [
+        'FOREIGN KEY (photo_id) REFERENCES photos (id) ON DELETE CASCADE',
         'FOREIGN KEY (character_id) REFERENCES characters (id) '
             'ON DELETE CASCADE',
       ];
@@ -154,7 +173,8 @@ class DbCharacterPhotos extends Table {
   DbTags,
   DbCharacterTags,
   DbCharacterReferences,
-  DbCharacterPhotos,
+  DbPhotos,
+  DbPhotoCharacters,
 ])
 class AppDatabase extends _$AppDatabase {
   /// Pass an [executor] in tests (e.g. `NativeDatabase.memory()`). With no
@@ -248,7 +268,14 @@ class AppDatabase extends _$AppDatabase {
   /// The schema version this build of the app creates and understands.
   /// Also written into backups, so a backup from a newer app version can
   /// be refused instead of half-loaded.
-  static const int currentSchemaVersion = 1;
+  ///
+  /// History:
+  ///  - 1 (2026-09-19): characters, tags, character_tags,
+  ///    character_references, character_photos.
+  ///  - 2 (2026-09-20): character_photos replaced by photos +
+  ///    photo_characters (one photo can show several characters, and has
+  ///    an optional note).
+  static const int currentSchemaVersion = 2;
 
   /// The actual database file used by the real app (not tests).
   static Future<File> databaseFile() async {
@@ -279,6 +306,23 @@ class AppDatabase extends _$AppDatabase {
         onCreate: (m) async {
           await m.createAll();
           wasCreatedThisRun = true;
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            // v1 -> v2: move any rows from the old one-photo-one-character
+            // table into the new photos + photo_characters tables, then
+            // drop the old table. (In practice it was always empty: no
+            // screen could add photos in v1.)
+            await m.createTable(dbPhotos);
+            await m.createTable(dbPhotoCharacters);
+            await customStatement(
+                'INSERT INTO photos (id, file_name, note, created_at) '
+                "SELECT id, file_path, '', created_at FROM character_photos");
+            await customStatement(
+                'INSERT INTO photo_characters (photo_id, character_id) '
+                'SELECT id, character_id FROM character_photos');
+            await customStatement('DROP TABLE IF EXISTS character_photos');
+          }
         },
         beforeOpen: (details) async {
           // SQLite ignores foreign keys (and so the cascade deletes) unless
@@ -360,13 +404,11 @@ class AppDatabase extends _$AppDatabase {
     return into(dbTags).insert(DbTagsCompanion.insert(name: name));
   }
 
-  /// Deletes a character. Its tag links, references and photo rows go with
-  /// it automatically (foreign-key cascade); this also deletes the photo
-  /// image files themselves, which the database can't do.
+  /// Deletes a character, together with its tag links, references and
+  /// photo links. The photos themselves are kept (they may show other
+  /// characters, and stay visible in the gallery); delete a photo
+  /// explicitly with [deletePhoto].
   Future<void> deleteCharacter(int id) async {
-    final photos = await (select(dbCharacterPhotos)
-          ..where((p) => p.characterId.equals(id)))
-        .get();
     await transaction(() async {
       // Linked rows are removed explicitly (not only via the foreign-key
       // cascade), so nothing is left pointing at a deleted character.
@@ -376,17 +418,11 @@ class AppDatabase extends _$AppDatabase {
             ..where((r) =>
                 r.characterAId.equals(id) | r.characterBId.equals(id)))
           .go();
-      await (delete(dbCharacterPhotos)..where((p) => p.characterId.equals(id)))
+      await (delete(dbPhotoCharacters)
+            ..where((p) => p.characterId.equals(id)))
           .go();
       await (delete(dbCharacters)..where((c) => c.id.equals(id))).go();
     });
-    if (photos.isEmpty) return;
-    final photoDir = await photosDirectory();
-    for (final photo in photos) {
-      final file =
-          File('${photoDir.path}${Platform.pathSeparator}${photo.filePath}');
-      if (await file.exists()) await file.delete();
-    }
   }
 
   /// Writes a clean, self-contained copy of the whole database to [path]
@@ -397,10 +433,76 @@ class AppDatabase extends _$AppDatabase {
     await customStatement("VACUUM INTO '$escaped'");
   }
 
-  /// File names of every stored photo (see [DbCharacterPhotos]).
-  Future<List<String>> allPhotoFileNames() async {
-    final rows = await select(dbCharacterPhotos).get();
-    return [for (final r in rows) r.filePath];
+  // ---- Photos -------------------------------------------------------------
+
+  /// Every photo, newest first.
+  Future<List<PhotoRow>> allPhotoRows() {
+    return (select(dbPhotos)
+          ..orderBy([
+            (p) => OrderingTerm.desc(p.createdAt),
+            (p) => OrderingTerm.desc(p.id),
+          ]))
+        .get();
+  }
+
+  /// Every photo link, as `(photoId, characterId)`.
+  Future<List<(int, int)>> allPhotoLinks() async {
+    final rows = await select(dbPhotoCharacters).get();
+    return [for (final r in rows) (r.photoId, r.characterId)];
+  }
+
+  /// Adds a photo row and links it to [characterIds]. Returns its id.
+  Future<int> insertPhoto({
+    required String fileName,
+    required String note,
+    required DateTime createdAt,
+    required List<int> characterIds,
+  }) {
+    return transaction(() async {
+      final id = await into(dbPhotos).insert(DbPhotosCompanion.insert(
+        fileName: fileName,
+        note: Value(note),
+        createdAt: createdAt,
+      ));
+      await _writePhotoLinks(id, characterIds);
+      return id;
+    });
+  }
+
+  Future<void> updatePhotoNote(int photoId, String note) async {
+    await (update(dbPhotos)..where((p) => p.id.equals(photoId)))
+        .write(DbPhotosCompanion(note: Value(note)));
+  }
+
+  /// Replaces which characters [photoId] is linked to.
+  Future<void> setPhotoLinks(int photoId, List<int> characterIds) {
+    return transaction(() async {
+      await (delete(dbPhotoCharacters)..where((p) => p.photoId.equals(photoId)))
+          .go();
+      await _writePhotoLinks(photoId, characterIds);
+    });
+  }
+
+  Future<void> _writePhotoLinks(int photoId, List<int> characterIds) async {
+    for (final characterId in characterIds.toSet()) {
+      await into(dbPhotoCharacters).insert(
+        DbPhotoCharactersCompanion.insert(
+          photoId: photoId,
+          characterId: characterId,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+  }
+
+  /// Deletes a photo row and its links (not the image file; the store
+  /// does that).
+  Future<void> deletePhotoRow(int photoId) {
+    return transaction(() async {
+      await (delete(dbPhotoCharacters)..where((p) => p.photoId.equals(photoId)))
+          .go();
+      await (delete(dbPhotos)..where((p) => p.id.equals(photoId))).go();
+    });
   }
 
   /// Stores the undirected link a <-> b. No-op if it already exists.

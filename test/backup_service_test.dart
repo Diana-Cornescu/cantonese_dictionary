@@ -50,6 +50,7 @@ void main() {
     store = DictionaryStore(
       AppDatabase(NativeDatabase(dbFile)),
       reopen: () => AppDatabase(NativeDatabase(dbFile)),
+      photosDirectory: () async => Directory(path('photos')),
     );
     await store.load();
     backups = BackupService(
@@ -131,5 +132,26 @@ void main() {
       throwsA(isA<BackupException>().having(
           (e) => e.message, 'message', contains('newer version'))),
     );
+  });
+
+  test('photos are included in the backup and come back on restore',
+      () async {
+    final ch = await store.addCharacter(_draft('P'));
+    final source = File(path('source.jpg'))
+      ..writeAsBytesSync([1, 2, 3, 4, 5]);
+    final photo = await store.addPhoto(source,
+        characterIds: [ch.id], note: 'menu');
+    final backup = await backups.createBackup();
+
+    await store.deletePhoto(photo.id);
+    expect(store.photos, isEmpty);
+
+    await backups.restore(backup.bytes);
+    expect(store.photos.length, 1);
+    final restored = store.photos.single;
+    expect(restored.note, 'menu');
+    expect(restored.characterIds, [ch.id]);
+    final file = await store.photoFile(restored);
+    expect(file.readAsBytesSync(), [1, 2, 3, 4, 5]);
   });
 }

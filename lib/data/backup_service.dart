@@ -32,7 +32,7 @@ class BackupFile {
 /// ```
 /// backup_info.json   what made it: app format, schema version, date, counts
 /// database.sqlite    a complete copy of the database
-/// photos/...         every character photo file (none yet; screens later)
+/// photos/...         every photo file (the app's own copies)
 /// ```
 ///
 /// Restoring always **replaces** all current data. Before it does, an

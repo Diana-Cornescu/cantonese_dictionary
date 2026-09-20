@@ -20,12 +20,13 @@ _Nothing left. Everything below moves up._
 
 | Item | Notes | Source |
 |------|-------|--------|
-| **Photo gallery screens** | ⏭️ **Next step.** Photos of characters seen out and about, for font identification. The database table (`character_photos`) and backup support already exist. Only the screens are missing. Design questions to settle first. | Personal_notes; `decisions_log_sqlite_drift.md` decision 5 |
+| **Photo gallery screens** | 🧪 **Code written 2026-09-20, to test.** First round of feedback also written: comma-separated names in the gallery; a + icon for changing characters; tappable linked characters (Back returns to the photo); gallery filters ("Unlinked only" plus a search by character, definition, tag or note). See `decisions_log_photo_gallery.md`. Photos of characters seen out and about, for font identification. **Decided 2026-09-20:** a Photos section on the character screen **plus** a gallery screen from home; add by **camera or phone gallery**; one photo can link to **several characters**; an optional **note** per photo (schema version 2). The app keeps its own resized **copy** (included in backups). Camera photos are **not** saved to the phone's gallery. | Personal_notes; `decisions_log_sqlite_drift.md` decision 5 |
 
 ## Priority 4
 
 | Item | Notes | Source |
 |------|-------|--------|
+| **Delete several photos at once** | For tidying up stale unlinked photos: select several in the gallery and delete them together. For now, filter "Unlinked only" and delete one at a time from each photo's screen. | You, 2026-09-20 (suggested) |
 | **Restyle flashcard stats as boxes** | Move below the definition. A centered "last reviewed" line, then a row of boxes (Seen, Accuracy), then a row of boxes (Correct, Incorrect). | Personal_notes |
 | **Watch for a `file_picker` update (Kotlin warning)** | The build warns that `file_picker` uses the old Kotlin Gradle Plugin, and that future Flutter versions will refuse to build with it. Nothing's broken today. When a newer `file_picker` supports "Built-in Kotlin", run `flutter pub upgrade file_picker`. | Build output, 2026-09-20 |
 | **Clean up "info" lint hints** | `use_build_context_synchronously` (character detail screen), deprecated `withOpacity` (theme), `prefer_const`. Harmless style hints. | `flutter analyze`, 2026-09-19 |
@@ -34,6 +35,7 @@ _Nothing left. Everything below moves up._
 
 | Item | Notes | Source |
 |------|-------|--------|
+| **Setting: save camera photos to the phone's gallery** | A switch in Settings to also save photos taken in the app to the phone's gallery. **Default off** (today's behaviour: photos stay only in the app). Needs a small extra package and a stored setting (e.g. a settings table, so it's in backups). | You, 2026-09-20 |
 | **Tag picker / managed tags UI** | Pick existing tags, rename once, filter by tag. The storage already exists. | `future_ideas.md`; decision 2 |
 | **Handwriting recognition** | Designed and parked. | `future_ideas.md` |
 

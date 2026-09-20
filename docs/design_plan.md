@@ -8,7 +8,7 @@ Status: v1 implemented (see `docs/decisions_log.md` for the build's dated histor
 
 Supporting choices:
 
-- **Local storage (since 2026-09-19):** a local SQLite database through Drift (`lib/data/app_database.dart`), stored inside the project folder (`local_data/`, git-ignored) when run on the Windows laptop, and in app-private storage on Android. Tables: `characters` (including handwriting as a packed binary blob and the flashcard counters), `tags`, `character_tags`, `character_references`, `character_photos`. See `docs/decisions_log_sqlite_drift.md`. *(v1 used a single hand-written JSON file; the sections below that describe the JSON layout are kept for history.)*
+- **Local storage (since 2026-09-19):** a local SQLite database through Drift (`lib/data/app_database.dart`), stored inside the project folder (`local_data/`, git-ignored) when run on the Windows laptop, and in app-private storage on Android. Tables: `characters` (including handwriting as a packed binary blob and the flashcard counters), `tags`, `character_tags`, `character_references`, `photos`, `photo_characters` (schema version 2 since 2026-09-20). See `docs/decisions_log_sqlite_drift.md`. *(v1 used a single hand-written JSON file; the sections below that describe the JSON layout are kept for history.)*
 - **State management:** a single `ChangeNotifier` (Flutter's own built-in class, not a package), consumed by widgets via `ListenableBuilder`.
 - **Handwriting canvas:** built directly with Flutter's `CustomPainter` + `GestureDetector`/`Listener` APIs — no third-party drawing package needed. This also gives full control over capturing raw stroke point data (with timestamps), which supports things like stroke-order playback later.
 - **No network permissions requested at all** in the Android manifest — the app cannot reach the internet even if it wanted to, so "fully local" is enforced at the OS permission level, not just by convention.
@@ -46,6 +46,8 @@ One JSON file, containing a list of character records (each shaped like the "tab
 **Flashcard mode** (redesigned 2026-09-20). Three toggle boxes at the top: *Hard only*, *Character → Definition*, *Definition → Character*. With both directions on, each card is asked a random way. You tap to reveal, then mark correct or incorrect; both directions update the same stats. It opens with only Character → Definition on. See `docs/decisions_log.md` (2026-09-20).
 
 **Settings → Backup & restore** (since 2026-09-19; replaced the old JSON export). A gear icon on the home screen opens Settings. Back up saves one `.zip` (database + photos + info) through the system Save window. Restore replaces everything with a chosen backup, after saving an automatic safety copy (with an "Undo last restore" option). See §5.
+
+**Photos** (added 2026-09-20). Photos of characters seen out and about. A Photos row on each character's screen, and a gallery screen (🖼 on the home screen) with every photo. Add by camera or the phone's gallery. One photo can link to several characters and has an optional note. The app stores its own resized copy, and backups include it. See `docs/decisions_log_photo_gallery.md`.
 
 **Confirmation dialogs.** A single reusable confirmation dialog component is triggered before committing any edit — this includes editing the definition, editing notes, changing tags, archiving, and deleting. Star/hard toggles are confirmed as the one exception: they stay instant with no popup, since they're trivially reversible with one more tap and would otherwise add real friction to something you'll likely do often and casually.
 
@@ -87,16 +89,19 @@ lib/
     stroke_codec.dart       # packs/unpacks handwriting strokes to a binary blob
     dictionary_store.dart   # ChangeNotifier: in-memory list + all CRUD/reference/flashcard/query methods
     backup_service.dart     # creates/restores the backup .zip
+    photo_entry.dart        # photo model
   features/
     dictionary_list/
     character_detail/
     add_character/
     flashcards/
     settings/          # settings_screen.dart (backup & restore)
+    photos/            # gallery, photo viewer, photo picking, character picker
   widgets/          # reusable: confirm dialog, handwriting canvas, tag chip
 test/
   dictionary_store_test.dart
   backup_service_test.dart
+  photo_store_test.dart
   stroke_codec_test.dart
 ```
 

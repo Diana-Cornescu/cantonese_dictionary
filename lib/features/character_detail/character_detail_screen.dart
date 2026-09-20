@@ -6,10 +6,13 @@ import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/tag_chip.dart';
+import '../photos/photo_image.dart';
+import '../photos/photo_picking.dart';
+import '../photos/photo_viewer_screen.dart';
 
 /// Detail screen for one character: a character window (typed/handwritten
 /// toggle) and a translation window (definition, flashcard stats, notes,
-/// tags, references), side by side on wide screens or stacked on narrow
+/// tags, references, photos), side by side on wide screens or stacked on narrow
 /// ones — a responsive breakpoint stands in for a custom draggable divider,
 /// which was explicitly deferred to a later version. Archive/delete for
 /// this character live at the very bottom of the screen.
@@ -530,9 +533,80 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
                 setState(() {});
               },
             ),
+          const Divider(height: 24),
+          _buildPhotosSection(entry),
         ],
       ),
     );
+  }
+
+  /// Photos of this character seen out and about: a row of thumbnails
+  /// (tap to open) and an "add" tile. New photos are linked to this
+  /// character; link more characters from the photo's own screen.
+  Widget _buildPhotosSection(CharacterEntry entry) {
+    final photos = widget.store.photosFor(entry.id);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Photos', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 88,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              for (final photo in photos)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PhotoViewerScreen(
+                          store: widget.store,
+                          photoId: photo.id,
+                        ),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        width: 88,
+                        height: 88,
+                        child: PhotoImage(store: widget.store, photo: photo),
+                      ),
+                    ),
+                  ),
+                ),
+              InkWell(
+                onTap: () => _addPhoto(entry),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add_a_photo_outlined),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _addPhoto(CharacterEntry entry) async {
+    final file = await pickPhoto(context);
+    if (file == null) return;
+    await widget.store.addPhoto(file, characterIds: [entry.id]);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Photo added. Tap it to add a note or link more '
+          'characters.'),
+    ));
   }
 
   Widget _buildBottomActions(CharacterEntry entry) {

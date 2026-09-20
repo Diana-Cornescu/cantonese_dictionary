@@ -20,7 +20,7 @@ One important thing to know going in (this applies again to the 2026-09-19 SQLit
    flutter create --platforms=android,windows --org com.cantonesedictionary --project-name cantonese_dictionary .
    ```
    This is a one-time step. The environment this app was built in couldn't run the real Flutter tool, so the `android/` and `windows/` platform folders (Gradle files, app icons, the Windows CMake/runner files, etc.) don't exist yet — this command generates them for you. It's safe to run on top of the existing project: it fills in the missing platform folders without touching `lib/`, `test/`, or your `pubspec.yaml` dependencies. If it ever prompts about overwriting a file you don't recognize, it's fine to accept — just don't accept an overwrite of anything under `lib/` or `test/` (it shouldn't ask to).
-8. Run `flutter pub get` to fetch dependencies (`path_provider`, `drift`, `drift_flutter`, `archive`, `file_picker`, plus the dev-only tools `drift_dev` and `build_runner`).
+8. Run `flutter pub get` to fetch dependencies (`path_provider`, `drift`, `drift_flutter`, `archive`, `file_picker`, `image_picker`, plus the dev-only tools `drift_dev` and `build_runner`).
    - Then run `dart run build_runner build` to generate `lib/data/app_database.g.dart`. See "Database code generation" below.
 9. Run `flutter analyze`. This is the code's first real compile-level check — see the note at the top of this document.
 10. Run `flutter test` to run the test suite.
@@ -32,7 +32,7 @@ The app stores its data in SQLite through Drift (see `docs/decisions_log_sqlite_
 - **When:** the first time, and again **every time a table in `app_database.dart` changes**. It isn't needed for ordinary builds.
 - **Command** (from the project folder): `dart run build_runner build`
 - **Commit** the generated `app_database.g.dart` to git, so a fresh clone builds without this step.
-- **If `flutter pub get` can't resolve versions:** run `flutter pub add drift drift_flutter archive file_picker dev:drift_dev dev:build_runner`. It picks the newest versions that work together and rewrites `pubspec.yaml` to match.
+- **If `flutter pub get` can't resolve versions:** run `flutter pub add drift drift_flutter archive file_picker image_picker dev:drift_dev dev:build_runner`. It picks the newest versions that work together and rewrites `pubspec.yaml` to match.
 - **If `flutter test` fails with something like `Failed to load dynamic library 'sqlite3.dll'`:** the tests use SQLite on your PC, not a phone. Depending on the package versions, Windows may need a copy of SQLite: download the "Precompiled Binaries for Windows" 64-bit DLL zip from sqlite.org and put `sqlite3.dll` in the project folder (it's git-ignored), or anywhere on your PATH. The app itself doesn't need this; `drift_flutter` bundles SQLite into the APK and the Windows build.
 - **Where the database lives:**
   - **Windows (laptop):** inside the project, at `local_data\cantonese_dictionary.sqlite` (next to `pubspec.yaml`). The folder is git-ignored so your data never gets committed. Back it up by copying that folder. You can open the file with the free "DB Browser for SQLite"; close the app first so the two don't fight over the file.

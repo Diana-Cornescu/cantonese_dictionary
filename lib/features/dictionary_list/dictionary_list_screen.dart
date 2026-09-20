@@ -6,11 +6,13 @@ import '../../theme/app_colors.dart';
 import '../add_character/add_character_screen.dart';
 import '../character_detail/character_detail_screen.dart';
 import '../flashcards/flashcard_mode_screen.dart';
+import '../photos/gallery_screen.dart';
 import '../settings/settings_screen.dart';
 
 /// The dictionary list screen, used both as the app's home/row-view screen
 /// (active characters, with search, and entry points into flashcard mode,
-/// settings (backup & restore), adding a new character, and the archive) and — when
+/// photos, settings (backup & restore), adding a new character, and the
+/// archive) and — when
 /// [isArchiveView] is true — as a pushed "Archived characters" screen with
 /// its own back arrow and title, reached via the archive icon rather than
 /// an in-place toggle.
@@ -100,6 +102,16 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                         MaterialPageRoute(
                           builder: (_) =>
                               FlashcardModeScreen(store: widget.store),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Photos',
+                      icon: const Icon(Icons.photo_library_outlined),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => GalleryScreen(store: widget.store),
                         ),
                       ),
                     ),

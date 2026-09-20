@@ -4,6 +4,13 @@ What changed in each release installed on the phone. Newest first.
 How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
+## Unreleased (next: 1.2.0)
+
+- **Photos:** add photos of characters seen out and about, by camera or from your phone's gallery. One photo can be linked to several characters and have a note. They show in a new **Photos** row on each character's screen and in a new **gallery** (🖼 on the home screen). Photos are included in backups.
+  - In the gallery: names are comma-separated, and you can filter by **Unlinked only** or search by character, definition, tag or note.
+  - On a photo: tap a linked character to open it (Back returns to the photo). The **+** button changes which characters are linked.
+- **Flashcards:** the character side now always shows your drawing under the typed character, in both directions.
+
 ## 1.1.0 — 2026-09-20
 
 - **Flashcards both ways:** new toggle boxes on the flashcard screen: *Hard only*, *Character → Definition*, *Definition → Character*. With both directions on, each card is asked a random way. Definition → Character shows the typed character and your drawing as the answer.

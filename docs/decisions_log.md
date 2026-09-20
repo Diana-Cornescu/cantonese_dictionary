@@ -74,3 +74,13 @@ No open questions remain from the initial planning round. Ready to move into imp
 ## 2026-09-20 — Tested ✅
 
 - Tested on the laptop and working: undo/clear while drawing, the shorter back history, flashcards in both directions, and the required definition. Ready for release 1.1.0.
+
+## 2026-09-20 — Photo gallery (schema version 2)
+
+- Photos of characters seen out and about: a Photos row on the character screen, a gallery screen, camera or gallery input, several characters per photo, and an optional note.
+- Full decisions and reasoning: **`docs/decisions_log_photo_gallery.md`**.
+
+## 2026-09-20 — Flashcards: drawing on the character side in both directions
+
+- **Change:** in **Character → Definition**, the question side now also shows your drawing under the typed character, just like the answer side of Definition → Character. It shows whenever a drawing exists.
+- **Why:** your request, so both directions look the same and you see your own handwriting every time.

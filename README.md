@@ -1,6 +1,6 @@
 # Cantonese Dictionary App
 
-A fully local, offline-first dictionary app for Cantonese characters — you add characters yourself, along with your own definitions, and the app grows into your own personal, self-built reference over time. Includes star/hard shortlists, cross-references between related characters, flashcard practice with tracked stats, and backup & restore to a single file. No servers, no accounts, and no internet connection required at any point — everything runs and stays on your device.
+A fully local, offline-first dictionary app for Cantonese characters — you add characters yourself, along with your own definitions, and the app grows into your own personal, self-built reference over time. Includes star/hard shortlists, cross-references between related characters, flashcard practice with tracked stats, photos of characters seen out and about, and backup & restore to a single file. No servers, no accounts, and no internet connection required at any point — everything runs and stays on your device.
 
 ## Status
 
@@ -14,6 +14,7 @@ v1 implemented — all screens, local storage, and tests are written, and this i
 
 - `docs/design_plan.md` — the living architecture/design plan for the app.
 - `docs/future_ideas.md` — features considered and deliberately parked for a later version (e.g., handwriting recognition, a managed tag list), kept in full so they aren't lost.
+- `docs/decisions_log_photo_gallery.md` — decisions and reasoning for the photo gallery (schema version 2).
 - `docs/decisions_log_backup_and_release.md` — decisions and reasoning for backup & restore, the signing key, and versioning releases.
 - `CHANGELOG.md` — what changed in each release installed on the phone.
 - `docs/decisions_log_sqlite_drift.md` — the dated decisions, reasoning and TL;DR for the move from a JSON file to SQLite + Drift (kept separate so it's easy to find).

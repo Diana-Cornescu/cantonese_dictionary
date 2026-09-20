@@ -9,7 +9,7 @@ import '../../widgets/handwriting_canvas.dart';
 
 /// Which way a single card is asked.
 enum CardDirection {
-  /// Front: typed character. Back: definition.
+  /// Front: typed character + your drawing. Back: definition.
   characterToDefinition,
 
   /// Front: definition. Back: typed character + your drawing.
@@ -304,7 +304,8 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
 
   /// One side of the card. [showCharacter] is true for the character side
   /// (the front in Character → Definition, the answer in Definition →
-  /// Character).
+  /// Character). The character side always shows the typed character and,
+  /// if there is one, your drawing.
   Widget _cardFace(CharacterEntry card, {required bool showCharacter}) {
     if (!showCharacter) {
       return Text(
@@ -312,12 +313,12 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
         textAlign: TextAlign.center,
       );
     }
-    final answerSide = _direction == CardDirection.definitionToCharacter;
     final strokes = card.handwrittenSample;
     final hasDrawing = strokes != null && strokes.isNotEmpty;
-    // As the question: just the big typed character (as before).
-    // As the answer: typed character plus your drawing underneath.
-    if (!answerSide || !hasDrawing) {
+    // Typed character plus your drawing underneath, whichever side of the
+    // card the character is on (question in Character → Definition, answer
+    // in Definition → Character). Since 2026-09-20.
+    if (!hasDrawing) {
       return Text(card.typedCharacter, style: const TextStyle(fontSize: 72));
     }
     return Column(

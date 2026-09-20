@@ -18,7 +18,9 @@ environment:
 #     and docs/decisions_log_sqlite_drift.md). drift_flutter bundles SQLite
 #     itself into the app, so nothing needs installing on the phone.
 #   - archive: builds/reads the backup .zip file.
-#   - file_picker: the system "Save as" / "Open" window for backups.
+#   - file_picker: the system "Save as" / "Open" window for backups (and
+#     choosing a photo file on the laptop).
+#   - image_picker: take a photo or pick one from the phone's gallery.
 # State management is still a plain ChangeNotifier (no package).
 dependencies:
   flutter:
@@ -28,6 +30,7 @@ dependencies:
   drift_flutter: ^0.2.0
   archive: ^4.0.0
   file_picker: ^10.0.0
+  image_picker: ^1.1.0
 
 # Dev-only tools (never shipped in the app):
 #   - drift_dev + build_runner: generate lib/data/app_database.g.dart from

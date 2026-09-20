@@ -1305,12 +1305,11 @@ class DbCharacterReferencesCompanion
   }
 }
 
-class $DbCharacterPhotosTable extends DbCharacterPhotos
-    with TableInfo<$DbCharacterPhotosTable, CharacterPhotoRow> {
+class $DbPhotosTable extends DbPhotos with TableInfo<$DbPhotosTable, PhotoRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $DbCharacterPhotosTable(this.attachedDatabase, [this._alias]);
+  $DbPhotosTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -1320,18 +1319,19 @@ class $DbCharacterPhotosTable extends DbCharacterPhotos
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
-  static const VerificationMeta _characterIdMeta =
-      const VerificationMeta('characterId');
+  static const VerificationMeta _fileNameMeta =
+      const VerificationMeta('fileName');
   @override
-  late final GeneratedColumn<int> characterId = GeneratedColumn<int>(
-      'character_id', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
-  static const VerificationMeta _filePathMeta =
-      const VerificationMeta('filePath');
-  @override
-  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
-      'file_path', aliasedName, false,
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+      'file_name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+      'note', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -1339,33 +1339,29 @@ class $DbCharacterPhotosTable extends DbCharacterPhotos
       'created_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns => [id, characterId, filePath, createdAt];
+  List<GeneratedColumn> get $columns => [id, fileName, note, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'character_photos';
+  static const String $name = 'photos';
   @override
-  VerificationContext validateIntegrity(Insertable<CharacterPhotoRow> instance,
+  VerificationContext validateIntegrity(Insertable<PhotoRow> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('character_id')) {
-      context.handle(
-          _characterIdMeta,
-          characterId.isAcceptableOrUnknown(
-              data['character_id']!, _characterIdMeta));
+    if (data.containsKey('file_name')) {
+      context.handle(_fileNameMeta,
+          fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta));
     } else if (isInserting) {
-      context.missing(_characterIdMeta);
+      context.missing(_fileNameMeta);
     }
-    if (data.containsKey('file_path')) {
-      context.handle(_filePathMeta,
-          filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta));
-    } else if (isInserting) {
-      context.missing(_filePathMeta);
+    if (data.containsKey('note')) {
+      context.handle(
+          _noteMeta, note.isAcceptableOrUnknown(data['note']!, _noteMeta));
     }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
@@ -1379,63 +1375,67 @@ class $DbCharacterPhotosTable extends DbCharacterPhotos
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  CharacterPhotoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+  PhotoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CharacterPhotoRow(
+    return PhotoRow(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      characterId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}character_id'])!,
-      filePath: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}file_path'])!,
+      fileName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}file_name'])!,
+      note: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}note'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
   }
 
   @override
-  $DbCharacterPhotosTable createAlias(String alias) {
-    return $DbCharacterPhotosTable(attachedDatabase, alias);
+  $DbPhotosTable createAlias(String alias) {
+    return $DbPhotosTable(attachedDatabase, alias);
   }
 }
 
-class CharacterPhotoRow extends DataClass
-    implements Insertable<CharacterPhotoRow> {
+class PhotoRow extends DataClass implements Insertable<PhotoRow> {
   final int id;
-  final int characterId;
-  final String filePath;
+
+  /// File name inside [AppDatabase.photosDirectory], e.g.
+  /// `1789879146039_48213.jpg`.
+  final String fileName;
+
+  /// Optional note, e.g. where the photo was taken.
+  final String note;
   final DateTime createdAt;
-  const CharacterPhotoRow(
+  const PhotoRow(
       {required this.id,
-      required this.characterId,
-      required this.filePath,
+      required this.fileName,
+      required this.note,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['character_id'] = Variable<int>(characterId);
-    map['file_path'] = Variable<String>(filePath);
+    map['file_name'] = Variable<String>(fileName);
+    map['note'] = Variable<String>(note);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
 
-  DbCharacterPhotosCompanion toCompanion(bool nullToAbsent) {
-    return DbCharacterPhotosCompanion(
+  DbPhotosCompanion toCompanion(bool nullToAbsent) {
+    return DbPhotosCompanion(
       id: Value(id),
-      characterId: Value(characterId),
-      filePath: Value(filePath),
+      fileName: Value(fileName),
+      note: Value(note),
       createdAt: Value(createdAt),
     );
   }
 
-  factory CharacterPhotoRow.fromJson(Map<String, dynamic> json,
+  factory PhotoRow.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CharacterPhotoRow(
+    return PhotoRow(
       id: serializer.fromJson<int>(json['id']),
-      characterId: serializer.fromJson<int>(json['characterId']),
-      filePath: serializer.fromJson<String>(json['filePath']),
+      fileName: serializer.fromJson<String>(json['fileName']),
+      note: serializer.fromJson<String>(json['note']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1444,95 +1444,93 @@ class CharacterPhotoRow extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'characterId': serializer.toJson<int>(characterId),
-      'filePath': serializer.toJson<String>(filePath),
+      'fileName': serializer.toJson<String>(fileName),
+      'note': serializer.toJson<String>(note),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  CharacterPhotoRow copyWith(
-          {int? id, int? characterId, String? filePath, DateTime? createdAt}) =>
-      CharacterPhotoRow(
+  PhotoRow copyWith(
+          {int? id, String? fileName, String? note, DateTime? createdAt}) =>
+      PhotoRow(
         id: id ?? this.id,
-        characterId: characterId ?? this.characterId,
-        filePath: filePath ?? this.filePath,
+        fileName: fileName ?? this.fileName,
+        note: note ?? this.note,
         createdAt: createdAt ?? this.createdAt,
       );
-  CharacterPhotoRow copyWithCompanion(DbCharacterPhotosCompanion data) {
-    return CharacterPhotoRow(
+  PhotoRow copyWithCompanion(DbPhotosCompanion data) {
+    return PhotoRow(
       id: data.id.present ? data.id.value : this.id,
-      characterId:
-          data.characterId.present ? data.characterId.value : this.characterId,
-      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      note: data.note.present ? data.note.value : this.note,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('CharacterPhotoRow(')
+    return (StringBuffer('PhotoRow(')
           ..write('id: $id, ')
-          ..write('characterId: $characterId, ')
-          ..write('filePath: $filePath, ')
+          ..write('fileName: $fileName, ')
+          ..write('note: $note, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, characterId, filePath, createdAt);
+  int get hashCode => Object.hash(id, fileName, note, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CharacterPhotoRow &&
+      (other is PhotoRow &&
           other.id == this.id &&
-          other.characterId == this.characterId &&
-          other.filePath == this.filePath &&
+          other.fileName == this.fileName &&
+          other.note == this.note &&
           other.createdAt == this.createdAt);
 }
 
-class DbCharacterPhotosCompanion extends UpdateCompanion<CharacterPhotoRow> {
+class DbPhotosCompanion extends UpdateCompanion<PhotoRow> {
   final Value<int> id;
-  final Value<int> characterId;
-  final Value<String> filePath;
+  final Value<String> fileName;
+  final Value<String> note;
   final Value<DateTime> createdAt;
-  const DbCharacterPhotosCompanion({
+  const DbPhotosCompanion({
     this.id = const Value.absent(),
-    this.characterId = const Value.absent(),
-    this.filePath = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
-  DbCharacterPhotosCompanion.insert({
+  DbPhotosCompanion.insert({
     this.id = const Value.absent(),
-    required int characterId,
-    required String filePath,
+    required String fileName,
+    this.note = const Value.absent(),
     required DateTime createdAt,
-  })  : characterId = Value(characterId),
-        filePath = Value(filePath),
+  })  : fileName = Value(fileName),
         createdAt = Value(createdAt);
-  static Insertable<CharacterPhotoRow> custom({
+  static Insertable<PhotoRow> custom({
     Expression<int>? id,
-    Expression<int>? characterId,
-    Expression<String>? filePath,
+    Expression<String>? fileName,
+    Expression<String>? note,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (characterId != null) 'character_id': characterId,
-      if (filePath != null) 'file_path': filePath,
+      if (fileName != null) 'file_name': fileName,
+      if (note != null) 'note': note,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
 
-  DbCharacterPhotosCompanion copyWith(
+  DbPhotosCompanion copyWith(
       {Value<int>? id,
-      Value<int>? characterId,
-      Value<String>? filePath,
+      Value<String>? fileName,
+      Value<String>? note,
       Value<DateTime>? createdAt}) {
-    return DbCharacterPhotosCompanion(
+    return DbPhotosCompanion(
       id: id ?? this.id,
-      characterId: characterId ?? this.characterId,
-      filePath: filePath ?? this.filePath,
+      fileName: fileName ?? this.fileName,
+      note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1543,11 +1541,11 @@ class DbCharacterPhotosCompanion extends UpdateCompanion<CharacterPhotoRow> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
-    if (characterId.present) {
-      map['character_id'] = Variable<int>(characterId.value);
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
     }
-    if (filePath.present) {
-      map['file_path'] = Variable<String>(filePath.value);
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -1557,11 +1555,208 @@ class DbCharacterPhotosCompanion extends UpdateCompanion<CharacterPhotoRow> {
 
   @override
   String toString() {
-    return (StringBuffer('DbCharacterPhotosCompanion(')
+    return (StringBuffer('DbPhotosCompanion(')
           ..write('id: $id, ')
-          ..write('characterId: $characterId, ')
-          ..write('filePath: $filePath, ')
+          ..write('fileName: $fileName, ')
+          ..write('note: $note, ')
           ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DbPhotoCharactersTable extends DbPhotoCharacters
+    with TableInfo<$DbPhotoCharactersTable, PhotoCharacterRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DbPhotoCharactersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _photoIdMeta =
+      const VerificationMeta('photoId');
+  @override
+  late final GeneratedColumn<int> photoId = GeneratedColumn<int>(
+      'photo_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _characterIdMeta =
+      const VerificationMeta('characterId');
+  @override
+  late final GeneratedColumn<int> characterId = GeneratedColumn<int>(
+      'character_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [photoId, characterId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'photo_characters';
+  @override
+  VerificationContext validateIntegrity(Insertable<PhotoCharacterRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('photo_id')) {
+      context.handle(_photoIdMeta,
+          photoId.isAcceptableOrUnknown(data['photo_id']!, _photoIdMeta));
+    } else if (isInserting) {
+      context.missing(_photoIdMeta);
+    }
+    if (data.containsKey('character_id')) {
+      context.handle(
+          _characterIdMeta,
+          characterId.isAcceptableOrUnknown(
+              data['character_id']!, _characterIdMeta));
+    } else if (isInserting) {
+      context.missing(_characterIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {photoId, characterId};
+  @override
+  PhotoCharacterRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PhotoCharacterRow(
+      photoId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}photo_id'])!,
+      characterId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}character_id'])!,
+    );
+  }
+
+  @override
+  $DbPhotoCharactersTable createAlias(String alias) {
+    return $DbPhotoCharactersTable(attachedDatabase, alias);
+  }
+}
+
+class PhotoCharacterRow extends DataClass
+    implements Insertable<PhotoCharacterRow> {
+  final int photoId;
+  final int characterId;
+  const PhotoCharacterRow({required this.photoId, required this.characterId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['photo_id'] = Variable<int>(photoId);
+    map['character_id'] = Variable<int>(characterId);
+    return map;
+  }
+
+  DbPhotoCharactersCompanion toCompanion(bool nullToAbsent) {
+    return DbPhotoCharactersCompanion(
+      photoId: Value(photoId),
+      characterId: Value(characterId),
+    );
+  }
+
+  factory PhotoCharacterRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PhotoCharacterRow(
+      photoId: serializer.fromJson<int>(json['photoId']),
+      characterId: serializer.fromJson<int>(json['characterId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'photoId': serializer.toJson<int>(photoId),
+      'characterId': serializer.toJson<int>(characterId),
+    };
+  }
+
+  PhotoCharacterRow copyWith({int? photoId, int? characterId}) =>
+      PhotoCharacterRow(
+        photoId: photoId ?? this.photoId,
+        characterId: characterId ?? this.characterId,
+      );
+  PhotoCharacterRow copyWithCompanion(DbPhotoCharactersCompanion data) {
+    return PhotoCharacterRow(
+      photoId: data.photoId.present ? data.photoId.value : this.photoId,
+      characterId:
+          data.characterId.present ? data.characterId.value : this.characterId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhotoCharacterRow(')
+          ..write('photoId: $photoId, ')
+          ..write('characterId: $characterId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(photoId, characterId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PhotoCharacterRow &&
+          other.photoId == this.photoId &&
+          other.characterId == this.characterId);
+}
+
+class DbPhotoCharactersCompanion extends UpdateCompanion<PhotoCharacterRow> {
+  final Value<int> photoId;
+  final Value<int> characterId;
+  final Value<int> rowid;
+  const DbPhotoCharactersCompanion({
+    this.photoId = const Value.absent(),
+    this.characterId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DbPhotoCharactersCompanion.insert({
+    required int photoId,
+    required int characterId,
+    this.rowid = const Value.absent(),
+  })  : photoId = Value(photoId),
+        characterId = Value(characterId);
+  static Insertable<PhotoCharacterRow> custom({
+    Expression<int>? photoId,
+    Expression<int>? characterId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (photoId != null) 'photo_id': photoId,
+      if (characterId != null) 'character_id': characterId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DbPhotoCharactersCompanion copyWith(
+      {Value<int>? photoId, Value<int>? characterId, Value<int>? rowid}) {
+    return DbPhotoCharactersCompanion(
+      photoId: photoId ?? this.photoId,
+      characterId: characterId ?? this.characterId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (photoId.present) {
+      map['photo_id'] = Variable<int>(photoId.value);
+    }
+    if (characterId.present) {
+      map['character_id'] = Variable<int>(characterId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbPhotoCharactersCompanion(')
+          ..write('photoId: $photoId, ')
+          ..write('characterId: $characterId, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -1576,8 +1771,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DbCharacterTagsTable(this);
   late final $DbCharacterReferencesTable dbCharacterReferences =
       $DbCharacterReferencesTable(this);
-  late final $DbCharacterPhotosTable dbCharacterPhotos =
-      $DbCharacterPhotosTable(this);
+  late final $DbPhotosTable dbPhotos = $DbPhotosTable(this);
+  late final $DbPhotoCharactersTable dbPhotoCharacters =
+      $DbPhotoCharactersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1587,7 +1783,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         dbTags,
         dbCharacterTags,
         dbCharacterReferences,
-        dbCharacterPhotos
+        dbPhotos,
+        dbPhotoCharacters
       ];
   @override
   DriftDatabaseOptions get options =>
@@ -2298,24 +2495,22 @@ typedef $$DbCharacterReferencesTableProcessedTableManager
         ),
         CharacterReferenceRow,
         PrefetchHooks Function()>;
-typedef $$DbCharacterPhotosTableCreateCompanionBuilder
-    = DbCharacterPhotosCompanion Function({
+typedef $$DbPhotosTableCreateCompanionBuilder = DbPhotosCompanion Function({
   Value<int> id,
-  required int characterId,
-  required String filePath,
+  required String fileName,
+  Value<String> note,
   required DateTime createdAt,
 });
-typedef $$DbCharacterPhotosTableUpdateCompanionBuilder
-    = DbCharacterPhotosCompanion Function({
+typedef $$DbPhotosTableUpdateCompanionBuilder = DbPhotosCompanion Function({
   Value<int> id,
-  Value<int> characterId,
-  Value<String> filePath,
+  Value<String> fileName,
+  Value<String> note,
   Value<DateTime> createdAt,
 });
 
-class $$DbCharacterPhotosTableFilterComposer
-    extends Composer<_$AppDatabase, $DbCharacterPhotosTable> {
-  $$DbCharacterPhotosTableFilterComposer({
+class $$DbPhotosTableFilterComposer
+    extends Composer<_$AppDatabase, $DbPhotosTable> {
+  $$DbPhotosTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2325,19 +2520,19 @@ class $$DbCharacterPhotosTableFilterComposer
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<int> get characterId => $composableBuilder(
-      column: $table.characterId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get fileName => $composableBuilder(
+      column: $table.fileName, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get filePath => $composableBuilder(
-      column: $table.filePath, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get note => $composableBuilder(
+      column: $table.note, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
 }
 
-class $$DbCharacterPhotosTableOrderingComposer
-    extends Composer<_$AppDatabase, $DbCharacterPhotosTable> {
-  $$DbCharacterPhotosTableOrderingComposer({
+class $$DbPhotosTableOrderingComposer
+    extends Composer<_$AppDatabase, $DbPhotosTable> {
+  $$DbPhotosTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2347,19 +2542,19 @@ class $$DbCharacterPhotosTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<int> get characterId => $composableBuilder(
-      column: $table.characterId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get fileName => $composableBuilder(
+      column: $table.fileName, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get filePath => $composableBuilder(
-      column: $table.filePath, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get note => $composableBuilder(
+      column: $table.note, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
 
-class $$DbCharacterPhotosTableAnnotationComposer
-    extends Composer<_$AppDatabase, $DbCharacterPhotosTable> {
-  $$DbCharacterPhotosTableAnnotationComposer({
+class $$DbPhotosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DbPhotosTable> {
+  $$DbPhotosTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2369,65 +2564,60 @@ class $$DbCharacterPhotosTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get characterId => $composableBuilder(
-      column: $table.characterId, builder: (column) => column);
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
 
-  GeneratedColumn<String> get filePath =>
-      $composableBuilder(column: $table.filePath, builder: (column) => column);
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
 
-class $$DbCharacterPhotosTableTableManager extends RootTableManager<
+class $$DbPhotosTableTableManager extends RootTableManager<
     _$AppDatabase,
-    $DbCharacterPhotosTable,
-    CharacterPhotoRow,
-    $$DbCharacterPhotosTableFilterComposer,
-    $$DbCharacterPhotosTableOrderingComposer,
-    $$DbCharacterPhotosTableAnnotationComposer,
-    $$DbCharacterPhotosTableCreateCompanionBuilder,
-    $$DbCharacterPhotosTableUpdateCompanionBuilder,
-    (
-      CharacterPhotoRow,
-      BaseReferences<_$AppDatabase, $DbCharacterPhotosTable, CharacterPhotoRow>
-    ),
-    CharacterPhotoRow,
+    $DbPhotosTable,
+    PhotoRow,
+    $$DbPhotosTableFilterComposer,
+    $$DbPhotosTableOrderingComposer,
+    $$DbPhotosTableAnnotationComposer,
+    $$DbPhotosTableCreateCompanionBuilder,
+    $$DbPhotosTableUpdateCompanionBuilder,
+    (PhotoRow, BaseReferences<_$AppDatabase, $DbPhotosTable, PhotoRow>),
+    PhotoRow,
     PrefetchHooks Function()> {
-  $$DbCharacterPhotosTableTableManager(
-      _$AppDatabase db, $DbCharacterPhotosTable table)
+  $$DbPhotosTableTableManager(_$AppDatabase db, $DbPhotosTable table)
       : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$DbCharacterPhotosTableFilterComposer($db: db, $table: table),
+              $$DbPhotosTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$DbCharacterPhotosTableOrderingComposer($db: db, $table: table),
+              $$DbPhotosTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$DbCharacterPhotosTableAnnotationComposer(
-                  $db: db, $table: table),
+              $$DbPhotosTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            Value<int> characterId = const Value.absent(),
-            Value<String> filePath = const Value.absent(),
+            Value<String> fileName = const Value.absent(),
+            Value<String> note = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
-              DbCharacterPhotosCompanion(
+              DbPhotosCompanion(
             id: id,
-            characterId: characterId,
-            filePath: filePath,
+            fileName: fileName,
+            note: note,
             createdAt: createdAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            required int characterId,
-            required String filePath,
+            required String fileName,
+            Value<String> note = const Value.absent(),
             required DateTime createdAt,
           }) =>
-              DbCharacterPhotosCompanion.insert(
+              DbPhotosCompanion.insert(
             id: id,
-            characterId: characterId,
-            filePath: filePath,
+            fileName: fileName,
+            note: note,
             createdAt: createdAt,
           ),
           withReferenceMapper: (p0) => p0
@@ -2437,20 +2627,147 @@ class $$DbCharacterPhotosTableTableManager extends RootTableManager<
         ));
 }
 
-typedef $$DbCharacterPhotosTableProcessedTableManager = ProcessedTableManager<
+typedef $$DbPhotosTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
-    $DbCharacterPhotosTable,
-    CharacterPhotoRow,
-    $$DbCharacterPhotosTableFilterComposer,
-    $$DbCharacterPhotosTableOrderingComposer,
-    $$DbCharacterPhotosTableAnnotationComposer,
-    $$DbCharacterPhotosTableCreateCompanionBuilder,
-    $$DbCharacterPhotosTableUpdateCompanionBuilder,
+    $DbPhotosTable,
+    PhotoRow,
+    $$DbPhotosTableFilterComposer,
+    $$DbPhotosTableOrderingComposer,
+    $$DbPhotosTableAnnotationComposer,
+    $$DbPhotosTableCreateCompanionBuilder,
+    $$DbPhotosTableUpdateCompanionBuilder,
+    (PhotoRow, BaseReferences<_$AppDatabase, $DbPhotosTable, PhotoRow>),
+    PhotoRow,
+    PrefetchHooks Function()>;
+typedef $$DbPhotoCharactersTableCreateCompanionBuilder
+    = DbPhotoCharactersCompanion Function({
+  required int photoId,
+  required int characterId,
+  Value<int> rowid,
+});
+typedef $$DbPhotoCharactersTableUpdateCompanionBuilder
+    = DbPhotoCharactersCompanion Function({
+  Value<int> photoId,
+  Value<int> characterId,
+  Value<int> rowid,
+});
+
+class $$DbPhotoCharactersTableFilterComposer
+    extends Composer<_$AppDatabase, $DbPhotoCharactersTable> {
+  $$DbPhotoCharactersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get photoId => $composableBuilder(
+      column: $table.photoId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get characterId => $composableBuilder(
+      column: $table.characterId, builder: (column) => ColumnFilters(column));
+}
+
+class $$DbPhotoCharactersTableOrderingComposer
+    extends Composer<_$AppDatabase, $DbPhotoCharactersTable> {
+  $$DbPhotoCharactersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get photoId => $composableBuilder(
+      column: $table.photoId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get characterId => $composableBuilder(
+      column: $table.characterId, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DbPhotoCharactersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DbPhotoCharactersTable> {
+  $$DbPhotoCharactersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get photoId =>
+      $composableBuilder(column: $table.photoId, builder: (column) => column);
+
+  GeneratedColumn<int> get characterId => $composableBuilder(
+      column: $table.characterId, builder: (column) => column);
+}
+
+class $$DbPhotoCharactersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $DbPhotoCharactersTable,
+    PhotoCharacterRow,
+    $$DbPhotoCharactersTableFilterComposer,
+    $$DbPhotoCharactersTableOrderingComposer,
+    $$DbPhotoCharactersTableAnnotationComposer,
+    $$DbPhotoCharactersTableCreateCompanionBuilder,
+    $$DbPhotoCharactersTableUpdateCompanionBuilder,
     (
-      CharacterPhotoRow,
-      BaseReferences<_$AppDatabase, $DbCharacterPhotosTable, CharacterPhotoRow>
+      PhotoCharacterRow,
+      BaseReferences<_$AppDatabase, $DbPhotoCharactersTable, PhotoCharacterRow>
     ),
-    CharacterPhotoRow,
+    PhotoCharacterRow,
+    PrefetchHooks Function()> {
+  $$DbPhotoCharactersTableTableManager(
+      _$AppDatabase db, $DbPhotoCharactersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DbPhotoCharactersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DbPhotoCharactersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DbPhotoCharactersTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> photoId = const Value.absent(),
+            Value<int> characterId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DbPhotoCharactersCompanion(
+            photoId: photoId,
+            characterId: characterId,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required int photoId,
+            required int characterId,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DbPhotoCharactersCompanion.insert(
+            photoId: photoId,
+            characterId: characterId,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$DbPhotoCharactersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $DbPhotoCharactersTable,
+    PhotoCharacterRow,
+    $$DbPhotoCharactersTableFilterComposer,
+    $$DbPhotoCharactersTableOrderingComposer,
+    $$DbPhotoCharactersTableAnnotationComposer,
+    $$DbPhotoCharactersTableCreateCompanionBuilder,
+    $$DbPhotoCharactersTableUpdateCompanionBuilder,
+    (
+      PhotoCharacterRow,
+      BaseReferences<_$AppDatabase, $DbPhotoCharactersTable, PhotoCharacterRow>
+    ),
+    PhotoCharacterRow,
     PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
@@ -2464,6 +2781,8 @@ class $AppDatabaseManager {
       $$DbCharacterTagsTableTableManager(_db, _db.dbCharacterTags);
   $$DbCharacterReferencesTableTableManager get dbCharacterReferences =>
       $$DbCharacterReferencesTableTableManager(_db, _db.dbCharacterReferences);
-  $$DbCharacterPhotosTableTableManager get dbCharacterPhotos =>
-      $$DbCharacterPhotosTableTableManager(_db, _db.dbCharacterPhotos);
+  $$DbPhotosTableTableManager get dbPhotos =>
+      $$DbPhotosTableTableManager(_db, _db.dbPhotos);
+  $$DbPhotoCharactersTableTableManager get dbPhotoCharacters =>
+      $$DbPhotoCharactersTableTableManager(_db, _db.dbPhotoCharacters);
 }

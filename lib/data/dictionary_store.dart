@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
 import 'app_database.dart';
 import 'character_entry.dart';
+import 'photo_entry.dart';
 import 'stroke_codec.dart';
 
 /// Central store for all dictionary data. Screens read from its in-memory
@@ -31,11 +34,21 @@ import 'stroke_codec.dart';
 class DictionaryStore extends ChangeNotifier {
   /// [reopen] creates a fresh [AppDatabase] on the same file. It's only
   /// needed for [replaceDatabase] (restoring a backup).
-  DictionaryStore(this._db, {AppDatabase Function()? reopen})
-      : _reopen = reopen;
+  /// [photosDirectory] says where photo files live; it defaults to the real
+  /// app folder and is only overridden in tests.
+  DictionaryStore(
+    this._db, {
+    AppDatabase Function()? reopen,
+    Future<Directory> Function()? photosDirectory,
+  })  : _reopen = reopen,
+        _photosDirectoryResolver =
+            photosDirectory ?? AppDatabase.photosDirectory;
 
   AppDatabase _db;
   final AppDatabase Function()? _reopen;
+  final Future<Directory> Function() _photosDirectoryResolver;
+  Directory? _photosDir;
+  final List<PhotoEntry> _photos = [];
   final List<CharacterEntry> _characters = [];
   bool _isLoaded = false;
 
@@ -67,6 +80,8 @@ class DictionaryStore extends ChangeNotifier {
     final rows = await _db.allCharacterRows();
     final tagsById = await _db.tagNamesByCharacter();
     final pairs = await _db.allReferencePairs();
+    final photoRows = await _db.allPhotoRows();
+    final photoLinks = await _db.allPhotoLinks();
 
     final refsById = <int, List<int>>{};
     for (final (a, b) in pairs) {
@@ -80,6 +95,20 @@ class DictionaryStore extends ChangeNotifier {
             row,
             tags: tagsById[row.id] ?? const [],
             references: refsById[row.id] ?? const [],
+          )));
+
+    final linksByPhoto = <int, List<int>>{};
+    for (final (photoId, characterId) in photoLinks) {
+      linksByPhoto.putIfAbsent(photoId, () => []).add(characterId);
+    }
+    _photos
+      ..clear()
+      ..addAll(photoRows.map((row) => PhotoEntry(
+            id: row.id,
+            fileName: row.fileName,
+            note: row.note,
+            createdAt: row.createdAt,
+            characterIds: linksByPhoto[row.id] ?? const [],
           )));
 
     // Checked after the first query on purpose: Drift opens (and, on first
@@ -99,7 +128,8 @@ class DictionaryStore extends ChangeNotifier {
   Future<void> snapshotDatabaseTo(String path) => _db.copyTo(path);
 
   /// File names of all stored photos. Used by backups.
-  Future<List<String>> photoFileNames() => _db.allPhotoFileNames();
+  Future<List<String>> photoFileNames() async =>
+      [for (final p in _photos) p.fileName];
 
   /// Closes the database, runs [swapFiles] (which replaces the database
   /// file on disk, e.g. with a restored backup), then reopens it and
@@ -245,6 +275,15 @@ class DictionaryStore extends ChangeNotifier {
     // rows itself (cascade); the loop below mirrors that in memory.
     await _db.deleteCharacter(id);
     _characters.removeWhere((c) => c.id == id);
+    // Photos stay, but no longer point at the deleted character.
+    for (var i = 0; i < _photos.length; i++) {
+      final photo = _photos[i];
+      if (photo.characterIds.contains(id)) {
+        _photos[i] = photo.copyWith(
+          characterIds: photo.characterIds.where((c) => c != id).toList(),
+        );
+      }
+    }
     for (var i = 0; i < _characters.length; i++) {
       final entry = _characters[i];
       if (entry.referencedCharacterIds.contains(id)) {
@@ -352,6 +391,98 @@ class DictionaryStore extends ChangeNotifier {
             b.referencedCharacterIds.where((r) => r != idA).toList(),
       );
     }
+    notifyListeners();
+  }
+
+  // ---- Photos ---------------------------------------------------------------
+
+  /// All photos, newest first.
+  List<PhotoEntry> get photos => List.unmodifiable(_photos);
+
+  /// Photos linked to character [characterId], newest first.
+  List<PhotoEntry> photosFor(int characterId) => List.unmodifiable(
+      _photos.where((p) => p.characterIds.contains(characterId)));
+
+  /// The folder photo files live in (created if missing).
+  Future<Directory> photosDirectory() async {
+    final dir = _photosDir ??= await _photosDirectoryResolver();
+    await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// The image file for [photo].
+  Future<File> photoFile(PhotoEntry photo) async {
+    final dir = await photosDirectory();
+    return File('${dir.path}${Platform.pathSeparator}${photo.fileName}');
+  }
+
+  /// Copies [source] into the app's photos folder (the original is left
+  /// untouched) and links it to [characterIds]. Returns the new photo.
+  Future<PhotoEntry> addPhoto(
+    File source, {
+    List<int> characterIds = const [],
+    String note = '',
+  }) async {
+    final dir = await photosDirectory();
+    final now = DateTime.now();
+    final dot = source.path.lastIndexOf('.');
+    final ext = dot == -1 ? '.jpg' : source.path.substring(dot).toLowerCase();
+    final fileName =
+        '${now.millisecondsSinceEpoch}_${Random().nextInt(1000000)}$ext';
+    final copy =
+        await source.copy('${dir.path}${Platform.pathSeparator}$fileName');
+    final int id;
+    try {
+      id = await _db.insertPhoto(
+        fileName: fileName,
+        note: note.trim(),
+        createdAt: now,
+        characterIds: characterIds,
+      );
+    } catch (_) {
+      if (await copy.exists()) await copy.delete();
+      rethrow;
+    }
+    final photo = PhotoEntry(
+      id: id,
+      fileName: fileName,
+      note: note.trim(),
+      createdAt: now,
+      characterIds: characterIds.toSet().toList(),
+    );
+    _photos.insert(0, photo);
+    notifyListeners();
+    return photo;
+  }
+
+  /// Changes [photoId]'s note (empty = no note).
+  Future<void> updatePhotoNote(int photoId, String note) async {
+    final index = _photos.indexWhere((p) => p.id == photoId);
+    if (index == -1) return;
+    await _db.updatePhotoNote(photoId, note.trim());
+    _photos[index] = _photos[index].copyWith(note: note.trim());
+    notifyListeners();
+  }
+
+  /// Replaces which characters [photoId] is linked to.
+  Future<void> setPhotoCharacters(int photoId, List<int> characterIds) async {
+    final index = _photos.indexWhere((p) => p.id == photoId);
+    if (index == -1) return;
+    final ids = characterIds.toSet().toList();
+    await _db.setPhotoLinks(photoId, ids);
+    _photos[index] = _photos[index].copyWith(characterIds: ids);
+    notifyListeners();
+  }
+
+  /// Deletes a photo and its image file.
+  Future<void> deletePhoto(int photoId) async {
+    final index = _photos.indexWhere((p) => p.id == photoId);
+    if (index == -1) return;
+    final photo = _photos[index];
+    await _db.deletePhotoRow(photoId);
+    _photos.removeAt(index);
+    final file = await photoFile(photo);
+    if (await file.exists()) await file.delete();
     notifyListeners();
   }
 }
