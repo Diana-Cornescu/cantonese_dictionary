@@ -228,8 +228,14 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
                                   visualDensity: VisualDensity.compact,
+                                  // Fire icon for "hard" (2026-09-20; was
+                                  // "!"): filled red when on, outline when
+                                  // off.
                                   icon: Icon(
-                                    Icons.priority_high,
+                                    entry.isHard
+                                        ? Icons.local_fire_department
+                                        : Icons
+                                            .local_fire_department_outlined,
                                     color:
                                         entry.isHard ? AppColors.danger : null,
                                   ),

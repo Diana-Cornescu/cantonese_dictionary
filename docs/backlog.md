@@ -25,8 +25,9 @@ _Nothing left. Everything below moves up._
 | Item | Notes | Source |
 |------|-------|--------|
 | **Delete several photos at once** | For tidying up stale unlinked photos: select several in the gallery and delete them together. For now, filter "Unlinked only" and delete one at a time from each photo's screen. | You, 2026-09-20 (suggested) |
-| **Relocate Trash Photo button** | Currently after selecting a photo in big picture mode, the trash photo button is right near the home button and prone to miss clicks | You, 2026-09-20 (suggested) |
 | **Restyle flashcard stats as boxes** | Move below the definition. A centered "last reviewed" line, then a row of boxes (Seen, Accuracy), then a row of boxes (Correct, Incorrect). | Personal_notes |
+| **Move the photo delete button away from home button** | Easy to miss click trash icon instead of home button after clicking into a photo |  You, 2026-09-20 (suggested) |
+| **Add filter Icon to photos and Home row screen** | To be able to filter for hard, starred, or tags along wiht the unlinked option |  You, 2026-09-20 (suggested) |
 | **Watch for a `file_picker` update (Kotlin warning)** | The build warns that `file_picker` uses the old Kotlin Gradle Plugin, and that future Flutter versions will refuse to build with it. Nothing's broken today. When a newer `file_picker` supports "Built-in Kotlin", run `flutter pub upgrade file_picker`. | Build output, 2026-09-20 |
 | **Clean up "info" lint hints** | `use_build_context_synchronously` (character detail screen), deprecated `withOpacity` (theme), `prefer_const`. Harmless style hints. | `flutter analyze`, 2026-09-19 |
 
@@ -46,7 +47,7 @@ _Nothing left. Everything below moves up._
 
 ## Done
 
-- **Released 1.2.0** (2026-09-20): photo gallery (with feedback round), side menu, "Go to character screen" in flashcards (shown after revealing), drawing on both flashcard sides, a Home button in the gallery.
+- **Released 1.2.0** (2026-09-20): photo gallery (with feedback round), side menu, "Go to character screen" in flashcards (shown after revealing), drawing on both flashcard sides, a Home button in the gallery, redesigned flashcard options (card dropdown: All / Hard only / Favorites only; direction dropdown with Bidirectional), 🔥 fire icon for hard.
 
 - **Flashcards in both directions** (Priority 2, tested 2026-09-20): Hard only / Character → Definition / Definition → Character toggle boxes, random direction per card when both are on. The definition is now required. Goes out in 1.1.0.
 - **Shorter "back" history, option A** (Priority 2, tested 2026-09-20): a reference replaces the character screen, so Back goes to the list. Goes out in 1.1.0.

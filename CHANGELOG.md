@@ -12,6 +12,8 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 - **Flashcards:** the character side now always shows your drawing under the typed character, in both directions.
 - **Flashcards:** the Back button became **Go to character screen**, shown after you reveal the card. It opens the current card's character, and Back returns to the same card.
 - **Photos gallery:** a Home button at the top right.
+- **Hard icon:** the "hard" flag is now a red 🔥 fire icon (was "!").
+- **Flashcard options redesigned:** two matching dropdowns: which cards (**All characters**, **Hard only**, **Favorites only**) and which way (**Character → Definition**, **Definition → Character**, **Bidirectional**, a random direction per card).
 - **Side menu:** a ☰ menu on the home screen replaces the row of top-bar icons, with Flashcards, Photos, Archive and Settings.
 
 ## 1.1.0 — 2026-09-20

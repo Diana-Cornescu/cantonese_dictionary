@@ -95,3 +95,27 @@ No open questions remain from the initial planning round. Ready to move into imp
 - The flashcard **Go to character screen** button now shows only once the card is revealed, together with Correct/Incorrect, so it can't give the answer away before you've guessed.
 - The photo gallery got a Home button.
 - Released as **1.2.0**: photo gallery, side menu, flashcard changes. See `CHANGELOG.md`.
+
+## 2026-09-20 — Flashcard options: switch + dropdown
+
+- **Change:** the three toggle chips on the flashcard screen were replaced, following your mock-up:
+  - a two-part switch **Hard only | All cards**,
+  - a divider,
+  - a rounded dropdown (⇄ icon) with **Character → Definition**, **Definition → Character** and **Bidirectional**.
+- **Behaviour is the same as before:** Bidirectional = both directions on, and each card picks one at random. Default on every open: **All cards + Character → Definition**. Changing either option reshuffles.
+- **Simpler than before:** you can no longer end up with no direction selected, so the "Keep at least one direction on" message is gone.
+- Part of **1.2.0**.
+
+### Same day, revised
+
+- **Divider removed.**
+- The two-part "Hard only | All cards" switch went **back to a simple on/off "Hard mode" switch**.
+- Both controls are now **matching outlined pills of the same height** (40 px): "Hard mode" with its switch, and the ⇄ direction dropdown.
+- The direction dropdown no longer stays **highlighted in blue** after you choose an option (the focus highlight was removed).
+- **Hard icon:** the "hard" flag on the list rows is now a **fire icon** 🔥, red and filled when on, an outline when off (it was "!"). The Hard mode pill in flashcards shows the same red fire icon.
+
+### Same day, final version of the flashcard options
+
+- The Hard mode switch became a **dropdown in the same style as the direction dropdown**: **All characters**, **Hard only** (🔥) or **Favorites only** (⭐, new). Its icon changes with the choice.
+- Both dropdowns are identical outlined pills of the same height. Default on every open: **All characters + Character → Definition**.
+- An empty Hard or Favorites list shows a hint and a "Show all characters instead" button.

@@ -17,16 +17,40 @@ enum CardDirection {
   definitionToCharacter,
 }
 
-/// Flashcard practice (redesigned 2026-09-20, see docs/decisions_log.md).
+/// The study mode chosen in the dropdown.
+enum StudyDirection {
+  characterToDefinition('Character → Definition'),
+  definitionToCharacter('Definition → Character'),
+
+  /// Each card randomly picks one of the two directions.
+  bidirectional('Bidirectional');
+
+  const StudyDirection(this.label);
+  final String label;
+}
+
+/// Which characters are practised, chosen in the first dropdown.
+enum CardPool {
+  all('All characters', Icons.style_outlined, null),
+  hard('Hard only', Icons.local_fire_department, AppColors.danger),
+  favorites('Favorites only', Icons.star, AppColors.star);
+
+  const CardPool(this.label, this.icon, this.color);
+  final String label;
+  final IconData icon;
+  final Color? color;
+}
+
+/// Flashcard practice (see docs/decisions_log.md, 2026-09-20).
 ///
-/// Three toggle boxes at the top:
-///  - **Hard only**: practise only hard-flagged characters.
-///  - **Character → Definition** and **Definition → Character**: which way
-///    cards are asked. With both on, each card randomly picks one of the
-///    two. At least one must stay on.
+/// Options bar at the top (redesigned 2026-09-20): two matching outlined
+/// dropdown pills:
+///  - which cards: **All characters**, **Hard only** or **Favorites only**,
+///  - which way: **Character → Definition**, **Definition → Character** or
+///    **Bidirectional** (each card randomly picks a direction).
 ///
-/// Every time the screen opens it starts with only Character → Definition
-/// on (Hard only off). Changing any box reshuffles and starts from the top.
+/// Every time the screen opens it starts with All characters and Character
+/// → Definition. Changing either option reshuffles and starts from the top.
 /// Both directions add to the same seen/correct/incorrect stats.
 class FlashcardModeScreen extends StatefulWidget {
   const FlashcardModeScreen({super.key, required this.store});
@@ -40,9 +64,11 @@ class FlashcardModeScreen extends StatefulWidget {
 class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
   final _random = Random();
 
-  bool _hardOnly = false;
-  bool _charToDef = true;
-  bool _defToChar = false;
+  CardPool _cardPool = CardPool.all;
+  StudyDirection _study = StudyDirection.characterToDefinition;
+
+  bool get _charToDef => _study != StudyDirection.definitionToCharacter;
+  bool get _defToChar => _study != StudyDirection.characterToDefinition;
 
   List<CharacterEntry> _pool = [];
   int _index = 0;
@@ -60,9 +86,12 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
   /// made before definitions became required) can't be asked Definition →
   /// Character, so they're left out when that's the only direction on.
   void _rebuildPool() {
-    final source = _hardOnly
-        ? widget.store.hardCharacters
-        : widget.store.activeCharacters;
+    final List<CharacterEntry> source = switch (_cardPool) {
+      CardPool.all => widget.store.activeCharacters,
+      CardPool.hard => widget.store.hardCharacters,
+      CardPool.favorites =>
+        widget.store.activeCharacters.where((c) => c.isStarred).toList(),
+    };
     final pool = source
         .where((c) => _charToDef || c.definition.trim().isNotEmpty)
         .toList()
@@ -87,33 +116,18 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
         : options[_random.nextInt(options.length)];
   }
 
-  void _toggleHardOnly() {
+  void _setCardPool(CardPool value) {
+    if (value == _cardPool) return;
     setState(() {
-      _hardOnly = !_hardOnly;
+      _cardPool = value;
       _rebuildPool();
     });
   }
 
-  void _toggleDirection(CardDirection which) {
-    final turningOff = which == CardDirection.characterToDefinition
-        ? _charToDef
-        : _defToChar;
-    final otherOn = which == CardDirection.characterToDefinition
-        ? _defToChar
-        : _charToDef;
-    if (turningOff && !otherOn) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-            content: Text('Keep at least one direction on.')));
-      return;
-    }
+  void _setStudy(StudyDirection value) {
+    if (value == _study) return;
     setState(() {
-      if (which == CardDirection.characterToDefinition) {
-        _charToDef = !_charToDef;
-      } else {
-        _defToChar = !_defToChar;
-      }
+      _study = value;
       _rebuildPool();
     });
   }
@@ -196,31 +210,80 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
     );
   }
 
-  /// The three rounded toggle boxes.
+  /// The options bar: two matching outlined dropdown pills (which cards,
+  /// which direction), the same height and style.
   Widget _buildToggles() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       child: Wrap(
         alignment: WrapAlignment.center,
-        spacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
         runSpacing: 8,
         children: [
-          FilterChip(
-            label: const Text('Hard only'),
-            selected: _hardOnly,
-            onSelected: (_) => _toggleHardOnly(),
+          _dropdownPill<CardPool>(
+            leading: Icon(_cardPool.icon, size: 20, color: _cardPool.color),
+            value: _cardPool,
+            options: CardPool.values,
+            label: (option) => option.label,
+            onChanged: _setCardPool,
           ),
-          FilterChip(
-            label: const Text('Character → Definition'),
-            selected: _charToDef,
-            onSelected: (_) =>
-                _toggleDirection(CardDirection.characterToDefinition),
+          _dropdownPill<StudyDirection>(
+            leading: const Icon(Icons.swap_horiz, size: 20),
+            value: _study,
+            options: StudyDirection.values,
+            label: (option) => option.label,
+            onChanged: _setStudy,
           ),
-          FilterChip(
-            label: const Text('Definition → Character'),
-            selected: _defToChar,
-            onSelected: (_) =>
-                _toggleDirection(CardDirection.definitionToCharacter),
+        ],
+      ),
+    );
+  }
+
+  /// One outlined, rounded dropdown with an icon in front.
+  Widget _dropdownPill<T>({
+    required Widget leading,
+    required T value,
+    required List<T> options,
+    required String Function(T) label,
+    required void Function(T) onChanged,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    final labelStyle = Theme.of(context).textTheme.labelLarge;
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.only(left: 12, right: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: colors.outline),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          leading,
+          const SizedBox(width: 8),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<T>(
+              value: value,
+              isDense: true,
+              icon: const Icon(Icons.expand_more),
+              borderRadius: BorderRadius.circular(12),
+              // No blue highlight left on the button after choosing.
+              focusColor: Colors.transparent,
+              style: labelStyle?.copyWith(color: colors.onSurface),
+              items: [
+                for (final option in options)
+                  DropdownMenuItem<T>(
+                    value: option,
+                    child: Text(label(option)),
+                  ),
+              ],
+              onChanged: (selected) {
+                // Drop keyboard focus so the button isn't left highlighted.
+                FocusScope.of(context).unfocus();
+                if (selected != null) onChanged(selected);
+              },
+            ),
           ),
         ],
       ),
@@ -229,20 +292,24 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
 
   Widget _buildBody() {
     if (_pool.isEmpty) {
-      final message = _hardOnly
-          ? 'No hard-flagged characters yet — flag some with the ! button '
-              'first.'
-          : 'No characters to study yet — add some first.';
+      final message = switch (_cardPool) {
+        CardPool.hard =>
+          'No hard-flagged characters yet — flag some with the 🔥 button '
+              'first.',
+        CardPool.favorites =>
+          'No favorites yet — star some characters with the ☆ button first.',
+        CardPool.all => 'No characters to study yet — add some first.',
+      };
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(message, textAlign: TextAlign.center),
-            if (_hardOnly) ...[
+            if (_cardPool != CardPool.all) ...[
               const SizedBox(height: 16),
               OutlinedButton(
-                onPressed: _toggleHardOnly,
+                onPressed: () => _setCardPool(CardPool.all),
                 child: const Text('Show all characters instead'),
               ),
             ],
