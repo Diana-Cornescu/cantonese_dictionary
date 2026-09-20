@@ -4,6 +4,10 @@ What changed in each release installed on the phone. Newest first.
 How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
+## 1.3.0 — 2026-09-20
+- **Photos**: move delete button and add a unlink all button.
+- 
+
 ## 1.2.0 — 2026-09-20
 
 - **Photos:** add photos of characters seen out and about, by camera or from your phone's gallery. One photo can be linked to several characters and have a note. They show in a new **Photos** row on each character's screen and in a new **gallery** (🖼 on the home screen). Photos are included in backups.

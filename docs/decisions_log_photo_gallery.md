@@ -86,3 +86,20 @@ This file is separate from the other decision logs on purpose, so these decision
 
 - The gallery got a **Home** button at the top right, like the other screens.
 - Released as part of **1.2.0**.
+
+---
+
+## 2026-09-20 — Photo screen: destructive actions moved to the bottom
+
+- **Problem:** on a photo's screen, **Delete photo** sat in the app bar immediately
+  left of **Home**. Two icons, a few millimetres apart, one of which throws the
+  photo away — too easy to mis-tap.
+- **Delete photo** is now a labelled button at the **bottom of the screen**,
+  below the linked characters, outlined in the theme's error colour. It still
+  asks for confirmation first.
+- A new **Unlink all** button sits beside it. It drops **every** character link but
+  keeps the photo, which then turns up under the gallery's "Unlinked only"
+  filter. It also confirms first, and is disabled when the photo has no links.
+- The **+** button still adds or removes individual links; Unlink is the quick
+  "detach this from everything" path.
+- The app bar now holds only **Home**.

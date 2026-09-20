@@ -9,8 +9,14 @@ import 'photo_image.dart';
 
 /// One photo, full size (pinch or scroll to zoom), with its date, note and
 /// the characters it's linked to. From here you can edit the note, change
-/// the linked characters (+ button), or delete the photo. Tapping a linked
-/// character opens its screen; Back returns here.
+/// the linked characters (+ button), unlink it from every character, or
+/// delete the photo. Tapping a linked character opens its screen; Back
+/// returns here.
+///
+/// Unlink and Delete live at the bottom of the screen, below the linked
+/// characters, deliberately well away from the Home button in the app bar
+/// (2026-09-20): deleting a photo used to be one mis-tap away from going
+/// home.
 class PhotoViewerScreen extends StatelessWidget {
   const PhotoViewerScreen({
     super.key,
@@ -72,6 +78,24 @@ class PhotoViewerScreen extends StatelessWidget {
     await store.setPhotoCharacters(photo.id, ids);
   }
 
+  /// Drops every character link but keeps the photo, which then shows up
+  /// under the gallery's "Unlinked only" filter.
+  Future<void> _unlinkAll(BuildContext context, PhotoEntry photo) async {
+    final count = photo.characterIds.length;
+    final confirmed = await confirmAction(
+      context,
+      title: 'Unlink photo?',
+      message: count > 1
+          ? 'This photo will be unlinked from all $count characters. '
+              'The photo itself is kept.'
+          : 'This photo will be unlinked from the character. '
+              'The photo itself is kept.',
+      confirmLabel: 'Unlink all',
+    );
+    if (!confirmed) return;
+    await store.setPhotoCharacters(photo.id, const []);
+  }
+
   Future<void> _delete(BuildContext context, PhotoEntry photo) async {
     final confirmed = await confirmAction(
       context,
@@ -104,11 +128,6 @@ class PhotoViewerScreen extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Photo'),
             actions: [
-              IconButton(
-                tooltip: 'Delete photo',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _delete(context, photo),
-              ),
               IconButton(
                 tooltip: 'Home',
                 icon: const Icon(Icons.home_outlined),
@@ -186,6 +205,35 @@ class PhotoViewerScreen extends StatelessWidget {
                             tooltip: 'Add or remove characters',
                             icon: const Icon(Icons.add),
                             onPressed: () => _editCharacters(context, photo),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: linked.isEmpty
+                                  ? null
+                                  : () => _unlinkAll(context, photo),
+                              icon: const Icon(Icons.link_off),
+                              label: const Text('Unlink all'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _delete(context, photo),
+                              icon: const Icon(Icons.delete_outline),
+                              label: const Text('Delete photo'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.error,
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
