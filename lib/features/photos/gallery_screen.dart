@@ -69,7 +69,17 @@ class _GalleryScreenState extends State<GalleryScreen> {
         final photos = _visiblePhotos();
         final filtering = _unlinkedOnly || _search.text.trim().isNotEmpty;
         return Scaffold(
-          appBar: AppBar(title: const Text('Photos')),
+          appBar: AppBar(
+            title: const Text('Photos'),
+            actions: [
+              IconButton(
+                tooltip: 'Home',
+                icon: const Icon(Icons.home_outlined),
+                onPressed: () =>
+                    Navigator.of(context).popUntil((route) => route.isFirst),
+              ),
+            ],
+          ),
           floatingActionButton: FloatingActionButton(
             tooltip: 'Add photo',
             onPressed: _addPhoto,

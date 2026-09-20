@@ -1,7 +1,7 @@
 # Decisions Log — Photo Gallery
 
 **Started:** 2026-09-20
-**Status:** First version tried on the laptop 2026-09-20. The feedback round (below) is written and still to test.
+**Status:** ✅ Released in **1.2.0** (2026-09-20).
 
 This file is separate from the other decision logs on purpose, so these decisions are easy to find. Add a new dated section whenever a decision here changes.
 
@@ -10,7 +10,7 @@ This file is separate from the other decision logs on purpose, so these decision
 ## TL;DR
 
 - **Why:** photos of characters seen out and about (signs, menus…) help recognise different fonts and handwriting styles.
-- **Where:** a **Photos** row on each character's screen, plus a **gallery screen** (🖼 icon on the home screen) showing every photo.
+- **Where:** a **Photos** row on each character's screen, plus a **gallery screen** (**Photos** in the ☰ side menu since 2026-09-20; before that a 🖼 icon) showing every photo.
 - **Adding:** on the phone, **take a photo** or **choose from the gallery**. On the laptop, choose an image file.
 - **One photo can show several characters.** Link and unlink them from the photo's screen.
 - **Optional note** per photo, e.g. "menu at Tim Ho Wan".
@@ -79,3 +79,10 @@ This file is separate from the other decision logs on purpose, so these decision
   - A **search box** matches the linked characters' typed character, definition or tags, or the photo's note.
   - Both work together.
 - **Not done yet:** deleting several photos at once. It's in the backlog (Priority 4). For now, delete from each photo's screen.
+
+---
+
+## 2026-09-20 — Home button, released in 1.2.0
+
+- The gallery got a **Home** button at the top right, like the other screens.
+- Released as part of **1.2.0**.

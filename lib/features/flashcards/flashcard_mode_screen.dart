@@ -6,6 +6,7 @@ import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/handwriting_canvas.dart';
+import '../character_detail/character_detail_screen.dart';
 
 /// Which way a single card is asked.
 enum CardDirection {
@@ -133,6 +134,34 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
     final current = _pool[_index];
     await widget.store.recordReview(current.id, correct: correct);
     _next();
+  }
+
+  /// Opens [card]'s character screen. When you come back, the same card is
+  /// still showing, refreshed with any edits (or skipped if you deleted it).
+  Future<void> _openCharacter(CharacterEntry card) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            CharacterDetailScreen(store: widget.store, characterId: card.id),
+      ),
+    );
+    if (!mounted || _pool.isEmpty) return;
+    CharacterEntry? fresh;
+    for (final c in widget.store.characters) {
+      if (c.id == card.id) fresh = c;
+    }
+    setState(() {
+      if (fresh != null) {
+        _pool[_index] = fresh;
+      } else {
+        // Deleted while away: drop it and move on.
+        _pool.removeAt(_index);
+        if (_index >= _pool.length) _index = 0;
+        _revealed = false;
+        _pickDirection();
+      }
+    });
   }
 
   void _goHome() {
@@ -293,10 +322,16 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
                 ? 'Tap the card to reveal the character'
                 : 'Tap the card to reveal the definition'),
           const SizedBox(height: 24),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Back'),
-          ),
+          // Opens this card's character screen; Back returns to this same
+          // card (2026-09-20). Replaced the old "Back" button. Only shown
+          // once the card is revealed, together with Correct/Incorrect, so
+          // it can't give the answer away.
+          if (_revealed)
+            TextButton.icon(
+              onPressed: () => _openCharacter(current),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Go to character screen'),
+            ),
         ],
       ),
     );

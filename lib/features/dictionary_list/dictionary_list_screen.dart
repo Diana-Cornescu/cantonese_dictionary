@@ -52,6 +52,65 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
     }).toList();
   }
 
+  /// Opens [screen] from the side menu, closing the menu first.
+  void _openFromMenu(Widget screen) {
+    Navigator.pop(context); // close the menu
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  }
+
+  /// The side menu: takes up most of the screen width (capped on wide
+  /// screens like the laptop).
+  Widget _buildMenu(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final menuWidth = (width * 0.8).clamp(0.0, 360.0);
+    return Drawer(
+      width: menuWidth,
+      child: SafeArea(
+        child: ListView(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Text(
+                'Cantonese Dictionary',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              // Rotated 90° clockwise, as on the old top-bar button.
+              leading: const RotatedBox(
+                quarterTurns: 1,
+                child: Icon(Icons.style_outlined),
+              ),
+              title: const Text('Flashcards'),
+              onTap: () =>
+                  _openFromMenu(FlashcardModeScreen(store: widget.store)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Photos'),
+              onTap: () => _openFromMenu(GalleryScreen(store: widget.store)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.archive_outlined),
+              title: const Text('Archive'),
+              onTap: () => _openFromMenu(DictionaryListScreen(
+                store: widget.store,
+                isArchiveView: true,
+              )),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('Settings'),
+              onTap: () => _openFromMenu(SettingsScreen(store: widget.store)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _goHome() {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
@@ -75,58 +134,12 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                       onPressed: _goHome,
                     ),
                   ]
-                : [
-                    IconButton(
-                      tooltip: 'View archived',
-                      icon: const Icon(Icons.archive_outlined),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DictionaryListScreen(
-                            store: widget.store,
-                            isArchiveView: true,
-                          ),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Flashcard mode',
-                      // Rotated 90° clockwise per feedback on the icon's
-                      // orientation.
-                      icon: const RotatedBox(
-                        quarterTurns: 1,
-                        child: Icon(Icons.style_outlined),
-                      ),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              FlashcardModeScreen(store: widget.store),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Photos',
-                      icon: const Icon(Icons.photo_library_outlined),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => GalleryScreen(store: widget.store),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Settings',
-                      icon: const Icon(Icons.settings_outlined),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SettingsScreen(store: widget.store),
-                        ),
-                      ),
-                    ),
-                  ],
+                : null,
           ),
+          // Home screen only: a side menu (☰ at the top left) with every
+          // other area of the app. Replaces the row of icons in the top bar
+          // (2026-09-20). The archive view keeps its back arrow instead.
+          drawer: widget.isArchiveView ? null : _buildMenu(context),
           body: Column(
             children: [
               Padding(

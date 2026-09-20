@@ -84,3 +84,14 @@ No open questions remain from the initial planning round. Ready to move into imp
 
 - **Change:** in **Character → Definition**, the question side now also shows your drawing under the typed character, just like the answer side of Definition → Character. It shows whenever a drawing exists.
 - **Why:** your request, so both directions look the same and you see your own handwriting every time.
+
+## 2026-09-20 — Side menu and "Go to character screen" in flashcards
+
+- **Side menu:** the home screen now has a ☰ button at the top left that opens a side menu taking about 80% of the screen width (capped at 360 px on the laptop). It holds **Flashcards, Photos, Archive** and, after a divider, **Settings**. This replaces the row of four icons in the top bar, which was getting crowded and will have room for more entries later. The archive view keeps its back arrow and has no menu.
+- **Flashcards, "Go to character screen":** replaces the old Back button under the card. It opens the current card's character screen, and **Back returns to the flashcards, on the same card**. Any edits made there show on the card when you return. If you deleted the character, the card is skipped. Leaving flashcards is still possible with the top-left back arrow or Home.
+
+## 2026-09-20 — "Go to character screen" only after revealing; release 1.2.0
+
+- The flashcard **Go to character screen** button now shows only once the card is revealed, together with Correct/Incorrect, so it can't give the answer away before you've guessed.
+- The photo gallery got a Home button.
+- Released as **1.2.0**: photo gallery, side menu, flashcard changes. See `CHANGELOG.md`.

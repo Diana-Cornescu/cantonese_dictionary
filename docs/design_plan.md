@@ -49,6 +49,8 @@ One JSON file, containing a list of character records (each shaped like the "tab
 
 **Photos** (added 2026-09-20). Photos of characters seen out and about. A Photos row on each character's screen, and a gallery screen (🖼 on the home screen) with every photo. Add by camera or the phone's gallery. One photo can link to several characters and has an optional note. The app stores its own resized copy, and backups include it. See `docs/decisions_log_photo_gallery.md`.
 
+**Navigation** (2026-09-20). The home screen has a ☰ side menu with Flashcards, Photos, Archive and Settings. There are no top-bar icons on the home screen.
+
 **Confirmation dialogs.** A single reusable confirmation dialog component is triggered before committing any edit — this includes editing the definition, editing notes, changing tags, archiving, and deleting. Star/hard toggles are confirmed as the one exception: they stay instant with no popup, since they're trivially reversible with one more tap and would otherwise add real friction to something you'll likely do often and casually.
 
 **Dynamic resizing.** Kept intentionally general for now: screens use flexible/responsive layout containers so panes reflow across different window and screen sizes, but exactly which boundaries (if any) get a draggable resize handle is left open until an early prototype makes it clear what's actually worth making resizable.
