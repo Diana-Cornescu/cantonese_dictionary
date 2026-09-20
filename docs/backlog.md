@@ -1,39 +1,39 @@
 # Backlog
 
-**Last updated:** 2026-09-19
+**Last updated:** 2026-09-20
 
 What's still to do, in priority order. This is the single place to check "what's next". Detailed reasoning lives in the decision logs; this file only tracks what's left and how important it is.
 
-**Priority:** 1 = do next · 2 = after that · 3 = nice to have. Work top to bottom.
+**Priority:** lower number = sooner. Work top to bottom.
 
 ---
 
-## Priority 1: next up
+## Priority 1
 
-| Item | Notes | Source |
-|------|-------|--------|
-| **Export, backup & restore** | 🧪 **Code written 2026-09-19, testing on the laptop.** Settings → Back up / Restore / Undo last restore. The readable JSON export was removed. | `decisions_log_backup_and_release.md` |
-| **Choose where exports are saved** | 🧪 **Code written 2026-09-19.** System Save/Open window every time. | `decisions_log_backup_and_release.md` |
-| **First release to the phone (1.0.0)** | Moved up from Priority 2. Create the signing key, switch the phone from debug to release, install. Steps in `setup_manual.md` Phase 6. | Personal_notes |
+_Nothing left. Everything below moves up._
 
 ## Priority 2
 
+_Nothing left. Everything below moves up._
+
+## Priority 3: next up
+
 | Item | Notes | Source |
 |------|-------|--------|
-| **Long "back" history** | Jumping between referenced characters stacks up screens, so "back" takes many presses. Keep the history shorter. Not critical. | Personal_notes ("2nd prio") |
+| **Photo gallery screens** | ⏭️ **Next step.** Photos of characters seen out and about, for font identification. The database table (`character_photos`) and backup support already exist. Only the screens are missing. Design questions to settle first. | Personal_notes; `decisions_log_sqlite_drift.md` decision 5 |
 
-## Priority 3
+## Priority 4
 
 | Item | Notes | Source |
 |------|-------|--------|
 | **Restyle flashcard stats as boxes** | Move below the definition. A centered "last reviewed" line, then a row of boxes (Seen, Accuracy), then a row of boxes (Correct, Incorrect). | Personal_notes |
+| **Watch for a `file_picker` update (Kotlin warning)** | The build warns that `file_picker` uses the old Kotlin Gradle Plugin, and that future Flutter versions will refuse to build with it. Nothing's broken today. When a newer `file_picker` supports "Built-in Kotlin", run `flutter pub upgrade file_picker`. | Build output, 2026-09-20 |
 | **Clean up "info" lint hints** | `use_build_context_synchronously` (character detail screen), deprecated `withOpacity` (theme), `prefer_const`. Harmless style hints. | `flutter analyze`, 2026-09-19 |
 
 ## Not prioritized yet
 
 | Item | Notes | Source |
 |------|-------|--------|
-| **Photo gallery screens** | Photos of characters seen out and about, for font identification. The database table already exists. | Personal_notes; `decisions_log_sqlite_drift.md` decision 5 |
 | **Tag picker / managed tags UI** | Pick existing tags, rename once, filter by tag. The storage already exists. | `future_ideas.md`; decision 2 |
 | **Handwriting recognition** | Designed and parked. | `future_ideas.md` |
 
@@ -44,6 +44,14 @@ What's still to do, in priority order. This is the single place to check "what's
 - **Remove the debug banner** (2026-09-19): not needed. The "DEBUG" corner banner only appears in debug builds, and release builds never show it. If it ever showed up in a release build, it would come back here as Priority 2.
 
 ## Done
+
+- **Flashcards in both directions** (Priority 2, tested 2026-09-20): Hard only / Character → Definition / Definition → Character toggle boxes, random direction per card when both are on. The definition is now required. Goes out in 1.1.0.
+- **Shorter "back" history, option A** (Priority 2, tested 2026-09-20): a reference replaces the character screen, so Back goes to the list. Goes out in 1.1.0.
+
+- **Undo last stroke / clear drawing** (Priority 2, tested 2026-09-20): two small buttons in the top-right corner of every drawing box (Add character screen and the Redraw window). Before, a mistake meant finishing with "Done" and redrawing. Goes out in 1.1.0.
+
+- **Released 1.0.0 to the phone** (2026-09-19): signed with your own key, installed locally, Back up/Restore checked on Android. Tagged `v1.0.0`.
+- **Backup & restore + choosing where it's saved** (2026-09-19). Settings screen, one `.zip`, system Save/Open window. See `decisions_log_backup_and_release.md`.
 
 - **Move storage to SQLite + Drift** (2026-09-19). See `decisions_log_sqlite_drift.md`.
 - **Two rounds of UI edits** from Personal_notes (tags in the character screen, yellow star, colored accuracy, home button, hard-mode toggle, archive/delete moved, handwriting-only required, drawing clipped, SafeArea buttons). Done by 2026-07-23.

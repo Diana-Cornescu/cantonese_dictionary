@@ -64,6 +64,37 @@ The app stores its data in SQLite through Drift (see `docs/decisions_log_sqlite_
 23. Run `flutter devices` to confirm the phone shows up.
 24. Run `flutter run`, targeting the phone, to install a debug build directly onto it.
 
+## Reset: wipe test data (added 2026-09-19)
+
+Use this whenever you want the app to start completely empty again. Afterwards it opens fresh, with only the example character 愛.
+
+### Windows (laptop)
+
+All of the laptop app's data lives in **one folder**: `local_data\` in the project, next to `pubspec.yaml`.
+
+| Inside `local_data\` | What it is |
+|---|---|
+| `cantonese_dictionary.sqlite` | the database (all characters, tags, stats, drawings) |
+| `photos\` | character photos (none yet) |
+| `safety_backups\` | automatic copies made before each Restore |
+| `backups\` | where the Back up window starts. **Keep anything here you want to keep** |
+
+1. **Close the app completely**, including stopping `flutter run` in the terminal (press `q`). Windows won't delete a database that's still open.
+2. **Keep anything you want?** Move it out of `local_data\backups\` first.
+3. **Delete the folder.** Either delete `local_data` in File Explorer, or in PowerShell from the project folder:
+   ```
+   Remove-Item -Recurse -Force local_data
+   ```
+4. Start the app (`flutter run -d windows`). It creates a new, empty `local_data` with just the example character.
+
+This never touches the code, git, or the `android_release_key_private` folder. `local_data` is git-ignored, so git doesn't notice.
+
+### Android (phone)
+
+- **Easiest:** uninstall the app, then install it again.
+- **Without reinstalling:** phone Settings → Apps → Cantonese Dictionary → Storage → **Clear storage**.
+- Either way, **all data on the phone is gone**. Back up first (Settings → Back up) if any of it matters.
+
 ## Phase 6 — Release build on your phone (added 2026-09-19)
 
 A release build runs on its own, with no laptop, cable or debug banner, and it's faster. It's installed locally over USB, not through the Play Store.
@@ -113,6 +144,7 @@ After this, future releases install over the top and keep your data.
 2. **Write what changed** at the top of `CHANGELOG.md`.
 3. **Test:** `flutter analyze` and `flutter test`.
 4. **Build:** `flutter build apk --release`. The file is `build\app\outputs\flutter-apk\app-release.apk`.
+   - ⚠️ **Check the output does NOT say `WARNING: ... key.properties not found`.** If it does, the APK is signed with the debug key and won't update your phone's app properly. Fix the key folder before installing.
 5. **Install:** phone plugged in, `flutter install --release`. It installs over the existing app and keeps the data. (Or copy the `.apk` to the phone and open it; Android asks to allow installing from that source.)
 6. **Record it in git:**
    ```

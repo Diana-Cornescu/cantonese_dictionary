@@ -35,8 +35,13 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
     super.dispose();
   }
 
+  /// A drawing and a definition are both required (definition required
+  /// since 2026-09-20, so every card works in Definition -> Character
+  /// flashcards).
   bool get _canSave =>
-      _capturedStrokes != null && _capturedStrokes!.isNotEmpty;
+      _capturedStrokes != null &&
+      _capturedStrokes!.isNotEmpty &&
+      _definitionController.text.trim().isNotEmpty;
 
   Future<void> _save() async {
     if (!_canSave) return;
@@ -48,7 +53,7 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
       // screen previews entries by typed character.
       typedCharacter: typedText.isEmpty ? '?' : typedText,
       handwrittenSample: _capturedStrokes,
-      definition: _definitionController.text,
+      definition: _definitionController.text.trim(),
       notes: '',
       tags: _tagsController.text,
       isStarred: false,
@@ -112,10 +117,12 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
             TextField(
               controller: _definitionController,
               decoration: const InputDecoration(
-                labelText: 'Definition',
+                labelText: 'Definition *',
                 border: OutlineInputBorder(),
               ),
               maxLines: 4,
+              // Re-check whether Save can be enabled as you type.
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
             TextField(

@@ -90,13 +90,23 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   Future<void> _editDefinition(CharacterEntry entry) async {
     final newValue = await _promptForText('Edit definition', entry.definition);
     if (newValue == null) return;
+    // A definition is required (2026-09-20), so it can't be emptied.
+    if (newValue.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("The definition can't be empty.")));
+      }
+      return;
+    }
+    if (!mounted) return;
     final confirmed = await confirmAction(
       context,
       title: 'Save definition?',
       message: "Save changes to the definition for '${entry.typedCharacter}'?",
     );
     if (confirmed) {
-      await widget.store.updateCharacter(entry.copyWith(definition: newValue));
+      await widget.store
+          .updateCharacter(entry.copyWith(definition: newValue.trim()));
     }
   }
 
@@ -155,7 +165,9 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
         ],
       ),
     );
-    if (saved != true || captured == null) return;
+    // An emptied (cleared) drawing is treated like Cancel: the saved
+    // drawing is only ever replaced by a real one.
+    if (saved != true || captured == null || captured!.isEmpty) return;
     final confirmed = await confirmAction(
       context,
       title: 'Save handwriting?',
@@ -468,7 +480,11 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              onTap: () => Navigator.push(
+              // Replace (not push) this screen with the referenced one, so
+              // following references never piles up screens: Back always
+              // returns to the list you came from. See docs/backlog.md
+              // ("Long back history", option A, 2026-09-19).
+              onTap: () => Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (_) => CharacterDetailScreen(

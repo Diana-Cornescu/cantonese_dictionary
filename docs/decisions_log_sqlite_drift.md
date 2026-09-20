@@ -1,7 +1,7 @@
 # Decisions Log — SQLite + Drift Backend Migration
 
 **Started:** 2026-09-19
-**Status:** Implemented 2026-09-19. Code generation and `flutter analyze` pass on the laptop; tests and manual run still to do. Export/backup (#7) postponed.
+**Status:** ✅ Done and verified 2026-09-19. Build, analyze, tests and manual testing all pass. Export/backup (#7) postponed.
 
 This file is kept separate from `decisions_log.md` on purpose, so the database migration decisions are easy to find. Add a new dated section whenever a decision here changes.
 
@@ -146,3 +146,11 @@ If anything fails, paste the output back.
   - Since the table definitions changed, **rerun `build_runner`**. If a `local_data` folder was already created, delete it so the database is rebuilt with the new constraints (it only held test data).
 - The newer `build_runner` **no longer accepts `--delete-conflicting-outputs`** (it's ignored). The docs now just say `dart run build_runner build`.
 - **`flutter analyze`:** 0 errors, 15 info-level hints. The two from this change were fixed (a double-quoted string, an unneeded `dart:async` import). The rest are older style hints in the screens and theme (`use_build_context_synchronously`, deprecated `withOpacity`, `prefer_const`). They're harmless and left for a separate cleanup.
+
+---
+
+## 2026-09-19 — Verified ✅
+
+- `build_runner` (no warnings), `flutter analyze` (info hints only) and `flutter test` all pass.
+- Manual testing works as intended: adding/editing characters, drawings, tags, star/hard, references, flashcards, archiving and deleting, with everything still there after a full restart.
+- **Migration complete.** Still open: export/backup/restore (#7), and the leftover info-level lint hints in the screens and theme (optional cleanup).

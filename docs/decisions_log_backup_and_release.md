@@ -1,7 +1,7 @@
 # Decisions Log — Backup & Restore, and First Release Build
 
 **Started:** 2026-09-19
-**Status:** ✅ Backup & restore verified on the laptop 2026-09-19 (analyze, tests, manual test on Windows). Next: first release to the phone (Phase 6).
+**Status:** ✅ Done. **1.0.0 released to the phone 2026-09-19.**
 
 This file is separate from the other decision logs on purpose, so these decisions are easy to find. Add a new dated section whenever a decision here changes.
 
@@ -15,7 +15,7 @@ This file is separate from the other decision logs on purpose, so these decision
 - **Restore replaces everything**, after automatically saving a safety copy of the current data.
 - **Manual only**, nothing automatic.
 - **The readable JSON export was removed.**
-- **Release builds are signed with your own key.** The key and passwords live in a local, **git-ignored** `signing/` folder, because the repo is public.
+- **Release builds are signed with your own key.** The key and passwords live in a local, **git-ignored** `android_release_key_private/` folder, because the repo is public.
 - **Versioning:** plain `MAJOR.MINOR.PATCH` in `pubspec.yaml` (first release **1.0.0**, never `+N`), a `CHANGELOG.md`, and a git tag per release.
 
 ---
@@ -30,7 +30,7 @@ This file is separate from the other decision logs on purpose, so these decision
 | 4 | Restore behaviour | **Replace everything**, after a confirmation. An **automatic safety copy** is saved first (newest 5 kept), plus an **"Undo last restore"** button. | Merging two datasets (duplicates, conflicting edits) is complicated and error-prone. The safety copy makes a wrong restore harmless. |
 | 5 | Where the buttons live | **⚙️ Settings screen** from the home screen. | Room for future settings. Replaces the old export icon. |
 | 6 | Automatic backups | **None, manual only.** | Your choice. A "last backed up X days ago" reminder could come later. |
-| 7 | Signing key location | **Local `signing/` folder, git-ignored.** Not in GitHub. | The repo is **public**: a committed key plus passwords would let anyone sign APKs as you, and git history can't be cleaned afterwards. Keeping it local still keeps it in the project folder. **Back up the folder privately.** |
+| 7 | Signing key location | **Local `android_release_key_private/` folder, git-ignored.** Not in GitHub. | The repo is **public**: a committed key plus passwords would let anyone sign APKs as you, and git history can't be cleaned afterwards. Keeping it local still keeps it in the project folder. **Back up the folder privately.** |
 
 ### Thought process on the signing key
 - You wanted everything in one place. The honest risk for a personal, sideloaded app is small, and **losing** the key is the bigger practical danger.
@@ -62,7 +62,7 @@ This file is separate from the other decision logs on purpose, so these decision
 
 ## Release & versioning
 
-- `android/app/build.gradle.kts` reads `signing/key.properties`. If it's missing, it prints a WARNING and uses the debug key.
+- `android/app/build.gradle.kts` reads `android_release_key_private/key.properties`. If it's missing, it prints a WARNING and uses the debug key.
 - Version is **`1.0.0`**, the first release. `CHANGELOG.md` was added.
 - **The first switch needs one uninstall** (debug key → your key): back up, uninstall, install the release, restore.
 - The full steps are in `docs/setup_manual.md`, Phase 6.
@@ -83,3 +83,31 @@ This file is separate from the other decision logs on purpose, so these decision
 - `flutter pub get`, `flutter analyze` and `flutter test` (including the 4 backup tests) pass. Back up, Restore and Undo work on Windows.
 - The `lib/features/export/` folder and the export test were deleted.
 - Next: `setup_manual.md` Phase 6 (signing key → switch the phone to the release app → release 1.0.0).
+
+---
+
+## 2026-09-19 — Change: key folder renamed
+
+- **Decision:** the key folder is now **`android_release_key_private/`** (it was `signing/`).
+- **Why:** "signing" alone didn't say what the folder is or that it must stay private. The new name says both.
+- Also fixed in the setup manual: in PowerShell, a quoted program path needs `&` in front of it, and `keytool.exe` sits directly in `jbr\bin\` (`flutter doctor` shows `jbr\bin\java`, which is the Java program, not a folder).
+
+---
+
+## 2026-09-19 — Released 1.0.0 ✅
+
+- The signing key was created in `android_release_key_private/` (git-ignored, backed up privately).
+- Phone test data was wiped by uninstalling, so no backup/restore was needed for the switch.
+- `flutter build apk --release` and `flutter install --release` worked. There's no debug banner, and the app runs without the laptop.
+- Back up and Restore work on Android through the system Save/Open window.
+- Tagged `v1.0.0` in git.
+- Also added the "Reset: wipe test data" checklist to `setup_manual.md`.
+
+---
+
+## 2026-09-20 — Fix: release builds were using the debug key
+
+- **What happened:** the key-folder rename (`signing/` → `android_release_key_private/`) reached `.gitignore` and the docs, but **not** `android/app/build.gradle.kts`. That file still looked in `signing/`, didn't find the key, and fell back to the debug key. This showed up as a WARNING while building 1.1.0. **So 1.0.0 on the phone is almost certainly debug-signed too.**
+- **Fix:** `build.gradle.kts` now reads `android_release_key_private/key.properties`.
+- **Consequence:** the first properly signed install needs the one-time switch again (Settings → Back up, uninstall, install, Restore). After that, updates install over the top as intended.
+- **Lesson:** after a release build, check that the WARNING about the key is **not** printed. That check is now part of setup_manual Phase 6c.

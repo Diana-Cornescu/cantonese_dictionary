@@ -8,10 +8,10 @@ plugins {
 }
 
 // Release signing. The key and its passwords live in the git-ignored
-// `signing/` folder at the project root (see docs/setup_manual.md,
+// `android_release_key_private/` folder at the project root (see docs/setup_manual.md,
 // "Release signing key"). If that folder is missing, release builds fall
 // back to the debug key so `flutter run --release` still works.
-val signingDir = rootProject.file("../signing")
+val signingDir = rootProject.file("../android_release_key_private")
 val keyPropertiesFile = File(signingDir, "key.properties")
 val keyProperties = Properties()
 if (keyPropertiesFile.exists()) {
@@ -20,7 +20,7 @@ if (keyPropertiesFile.exists()) {
 val hasReleaseKey = keyPropertiesFile.exists()
 if (!hasReleaseKey) {
     println(
-        "WARNING: signing/key.properties not found. Release builds will be " +
+        "WARNING: android_release_key_private/key.properties not found. Release builds will be " +
             "signed with the DEBUG key and can't update a properly signed install."
     )
 }

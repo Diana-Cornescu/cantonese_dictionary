@@ -43,7 +43,7 @@ One JSON file, containing a list of character records (each shaped like the "tab
 
 **Add new character flow.** A dialog/screen that asks you to draw the character on the canvas (saved as its handwritten sample), type the character itself directly — via your keyboard's Chinese/Cantonese input method, or by pasting it in from elsewhere — and enter the definition. There's no auto-recognition step in v1; that idea is parked in `docs/future_ideas.md` for a possible later version.
 
-**Flashcard mode.** Two sub-modes selected up front: Normal (random cycle through the entire non-archived pool) and Hard (random cycle through only characters flagged `isHard`). A card shows only the typed character; tapping it flips to reveal the definition; you then mark yourself correct or incorrect, which updates that character's `flashcard_stats` row immediately.
+**Flashcard mode** (redesigned 2026-09-20). Three toggle boxes at the top: *Hard only*, *Character → Definition*, *Definition → Character*. With both directions on, each card is asked a random way. You tap to reveal, then mark correct or incorrect; both directions update the same stats. It opens with only Character → Definition on. See `docs/decisions_log.md` (2026-09-20).
 
 **Settings → Backup & restore** (since 2026-09-19; replaced the old JSON export). A gear icon on the home screen opens Settings. Back up saves one `.zip` (database + photos + info) through the system Save window. Restore replaces everything with a chosen backup, after saving an automatic safety copy (with an "Undo last restore" option). See §5.
 

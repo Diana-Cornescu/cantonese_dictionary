@@ -39,3 +39,38 @@ No open questions remain from the initial planning round. Ready to move into imp
 
 - Settings screen with backup/restore (one `.zip`) replaced the JSON export. Release signing and versioning were set up.
 - Full decisions and reasoning: **`docs/decisions_log_backup_and_release.md`**.
+
+## 2026-09-19 — Shorter "back" history (option A)
+
+- **Problem:** following references from character to character stacked up screens, so getting back took many presses.
+- **Options considered:** A) replace the screen instead of stacking; B) keep only the last few characters; C) jump back to an already-open character instead of opening it again.
+- **Decision: A**, "for the moment". A reference opens in place of the current character screen, so Back always returns to the list you came from (home or archive). Simplest, and nothing piles up. The trade-off: Back no longer goes to the *previous character*. B or C could be added later if that's missed.
+- **Code:** one change in `character_detail_screen.dart` (`Navigator.push` → `Navigator.pushReplacement`).
+
+## 2026-09-20 — Undo / clear buttons while drawing
+
+- **Request (Priority 2):** undo the last stroke, or reset the drawing, inside the drawing window. Before, you had to press "Done" and redraw.
+- **Decision:** the buttons are built into the drawing box itself (`widgets/handwriting_canvas.dart`), so every place you draw gets them automatically: the Add character screen and the Redraw window on the character screen. They're two small icons in the top-right corner (Undo ↶, Clear 🗑) that don't take space from the drawing, and they're greyed out while the box is empty.
+- **Detail:** if you clear the Redraw window and then press "Use this drawing", nothing changes. An empty drawing never replaces a saved one. On the Add screen, a cleared drawing counts as "not drawn yet", which the required-drawing check already handles.
+
+## 2026-09-20 — Flashcards in both directions
+
+- **Request (Priority 2):** practise Definition → Character too, not only Character → Definition, or a mix of both.
+- **New flashcard screen layout:** three rounded toggle boxes at the top replace the old "Hard" switch:
+  - **Hard only**: only hard-flagged characters.
+  - **Character → Definition**: the front shows the character, the back shows the definition.
+  - **Definition → Character**: the front shows the definition, the back shows the typed character **plus your drawing** (scaled to fit).
+  - With **both directions on**, every card randomly picks one. A small label on the card says which way it's being asked.
+- **Behaviour you chose:**
+  - **Default on every open:** only Character → Definition on, Hard only off (same as before).
+  - **Stats:** one shared set of counters for both directions, so no database change.
+  - **Definitions are now required** when adding a character (Save stays disabled until there is one), and can't be emptied when editing. This way every card works in both directions.
+- **Smaller choices made along the way:**
+  - At least one direction must stay on. Trying to turn off the last one shows a short message instead.
+  - Changing any box reshuffles and starts again from card 1 (like the Hard switch did).
+  - Older characters without a definition, if any, are skipped when only Definition → Character is on, and always asked Character → Definition in mixed mode.
+- **Code:** `flashcard_mode_screen.dart` (rewritten); `handwriting_canvas.dart` gained a `fitToBox` option for small previews; the add and character screens now require a definition.
+
+## 2026-09-20 — Tested ✅
+
+- Tested on the laptop and working: undo/clear while drawing, the shorter back history, flashcards in both directions, and the required definition. Ready for release 1.1.0.
