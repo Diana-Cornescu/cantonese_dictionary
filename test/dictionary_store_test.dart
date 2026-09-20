@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:cantonese_dictionary_app/data/app_database.dart';
@@ -195,6 +194,22 @@ void main() {
     await first.close();
     final second = await _openFileStore(dbFile);
     expect(second.characters, isEmpty);
+    await second.close();
+  });
+
+  test('deleting a character removes its links from the database too',
+      () async {
+    final first = await _openFileStore(dbFile);
+    final a = await first.addCharacter(_draft('I').copyWith(tags: 'x'));
+    final b = await first.addCharacter(_draft('J'));
+    await first.addReference(a.id, b.id);
+    await first.deleteCharacter(a.id);
+
+    await first.close();
+    final second = await _openFileStore(dbFile);
+    expect(second.characters.any((c) => c.id == a.id), isFalse);
+    final rb = second.characters.firstWhere((c) => c.id == b.id);
+    expect(rb.referencedCharacterIds, isEmpty);
     await second.close();
   });
 }

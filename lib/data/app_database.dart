@@ -9,7 +9,7 @@ import 'stroke_codec.dart';
 
 // Drift generates this file from the table classes below. It is NOT written
 // by hand. Regenerate it after any change to this file with:
-//   dart run build_runner build --delete-conflicting-outputs
+//   dart run build_runner build
 // (see docs/setup_manual.md). The generated file is committed to git.
 part 'app_database.g.dart';
 
@@ -20,6 +20,13 @@ part 'app_database.g.dart';
 // `Characters` class (from package:characters). `tableName` keeps the real
 // SQL table names short and readable. Column getters become snake_case SQL
 // columns automatically (e.g. `typedCharacter` -> `typed_character`).
+//
+// Foreign keys are written as plain SQL in `customConstraints` rather than
+// with Drift's `.references(...)`: with the drift_dev version in use,
+// `.references(DbCharacters, ...)` produced "This parameter should be a
+// simple class name" warnings (2026-09-19), so it wasn't certain the
+// constraint was generated. [AppDatabase.deleteCharacter] also deletes the
+// linked rows explicitly, so deleting works even without the cascade.
 // See docs/decisions_log_sqlite_drift.md for why each table looks this way.
 // ---------------------------------------------------------------------------
 
@@ -71,14 +78,19 @@ class DbCharacterTags extends Table {
   @override
   String get tableName => 'character_tags';
 
-  IntColumn get characterId => integer()
-      .references(DbCharacters, #id, onDelete: KeyAction.cascade)();
-  IntColumn get tagId =>
-      integer().references(DbTags, #id, onDelete: KeyAction.cascade)();
+  IntColumn get characterId => integer()();
+  IntColumn get tagId => integer()();
   IntColumn get position => integer().withDefault(const Constant(0))();
 
   @override
   Set<Column> get primaryKey => {characterId, tagId};
+
+  @override
+  List<String> get customConstraints => [
+        'FOREIGN KEY (character_id) REFERENCES characters (id) '
+            'ON DELETE CASCADE',
+        'FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE',
+      ];
 }
 
 /// Undirected links between two characters. Each pair is stored exactly
@@ -89,10 +101,8 @@ class DbCharacterReferences extends Table {
   @override
   String get tableName => 'character_references';
 
-  IntColumn get characterAId => integer()
-      .references(DbCharacters, #id, onDelete: KeyAction.cascade)();
-  IntColumn get characterBId => integer()
-      .references(DbCharacters, #id, onDelete: KeyAction.cascade)();
+  IntColumn get characterAId => integer()();
+  IntColumn get characterBId => integer()();
 
   @override
   Set<Column> get primaryKey => {characterAId, characterBId};
@@ -100,6 +110,10 @@ class DbCharacterReferences extends Table {
   @override
   List<String> get customConstraints => [
         'CHECK (character_a_id < character_b_id)',
+        'FOREIGN KEY (character_a_id) REFERENCES characters (id) '
+            'ON DELETE CASCADE',
+        'FOREIGN KEY (character_b_id) REFERENCES characters (id) '
+            'ON DELETE CASCADE',
       ];
 }
 
@@ -112,10 +126,15 @@ class DbCharacterPhotos extends Table {
   String get tableName => 'character_photos';
 
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get characterId => integer()
-      .references(DbCharacters, #id, onDelete: KeyAction.cascade)();
+  IntColumn get characterId => integer()();
   TextColumn get filePath => text()();
   DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  List<String> get customConstraints => [
+        'FOREIGN KEY (character_id) REFERENCES characters (id) '
+            'ON DELETE CASCADE',
+      ];
 }
 
 // ---------------------------------------------------------------------------
@@ -143,8 +162,13 @@ class AppDatabase extends _$AppDatabase {
   /// `cantonese_dictionary.sqlite`).
   static const String fileName = 'cantonese_dictionary';
 
-  /// Name of the visible folder the database goes in on desktop.
-  static const String desktopFolderName = 'Cantonese Dictionary';
+  /// Folder inside the project (repo) where the database lives when the
+  /// app runs on the development laptop. Git-ignored.
+  static const String repoDataFolderName = 'local_data';
+
+  /// Fallback folder (inside Documents) for a desktop build that is run
+  /// from somewhere the project folder can't be found.
+  static const String desktopFallbackFolderName = 'Cantonese Dictionary';
 
   static QueryExecutor _openDefault() {
     return driftDatabase(
@@ -156,23 +180,61 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Where the database file lives:
-  /// - **Windows (and other desktops):** a visible, easy-to-find folder,
-  ///   `Documents\Cantonese Dictionary\`, so it doesn't get forgotten in a
-  ///   hidden system folder like `%APPDATA%`.
-  /// - **Android:** the app's private storage. That's the standard place on
-  ///   phones; putting it anywhere visible needs extra storage permissions,
-  ///   and Android's newer rules restrict it anyway. Getting data *off* the
-  ///   phone is the job of the planned backup/export feature (open item 7
-  ///   in docs/decisions_log_sqlite_drift.md).
+  /// - **Windows (and other desktops):** inside the project folder, in
+  ///   `local_data/` next to `pubspec.yaml`, so it sits with the code and
+  ///   is easy to find. The folder is git-ignored, so the database is never
+  ///   committed by accident.
+  ///   If the project folder can't be found (e.g. a release .exe copied
+  ///   somewhere else), it falls back to `Documents\Cantonese Dictionary\`.
+  /// - **Android:** the app's private storage. The phone has no copy of the
+  ///   project, and private storage is the standard place for app data
+  ///   there. Getting data *off* the phone is the job of the planned
+  ///   backup/export feature (open item 7 in
+  ///   docs/decisions_log_sqlite_drift.md).
   static Future<Directory> databaseDirectory() async {
     if (Platform.isAndroid || Platform.isIOS) {
       return getApplicationSupportDirectory();
     }
-    final documents = await getApplicationDocumentsDirectory();
-    final dir = Directory(
-        '${documents.path}${Platform.pathSeparator}$desktopFolderName');
+    final projectRoot = _findProjectRoot();
+    final Directory dir;
+    if (projectRoot != null) {
+      dir = Directory(
+          '${projectRoot.path}${Platform.pathSeparator}$repoDataFolderName');
+    } else {
+      final documents = await getApplicationDocumentsDirectory();
+      dir = Directory('${documents.path}${Platform.pathSeparator}'
+          '$desktopFallbackFolderName');
+    }
     await dir.create(recursive: true);
     return dir;
+  }
+
+  /// Finds this project's folder by walking up from where the app was
+  /// started, and from where its .exe lives (e.g.
+  /// `build\windows\x64\runner\Debug\`), looking for this app's
+  /// `pubspec.yaml`. Returns null if not found.
+  static Directory? _findProjectRoot() {
+    final starts = [
+      Directory.current,
+      File(Platform.resolvedExecutable).parent,
+    ];
+    for (final start in starts) {
+      Directory dir = start.absolute;
+      while (true) {
+        final pubspec =
+            File('${dir.path}${Platform.pathSeparator}pubspec.yaml');
+        if (pubspec.existsSync() &&
+            pubspec
+                .readAsStringSync()
+                .contains('name: cantonese_dictionary_app')) {
+          return dir;
+        }
+        final parent = dir.parent;
+        if (parent.path == dir.path) break; // reached the drive root
+        dir = parent;
+      }
+    }
+    return null;
   }
 
   /// Bump this whenever a table changes, and add a matching step in
@@ -278,7 +340,19 @@ class AppDatabase extends _$AppDatabase {
     final photos = await (select(dbCharacterPhotos)
           ..where((p) => p.characterId.equals(id)))
         .get();
-    await (delete(dbCharacters)..where((c) => c.id.equals(id))).go();
+    await transaction(() async {
+      // Linked rows are removed explicitly (not only via the foreign-key
+      // cascade), so nothing is left pointing at a deleted character.
+      await (delete(dbCharacterTags)..where((t) => t.characterId.equals(id)))
+          .go();
+      await (delete(dbCharacterReferences)
+            ..where((r) =>
+                r.characterAId.equals(id) | r.characterBId.equals(id)))
+          .go();
+      await (delete(dbCharacterPhotos)..where((p) => p.characterId.equals(id)))
+          .go();
+      await (delete(dbCharacters)..where((c) => c.id.equals(id))).go();
+    });
     for (final photo in photos) {
       final file = File(photo.filePath);
       if (await file.exists()) await file.delete();

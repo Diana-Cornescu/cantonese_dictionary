@@ -1,7 +1,7 @@
 # Decisions Log — SQLite + Drift Backend Migration
 
 **Started:** 2026-09-19
-**Status:** Implemented 2026-09-19 (code written, **not yet compiled or run**; see "Implementation" below). Export/backup (#7) postponed.
+**Status:** Implemented 2026-09-19. Code generation and `flutter analyze` pass on the laptop; tests and manual run still to do. Export/backup (#7) postponed.
 
 This file is kept separate from `decisions_log.md` on purpose, so the database migration decisions are easy to find. Add a new dated section whenever a decision here changes.
 
@@ -30,7 +30,7 @@ This file is kept separate from `decisions_log.md` on purpose, so the database m
 - That's a **development-time step, like compiling**. It isn't something the app does while running. The phone never runs it; the phone only runs the finished APK, and the APK is built on the laptop anyway (`flutter build apk`).
 - It's only needed **when the tables change**, not on every build. The generated file is committed to git, so a fresh clone works without regenerating.
 - This isn't leftover logic from the old sandbox problem. It's how Drift is designed. The alternative without code generation is `sqflite` (raw SQL strings, no type checking). We rejected it because Drift catches mistakes at compile time and has built-in migrations.
-- Command: `dart run build_runner build --delete-conflicting-outputs` (to be added to `setup_manual.md`).
+- Command: `dart run build_runner build` (to be added to `setup_manual.md`).
 
 ---
 
@@ -111,7 +111,7 @@ This file is kept separate from `decisions_log.md` on purpose, so the database m
 
 **Not verified yet:** the cloud environment still can't reach pub.dev, so nothing was compiled or run. The first real check is on your laptop:
 1. `flutter pub get`
-2. `dart run build_runner build --delete-conflicting-outputs`
+2. `dart run build_runner build`
 3. `flutter analyze`
 4. `flutter test`
 
@@ -136,3 +136,13 @@ If anything fails, paste the output back.
 - **How the app finds the folder:** it walks up from where it was started, and from where its `.exe` lives, until it finds this app's `pubspec.yaml`. If it can't find it (e.g. a release `.exe` copied elsewhere), it falls back to `Documents\Cantonese Dictionary\`.
 - **Android unchanged:** app-private storage. The phone has no copy of the repo.
 - **Trade-off noted:** normally an app's data doesn't live inside its source folder (your earlier note: a running app shouldn't be editing its own files). That's acceptable here because it's only on the development laptop and it's git-ignored. The phone, where the app will actually live, uses standard app storage.
+
+---
+
+## 2026-09-19 — First real build on the laptop
+
+- **`build_runner`** worked. It printed 5 warnings: *"This parameter should be a simple class name"* on every `.references(DbCharacters, #id, ...)`.
+  - **Fix:** the foreign keys are now plain SQL in each table's `customConstraints` instead of `.references(...)`. `deleteCharacter` also removes a character's tag links, references and photo rows **explicitly** in one transaction, so deleting is correct even without the cascade. A new test checks that a deleted character's links are gone after reopening the database.
+  - Since the table definitions changed, **rerun `build_runner`**. If a `local_data` folder was already created, delete it so the database is rebuilt with the new constraints (it only held test data).
+- The newer `build_runner` **no longer accepts `--delete-conflicting-outputs`** (it's ignored). The docs now just say `dart run build_runner build`.
+- **`flutter analyze`:** 0 errors, 15 info-level hints. The two from this change were fixed (a double-quoted string, an unneeded `dart:async` import). The rest are older style hints in the screens and theme (`use_build_context_synchronously`, deprecated `withOpacity`, `prefer_const`). They're harmless and left for a separate cleanup.

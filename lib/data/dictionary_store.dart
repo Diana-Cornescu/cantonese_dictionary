@@ -124,7 +124,7 @@ class DictionaryStore extends ChangeNotifier {
       id: -1, // replaced by the id the database assigns
       typedCharacter: '愛',
       handwrittenSample: null,
-      definition: "This is an example row — tap it to see how the detail "
+      definition: 'This is an example row — tap it to see how the detail '
           'screen works, star or hard-flag it to try the shortlists, or '
           "delete it once you're comfortable. (Cantonese: oi3, meaning "
           "'love'.)",
