@@ -29,13 +29,13 @@ _Nothing left. Everything below moves up._
 | **Move the photo delete button away from home button** | Easy to miss click trash icon instead of home button after clicking into a photo |  You, 2026-09-20 (suggested) |
 | **Add filter Icon to photos and Home row screen** | To be able to filter for hard, starred, or tags along wiht the unlinked option |  You, 2026-09-20 (suggested) |
 | **Watch for a `file_picker` update (Kotlin warning)** | The build warns that `file_picker` uses the old Kotlin Gradle Plugin, and that future Flutter versions will refuse to build with it. Nothing's broken today. When a newer `file_picker` supports "Built-in Kotlin", run `flutter pub upgrade file_picker`. | Build output, 2026-09-20 |
-| **Clean up "info" lint hints** | `use_build_context_synchronously` (character detail screen), deprecated `withOpacity` (theme), `prefer_const`. Harmless style hints. | `flutter analyze`, 2026-09-19 |
+| **Clean up "info" lint hints** | `use_build_context_synchronously` (character detail screen), `prefer_const`. (The `withOpacity` ones were fixed with the color themes, 2026-09-20.) Harmless style hints. | `flutter analyze`, 2026-09-19 |
 
 ## Not prioritized yet
 
 | Item | Notes | Source |
 |------|-------|--------|
-| **Setting: save camera photos to the phone's gallery** | A switch in Settings to also save photos taken in the app to the phone's gallery. **Default off** (today's behaviour: photos stay only in the app). Needs a small extra package and a stored setting (e.g. a settings table, so it's in backups). | You, 2026-09-20 |
+| **Setting: save camera photos to the phone's gallery** | A switch in Settings to also save photos taken in the app to the phone's gallery. **Default off** (today's behaviour: photos stay only in the app). Needs a small extra package. The setting itself can go in the `app_settings` table (added 2026-09-20 for color themes). | You, 2026-09-20 |
 | **Tag picker / managed tags UI** | Pick existing tags, rename once, filter by tag. The storage already exists. | `future_ideas.md`; decision 2 |
 | **Handwriting recognition** | Designed and parked. | `future_ideas.md` |
 
@@ -47,7 +47,7 @@ _Nothing left. Everything below moves up._
 
 ## Done
 
-- **Released 1.2.0** (2026-09-20): photo gallery (with feedback round), side menu, "Go to character screen" in flashcards (shown after revealing), drawing on both flashcard sides, a Home button in the gallery, redesigned flashcard options (card dropdown: All / Hard only / Favorites only; direction dropdown with Bidirectional), 🔥 fire icon for hard.
+- **Released 1.2.0** (2026-09-20): photo gallery (with feedback round), side menu, "Go to character screen" in flashcards (shown after revealing), drawing on both flashcard sides, a Home button in the gallery, redesigned flashcard options (card dropdown: All / Hard only / Favorites only; direction dropdown with Bidirectional), 🔥 fire icon for hard, color themes in Settings (8 palettes, schema version 3).
 
 - **Flashcards in both directions** (Priority 2, tested 2026-09-20): Hard only / Character → Definition / Definition → Character toggle boxes, random direction per card when both are on. The definition is now required. Goes out in 1.1.0.
 - **Shorter "back" history, option A** (Priority 2, tested 2026-09-20): a reference replaces the character screen, so Back goes to the list. Goes out in 1.1.0.

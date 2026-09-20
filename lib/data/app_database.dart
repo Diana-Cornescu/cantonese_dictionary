@@ -159,6 +159,21 @@ class DbPhotoCharacters extends Table {
       ];
 }
 
+/// Simple app settings as key/value text (schema version 3), e.g. the
+/// chosen color theme. Kept in the database so settings travel with
+/// backups.
+@DataClassName('AppSettingRow')
+class DbAppSettings extends Table {
+  @override
+  String get tableName => 'app_settings';
+
+  TextColumn get settingKey => text()();
+  TextColumn get settingValue => text()();
+
+  @override
+  Set<Column> get primaryKey => {settingKey};
+}
+
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
@@ -175,6 +190,7 @@ class DbPhotoCharacters extends Table {
   DbCharacterReferences,
   DbPhotos,
   DbPhotoCharacters,
+  DbAppSettings,
 ])
 class AppDatabase extends _$AppDatabase {
   /// Pass an [executor] in tests (e.g. `NativeDatabase.memory()`). With no
@@ -275,7 +291,8 @@ class AppDatabase extends _$AppDatabase {
   ///  - 2 (2026-09-20): character_photos replaced by photos +
   ///    photo_characters (one photo can show several characters, and has
   ///    an optional note).
-  static const int currentSchemaVersion = 2;
+  ///  - 3 (2026-09-20): app_settings (key/value), e.g. the color theme.
+  static const int currentSchemaVersion = 3;
 
   /// The actual database file used by the real app (not tests).
   static Future<File> databaseFile() async {
@@ -322,6 +339,10 @@ class AppDatabase extends _$AppDatabase {
                 'INSERT INTO photo_characters (photo_id, character_id) '
                 'SELECT id, character_id FROM character_photos');
             await customStatement('DROP TABLE IF EXISTS character_photos');
+          }
+          if (from < 3) {
+            // v2 -> v3: new settings table; nothing to copy.
+            await m.createTable(dbAppSettings);
           }
         },
         beforeOpen: (details) async {
@@ -431,6 +452,21 @@ class AppDatabase extends _$AppDatabase {
   Future<void> copyTo(String path) async {
     final escaped = path.replaceAll("'", "''");
     await customStatement("VACUUM INTO '$escaped'");
+  }
+
+  // ---- Settings -----------------------------------------------------------
+
+  /// Every stored setting as key -> value.
+  Future<Map<String, String>> allSettings() async {
+    final rows = await select(dbAppSettings).get();
+    return {for (final r in rows) r.settingKey: r.settingValue};
+  }
+
+  /// Saves (inserts or replaces) one setting.
+  Future<void> putSetting(String key, String value) async {
+    await into(dbAppSettings).insertOnConflictUpdate(
+      DbAppSettingsCompanion.insert(settingKey: key, settingValue: value),
+    );
   }
 
   // ---- Photos -------------------------------------------------------------

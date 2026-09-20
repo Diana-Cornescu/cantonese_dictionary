@@ -7,10 +7,11 @@ import 'package:flutter/material.dart';
 import '../../data/app_database.dart';
 import '../../data/backup_service.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_palettes.dart';
 import '../../widgets/confirm_dialog.dart';
 
-/// Settings, opened from the gear icon on the home screen. For now it only
-/// holds backup and restore; more settings will be added here later.
+/// Settings, opened from the side menu on the home screen: the color theme
+/// and backup & restore. More settings can be added here later.
 ///
 /// Backups are saved and opened through the system file window every
 /// time (no fixed default folder), so on Android you can pick Downloads,
@@ -152,6 +153,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (mounted) _showMessage('Last restore undone.');
       });
 
+  /// A row of round color swatches; tap one to switch the app's colors.
+  /// See `lib/theme/app_palettes.dart` for why these colors were chosen.
+  Widget _buildColorThemeSection() {
+    final current =
+        AppPalette.byId(widget.store.setting(AppPalette.settingKey));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Color theme', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            children: [
+              for (final palette in AppPalette.all)
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () async {
+                    await widget.store
+                        .setSetting(AppPalette.settingKey, palette.id);
+                    if (mounted) setState(() {});
+                  },
+                  child: SizedBox(
+                    width: 64,
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: palette.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: palette.id == current.id
+                                  ? palette.secondary
+                                  : Colors.transparent,
+                              width: 3,
+                            ),
+                          ),
+                          child: palette.id == current.id
+                              ? const Icon(Icons.check, color: Colors.white)
+                              : null,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          palette.name,
+                          style: Theme.of(context).textTheme.labelSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ready = _backups != null && !_busy;
@@ -161,6 +224,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           children: [
             if (_busy) const LinearProgressIndicator(),
+            _buildColorThemeSection(),
+            const Divider(height: 32),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(

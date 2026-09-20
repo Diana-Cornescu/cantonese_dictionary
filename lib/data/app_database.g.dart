@@ -1762,6 +1762,208 @@ class DbPhotoCharactersCompanion extends UpdateCompanion<PhotoCharacterRow> {
   }
 }
 
+class $DbAppSettingsTable extends DbAppSettings
+    with TableInfo<$DbAppSettingsTable, AppSettingRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DbAppSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _settingKeyMeta =
+      const VerificationMeta('settingKey');
+  @override
+  late final GeneratedColumn<String> settingKey = GeneratedColumn<String>(
+      'setting_key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _settingValueMeta =
+      const VerificationMeta('settingValue');
+  @override
+  late final GeneratedColumn<String> settingValue = GeneratedColumn<String>(
+      'setting_value', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [settingKey, settingValue];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(Insertable<AppSettingRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('setting_key')) {
+      context.handle(
+          _settingKeyMeta,
+          settingKey.isAcceptableOrUnknown(
+              data['setting_key']!, _settingKeyMeta));
+    } else if (isInserting) {
+      context.missing(_settingKeyMeta);
+    }
+    if (data.containsKey('setting_value')) {
+      context.handle(
+          _settingValueMeta,
+          settingValue.isAcceptableOrUnknown(
+              data['setting_value']!, _settingValueMeta));
+    } else if (isInserting) {
+      context.missing(_settingValueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {settingKey};
+  @override
+  AppSettingRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppSettingRow(
+      settingKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}setting_key'])!,
+      settingValue: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}setting_value'])!,
+    );
+  }
+
+  @override
+  $DbAppSettingsTable createAlias(String alias) {
+    return $DbAppSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class AppSettingRow extends DataClass implements Insertable<AppSettingRow> {
+  final String settingKey;
+  final String settingValue;
+  const AppSettingRow({required this.settingKey, required this.settingValue});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['setting_key'] = Variable<String>(settingKey);
+    map['setting_value'] = Variable<String>(settingValue);
+    return map;
+  }
+
+  DbAppSettingsCompanion toCompanion(bool nullToAbsent) {
+    return DbAppSettingsCompanion(
+      settingKey: Value(settingKey),
+      settingValue: Value(settingValue),
+    );
+  }
+
+  factory AppSettingRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppSettingRow(
+      settingKey: serializer.fromJson<String>(json['settingKey']),
+      settingValue: serializer.fromJson<String>(json['settingValue']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'settingKey': serializer.toJson<String>(settingKey),
+      'settingValue': serializer.toJson<String>(settingValue),
+    };
+  }
+
+  AppSettingRow copyWith({String? settingKey, String? settingValue}) =>
+      AppSettingRow(
+        settingKey: settingKey ?? this.settingKey,
+        settingValue: settingValue ?? this.settingValue,
+      );
+  AppSettingRow copyWithCompanion(DbAppSettingsCompanion data) {
+    return AppSettingRow(
+      settingKey:
+          data.settingKey.present ? data.settingKey.value : this.settingKey,
+      settingValue: data.settingValue.present
+          ? data.settingValue.value
+          : this.settingValue,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingRow(')
+          ..write('settingKey: $settingKey, ')
+          ..write('settingValue: $settingValue')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(settingKey, settingValue);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppSettingRow &&
+          other.settingKey == this.settingKey &&
+          other.settingValue == this.settingValue);
+}
+
+class DbAppSettingsCompanion extends UpdateCompanion<AppSettingRow> {
+  final Value<String> settingKey;
+  final Value<String> settingValue;
+  final Value<int> rowid;
+  const DbAppSettingsCompanion({
+    this.settingKey = const Value.absent(),
+    this.settingValue = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DbAppSettingsCompanion.insert({
+    required String settingKey,
+    required String settingValue,
+    this.rowid = const Value.absent(),
+  })  : settingKey = Value(settingKey),
+        settingValue = Value(settingValue);
+  static Insertable<AppSettingRow> custom({
+    Expression<String>? settingKey,
+    Expression<String>? settingValue,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (settingKey != null) 'setting_key': settingKey,
+      if (settingValue != null) 'setting_value': settingValue,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DbAppSettingsCompanion copyWith(
+      {Value<String>? settingKey,
+      Value<String>? settingValue,
+      Value<int>? rowid}) {
+    return DbAppSettingsCompanion(
+      settingKey: settingKey ?? this.settingKey,
+      settingValue: settingValue ?? this.settingValue,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (settingKey.present) {
+      map['setting_key'] = Variable<String>(settingKey.value);
+    }
+    if (settingValue.present) {
+      map['setting_value'] = Variable<String>(settingValue.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbAppSettingsCompanion(')
+          ..write('settingKey: $settingKey, ')
+          ..write('settingValue: $settingValue, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1774,6 +1976,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DbPhotosTable dbPhotos = $DbPhotosTable(this);
   late final $DbPhotoCharactersTable dbPhotoCharacters =
       $DbPhotoCharactersTable(this);
+  late final $DbAppSettingsTable dbAppSettings = $DbAppSettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1784,7 +1987,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         dbCharacterTags,
         dbCharacterReferences,
         dbPhotos,
-        dbPhotoCharacters
+        dbPhotoCharacters,
+        dbAppSettings
       ];
   @override
   DriftDatabaseOptions get options =>
@@ -2769,6 +2973,135 @@ typedef $$DbPhotoCharactersTableProcessedTableManager = ProcessedTableManager<
     ),
     PhotoCharacterRow,
     PrefetchHooks Function()>;
+typedef $$DbAppSettingsTableCreateCompanionBuilder = DbAppSettingsCompanion
+    Function({
+  required String settingKey,
+  required String settingValue,
+  Value<int> rowid,
+});
+typedef $$DbAppSettingsTableUpdateCompanionBuilder = DbAppSettingsCompanion
+    Function({
+  Value<String> settingKey,
+  Value<String> settingValue,
+  Value<int> rowid,
+});
+
+class $$DbAppSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $DbAppSettingsTable> {
+  $$DbAppSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get settingKey => $composableBuilder(
+      column: $table.settingKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get settingValue => $composableBuilder(
+      column: $table.settingValue, builder: (column) => ColumnFilters(column));
+}
+
+class $$DbAppSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DbAppSettingsTable> {
+  $$DbAppSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get settingKey => $composableBuilder(
+      column: $table.settingKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get settingValue => $composableBuilder(
+      column: $table.settingValue,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$DbAppSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DbAppSettingsTable> {
+  $$DbAppSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get settingKey => $composableBuilder(
+      column: $table.settingKey, builder: (column) => column);
+
+  GeneratedColumn<String> get settingValue => $composableBuilder(
+      column: $table.settingValue, builder: (column) => column);
+}
+
+class $$DbAppSettingsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $DbAppSettingsTable,
+    AppSettingRow,
+    $$DbAppSettingsTableFilterComposer,
+    $$DbAppSettingsTableOrderingComposer,
+    $$DbAppSettingsTableAnnotationComposer,
+    $$DbAppSettingsTableCreateCompanionBuilder,
+    $$DbAppSettingsTableUpdateCompanionBuilder,
+    (
+      AppSettingRow,
+      BaseReferences<_$AppDatabase, $DbAppSettingsTable, AppSettingRow>
+    ),
+    AppSettingRow,
+    PrefetchHooks Function()> {
+  $$DbAppSettingsTableTableManager(_$AppDatabase db, $DbAppSettingsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DbAppSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DbAppSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DbAppSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> settingKey = const Value.absent(),
+            Value<String> settingValue = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DbAppSettingsCompanion(
+            settingKey: settingKey,
+            settingValue: settingValue,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String settingKey,
+            required String settingValue,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DbAppSettingsCompanion.insert(
+            settingKey: settingKey,
+            settingValue: settingValue,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$DbAppSettingsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $DbAppSettingsTable,
+    AppSettingRow,
+    $$DbAppSettingsTableFilterComposer,
+    $$DbAppSettingsTableOrderingComposer,
+    $$DbAppSettingsTableAnnotationComposer,
+    $$DbAppSettingsTableCreateCompanionBuilder,
+    $$DbAppSettingsTableUpdateCompanionBuilder,
+    (
+      AppSettingRow,
+      BaseReferences<_$AppDatabase, $DbAppSettingsTable, AppSettingRow>
+    ),
+    AppSettingRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2785,4 +3118,6 @@ class $AppDatabaseManager {
       $$DbPhotosTableTableManager(_db, _db.dbPhotos);
   $$DbPhotoCharactersTableTableManager get dbPhotoCharacters =>
       $$DbPhotoCharactersTableTableManager(_db, _db.dbPhotoCharacters);
+  $$DbAppSettingsTableTableManager get dbAppSettings =>
+      $$DbAppSettingsTableTableManager(_db, _db.dbAppSettings);
 }

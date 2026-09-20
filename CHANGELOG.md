@@ -12,6 +12,7 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 - **Flashcards:** the character side now always shows your drawing under the typed character, in both directions.
 - **Flashcards:** the Back button became **Go to character screen**, shown after you reveal the card. It opens the current card's character, and Back returns to the same card.
 - **Photos gallery:** a Home button at the top right.
+- **Color themes:** Settings → Color theme lets you pick from 8 colors: Cerulean (default), Cobalt, Teal, Navy, Iris, Violet, Plum, Slate. None of them can be mistaken for the red (hard), gold (favorite) or green (correct) that already mean something. The choice is included in backups. (Database schema version 3.)
 - **Hard icon:** the "hard" flag is now a red 🔥 fire icon (was "!").
 - **Flashcard options redesigned:** two matching dropdowns: which cards (**All characters**, **Hard only**, **Favorites only**) and which way (**Character → Definition**, **Definition → Character**, **Bidirectional**, a random direction per card).
 - **Side menu:** a ☰ menu on the home screen replaces the row of top-bar icons, with Flashcards, Photos, Archive and Settings.

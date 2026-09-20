@@ -49,6 +49,7 @@ class DictionaryStore extends ChangeNotifier {
   final Future<Directory> Function() _photosDirectoryResolver;
   Directory? _photosDir;
   final List<PhotoEntry> _photos = [];
+  final Map<String, String> _settings = {};
   final List<CharacterEntry> _characters = [];
   bool _isLoaded = false;
 
@@ -82,6 +83,7 @@ class DictionaryStore extends ChangeNotifier {
     final pairs = await _db.allReferencePairs();
     final photoRows = await _db.allPhotoRows();
     final photoLinks = await _db.allPhotoLinks();
+    final settings = await _db.allSettings();
 
     final refsById = <int, List<int>>{};
     for (final (a, b) in pairs) {
@@ -96,6 +98,10 @@ class DictionaryStore extends ChangeNotifier {
             tags: tagsById[row.id] ?? const [],
             references: refsById[row.id] ?? const [],
           )));
+
+    _settings
+      ..clear()
+      ..addAll(settings);
 
     final linksByPhoto = <int, List<int>>{};
     for (final (photoId, characterId) in photoLinks) {
@@ -483,6 +489,18 @@ class DictionaryStore extends ChangeNotifier {
     _photos.removeAt(index);
     final file = await photoFile(photo);
     if (await file.exists()) await file.delete();
+    notifyListeners();
+  }
+
+  // ---- Settings -------------------------------------------------------------
+
+  /// A stored setting, or null if never set.
+  String? setting(String key) => _settings[key];
+
+  /// Saves a setting (kept in the database, so it's included in backups).
+  Future<void> setSetting(String key, String value) async {
+    await _db.putSetting(key, value);
+    _settings[key] = value;
     notifyListeners();
   }
 }

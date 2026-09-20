@@ -119,3 +119,16 @@ No open questions remain from the initial planning round. Ready to move into imp
 - The Hard mode switch became a **dropdown in the same style as the direction dropdown**: **All characters**, **Hard only** (🔥) or **Favorites only** (⭐, new). Its icon changes with the choice.
 - Both dropdowns are identical outlined pills of the same height. Default on every open: **All characters + Character → Definition**.
 - An empty Hard or Favorites list shows a hint and a "Show all characters instead" button.
+
+## 2026-09-20 — Color themes (schema version 3)
+
+- **Request:** choose the app's color in Settings instead of always blue, with many options, while keeping the colors that already have a meaning recognisable.
+- **Colors that already mean something** (`lib/theme/app_colors.dart`): **red** = hard / incorrect / delete, **gold** = favorite / mid accuracy, **green** = correct / high accuracy.
+- **Decision: 8 themes, all blues, teal, purples and a neutral:** Cerulean (the original, default), Cobalt, Teal, Navy, Iris, Violet, Plum, Slate.
+  - Every theme's hue is **at least 45° away** on the color wheel from red, gold and green. A test (`test/app_palettes_test.dart`) checks this, so a future theme can't accidentally break it.
+  - Teal was nudged towards blue (hue ~191°) for this reason.
+  - Deliberately **no red, pink, orange, brown, yellow or green** themes.
+- **How it looks:** Settings → **Color theme** shows a row of round swatches with a ✓ on the current one. Tapping one changes the whole app straight away: buttons, switches, the + button, highlights and text fields.
+- **Where it's saved:** a new **`app_settings`** table (key/value) in the database. That's **schema version 3**, and existing data upgrades automatically. It's also included in backups, so a restore brings back your theme. The table can hold future settings too (e.g. the "save camera photos to gallery" idea in the backlog).
+- **Side effect:** the theme code now uses `withValues(alpha: …)` instead of the deprecated `withOpacity`, which removes 5 of the old "info" hints.
+- ⚠️ **Tables changed:** run `dart run build_runner build` before building.

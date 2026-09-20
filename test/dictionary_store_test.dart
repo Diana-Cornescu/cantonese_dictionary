@@ -212,4 +212,18 @@ void main() {
     expect(rb.referencedCharacterIds, isEmpty);
     await second.close();
   });
+
+  test('settings (e.g. the color theme) are saved and survive a reload',
+      () async {
+    final first = await _openFileStore(dbFile);
+    expect(first.setting('color_theme'), isNull);
+    await first.setSetting('color_theme', 'violet');
+    await first.setSetting('color_theme', 'teal'); // overwrite
+    expect(first.setting('color_theme'), 'teal');
+
+    await first.close();
+    final second = await _openFileStore(dbFile);
+    expect(second.setting('color_theme'), 'teal');
+    await second.close();
+  });
 }

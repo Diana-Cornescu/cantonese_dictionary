@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'data/app_database.dart';
 import 'data/dictionary_store.dart';
 import 'features/dictionary_list/dictionary_list_screen.dart';
+import 'theme/app_palettes.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -24,10 +25,16 @@ class CantoneseDictionaryApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Cantonese Dictionary',
-      theme: AppTheme.light,
-      home: DictionaryListScreen(store: store),
+    // Rebuilds when the store changes, so a new color theme chosen in
+    // Settings (or restored from a backup) applies straight away.
+    return ListenableBuilder(
+      listenable: store,
+      builder: (context, _) => MaterialApp(
+        title: 'Cantonese Dictionary',
+        theme: AppTheme.light(
+            AppPalette.byId(store.setting(AppPalette.settingKey))),
+        home: DictionaryListScreen(store: store),
+      ),
     );
   }
 }
