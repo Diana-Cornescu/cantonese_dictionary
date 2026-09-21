@@ -6,6 +6,7 @@ import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/handwriting_canvas.dart';
+import '../../widgets/typed_character.dart';
 import '../character_detail/character_detail_screen.dart';
 
 /// Which way a single card is asked.
@@ -484,12 +485,18 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
         strokes != null &&
         strokes.isNotEmpty;
     if (!hasDrawing) {
-      return Text(card.typedCharacter, style: const TextStyle(fontSize: 72));
+      return TypedCharacterText(
+        text: card.typedCharacter,
+        style: const TextStyle(fontSize: 72),
+      );
     }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(card.typedCharacter, style: const TextStyle(fontSize: 56)),
+        TypedCharacterText(
+          text: card.typedCharacter,
+          style: const TextStyle(fontSize: 56),
+        ),
         const SizedBox(height: 8),
         SizedBox(
           width: 120,

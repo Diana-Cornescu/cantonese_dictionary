@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/clear_text_button.dart';
 import '../../widgets/filter_icon_button.dart';
+import '../../widgets/typed_character.dart';
 import 'photo_image.dart';
 import 'photo_picking.dart';
 import 'photo_viewer_screen.dart';
@@ -233,7 +234,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       for (final id in photo.characterIds)
                         ...store.characters
                             .where((c) => c.id == id)
-                            .map((c) => c.typedCharacter),
+                            .map((c) => typedCharacterLabel(c.typedCharacter)),
                     ].join(', ');
                     return InkWell(
                       onTap: () => Navigator.push(

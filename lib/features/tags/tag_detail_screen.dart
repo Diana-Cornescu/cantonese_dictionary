@@ -5,6 +5,7 @@ import '../../data/dictionary_store.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/tag_name_dialog.dart';
+import '../../widgets/typed_character.dart';
 import '../character_detail/character_detail_screen.dart';
 
 /// One tag: every character carrying it, and the three things you can do
@@ -149,8 +150,8 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
                               title: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    entry.typedCharacter,
+                                  TypedCharacterText(
+                                    text: entry.typedCharacter,
                                     style: Theme.of(context)
                                         .textTheme
                                         .headlineSmall,

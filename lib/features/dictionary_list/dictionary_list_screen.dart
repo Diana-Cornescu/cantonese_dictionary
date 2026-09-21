@@ -5,6 +5,7 @@ import '../../data/dictionary_store.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/clear_text_button.dart';
 import '../../widgets/filter_icon_button.dart';
+import '../../widgets/typed_character.dart';
 import '../add_character/add_character_screen.dart';
 import '../character_detail/character_detail_screen.dart';
 import '../flashcards/flashcard_mode_screen.dart';
@@ -278,8 +279,8 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                             title: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  entry.typedCharacter,
+                                TypedCharacterText(
+                                  text: entry.typedCharacter,
                                   style:
                                       Theme.of(context).textTheme.headlineSmall,
                                 ),

@@ -207,3 +207,14 @@ No open questions remain from the initial planning round. Ready to move into imp
 - The buttons' **label color is still the theme's**, deliberately: it's text on a plain background, not a block of color, and it keeps the screen from going entirely monochrome.
 - **Notes moved above the flashcard stats** on the character screen (2026-09-21). Notes expand on the definition, so they belong with it; the stats are a footer about how practice is going, not part of what the character means. Order is now Definition, Notes, Flashcard stats, Tags, References.
 - **The side menu lists "Characters list" first** (2026-09-21), marked selected. It only closes the menu — you're already there. The menu now names every area of the app including the one you're on, rather than only the ways out of it.
+
+## 2026-09-21 — Adding a character: one box, three ways in
+
+- **The Add screen got the character screen's switcher.** One box with **Typed / Handwritten / Photo** above it, swapped freely. Before, the drawing was a fixed 240 px box at the top and the only way in.
+- **The drawing is no longer mandatory.** A new character needs a **definition** plus **at least one** of typed, drawing or photo. Which one is up to you: something seen on a menu can start as a photo and be drawn later; something copied out of a text can start as typed.
+  - The **definition stays required** (decided 2026-09-20), so every card still works in Definition → Character flashcards.
+  - A **tick** appears on a face that has something in it, so "at least one" can be checked without opening all three, and a line under the buttons says so while none are filled.
+- **One photo here, on purpose.** A character can have any number of photos and a photo any number of characters — but that's what the photo's own screen and the carousel are for. Asking about it while creating a character would be a second job in the middle of the first.
+- **`typedCharacter` can now be empty, and is no longer defaulted to `"?"`.** That default was indistinguishable from someone deliberately typing a question mark, and said nothing about why the row was blank. `_editTypedCharacter` no longer forces it either, so clearing it is now a legitimate edit.
+  - **`lib/widgets/typed_character.dart`** (new) holds the two ways to show it: `TypedCharacterText` renders the text, or a grey "missing" icon in its place, and `typedCharacterLabel` does the same where only a string will do (a dialog title, a tooltip, a comma-separated list).
+  - Applied everywhere a typed character is drawn: the home and archive lists, the character screen's title and Typed face, its reference lists and confirmation messages, a tag's character list, the flashcard faces, the character picker, the photo screen's chips and the gallery's captions.

@@ -9,6 +9,7 @@ import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/tag_chip.dart';
 import '../../widgets/tag_picker_dialog.dart';
 import '../../widgets/text_prompt_dialog.dart';
+import '../../widgets/typed_character.dart';
 import '../photos/photo_image.dart';
 import '../photos/photo_picking.dart';
 import '../photos/photo_viewer_screen.dart';
@@ -84,14 +85,15 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   Future<void> _editTypedCharacter(CharacterEntry entry) async {
     final newValue = await _promptForText('Edit character', entry.typedCharacter);
     if (newValue == null) return;
-    final trimmed = newValue.trim();
-    // Same "?" fallback as the add-character screen: the typed text is the
-    // row-list preview, so it's never allowed to end up blank.
-    final finalValue = trimmed.isEmpty ? '?' : trimmed;
+    // No "?" fallback any more (2026-09-21): a character can live on its
+    // drawing or its photo alone, and everywhere the typed text is shown
+    // uses TypedCharacterText, which draws a "missing" icon when it's
+    // blank. Clearing it here is now a legitimate thing to do.
+    final finalValue = newValue.trim();
     final confirmed = await confirmAction(
       context,
       title: 'Save character?',
-      message: "Save changes to the typed character for '${entry.typedCharacter}'?",
+      message: "Save changes to the typed character for '${typedCharacterLabel(entry.typedCharacter)}'?",
     );
     if (confirmed) {
       await widget.store
@@ -120,7 +122,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     final confirmed = await confirmAction(
       context,
       title: 'Save definition?',
-      message: "Save changes to the definition for '${entry.typedCharacter}'?",
+      message: "Save changes to the definition for '${typedCharacterLabel(entry.typedCharacter)}'?",
     );
     if (confirmed) {
       await widget.store
@@ -134,7 +136,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     final confirmed = await confirmAction(
       context,
       title: 'Save notes?',
-      message: "Save changes to the notes for '${entry.typedCharacter}'?",
+      message: "Save changes to the notes for '${typedCharacterLabel(entry.typedCharacter)}'?",
     );
     if (confirmed) {
       await widget.store.updateCharacter(entry.copyWith(notes: newValue));
@@ -149,7 +151,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
       context,
       widget.store,
       initial: parseTags(entry.tags),
-      title: "Tags for '${entry.typedCharacter}'",
+      title: "Tags for '${typedCharacterLabel(entry.typedCharacter)}'",
     );
     if (chosen == null) return;
     final newValue = chosen.join(', ');
@@ -158,7 +160,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     final confirmed = await confirmAction(
       context,
       title: 'Save tags?',
-      message: "Save changes to the tags for '${entry.typedCharacter}'?",
+      message: "Save changes to the tags for '${typedCharacterLabel(entry.typedCharacter)}'?",
     );
     if (confirmed) {
       await widget.store.updateCharacter(entry.copyWith(tags: newValue));
@@ -211,7 +213,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     final confirmed = await confirmAction(
       context,
       title: 'Save handwriting?',
-      message: "Overwrite the saved handwriting for '${entry.typedCharacter}'?",
+      message: "Overwrite the saved handwriting for '${typedCharacterLabel(entry.typedCharacter)}'?",
     );
     if (confirmed) {
       await widget.store
@@ -225,7 +227,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
       context,
       title: 'Remove reference?',
       message:
-          "Remove the link between '${entry.typedCharacter}' and '$otherTyped'?",
+          "Remove the link between '${typedCharacterLabel(entry.typedCharacter)}' and '$otherTyped'?",
     );
     if (confirmed) {
       await widget.store.removeReference(entry.id, otherId);
@@ -237,7 +239,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     final confirmed = await confirmAction(
       context,
       title: '$verb character?',
-      message: "$verb '${entry.typedCharacter}'?",
+      message: "$verb '${typedCharacterLabel(entry.typedCharacter)}'?",
     );
     if (confirmed) {
       await widget.store.toggleArchived(entry.id);
@@ -248,7 +250,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     final confirmed = await confirmAction(
       context,
       title: 'Delete character?',
-      message: "Delete '${entry.typedCharacter}'? This cannot be undone.",
+      message: "Delete '${typedCharacterLabel(entry.typedCharacter)}'? This cannot be undone.",
     );
     if (confirmed) {
       await widget.store.deleteCharacter(entry.id);
@@ -277,7 +279,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
         final current = entry;
         return Scaffold(
           appBar: AppBar(
-            title: Text(current.typedCharacter),
+            title: Text(typedCharacterLabel(current.typedCharacter)),
             actions: [
               IconButton(
                 tooltip: 'Home',
@@ -538,9 +540,10 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
               height: 240,
               child: _view == _CharacterView.typed
                   ? Center(
-                      child: Text(
-                        entry.typedCharacter,
+                      child: TypedCharacterText(
+                        text: entry.typedCharacter,
                         style: const TextStyle(fontSize: 96),
+                        iconSize: 72,
                       ),
                     )
                   : entry.handwrittenSample != null
@@ -740,7 +743,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
             ListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: Text(other.typedCharacter),
+              title: Text(typedCharacterLabel(other.typedCharacter)),
               subtitle: Text(
                 other.definition,
                 maxLines: 1,
@@ -783,7 +786,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
             ListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: Text(candidate.typedCharacter),
+              title: Text(typedCharacterLabel(candidate.typedCharacter)),
               subtitle: Text(
                 candidate.definition,
                 maxLines: 1,

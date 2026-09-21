@@ -6,6 +6,10 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
 ## 1.5.0 — 2026-09-21
 
+- **Adding a character works like the character screen now.** One box with **Typed / Handwritten / Photo** buttons above it — pick whichever you have, switch between them freely.
+  - **The drawing is no longer compulsory.** A new character needs a definition plus **at least one** of the three. A character spotted on a menu can start as a photo and be drawn later. A tick marks each one you've filled in.
+  - One photo here; link more (and more characters) from the photo's own screen afterwards.
+  - A character with no typed text now shows a small grey **?** icon in the lists instead of a literal "?", so you can see it's still to be typed in.
 - **Notes moved up**, to sit under the definition instead of under the flashcard stats.
 - **"Characters list" at the top of the ☰ menu**, so the menu names every part of the app including the screen you're on.
 - **A Photos button on the character screen.** A third button next to **Typed** and **Handwritten**. It turns the same box into a carousel of the photos linked to this character — swipe between them, or use the round arrows either side. Tap one to open its full screen, where the note, its other characters and delete live.

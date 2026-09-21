@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/dictionary_store.dart';
 import 'clear_text_button.dart';
+import 'typed_character.dart';
 
 /// A dialog listing every character with a checkbox, plus a search box.
 /// Returns the chosen character ids, or null if cancelled.
@@ -92,8 +93,9 @@ class _CharacterPickerDialogState extends State<_CharacterPickerDialog> {
                             value: _selected.contains(c.id),
                             title: Text(
                               c.isArchived
-                                  ? '${c.typedCharacter}  (archived)'
-                                  : c.typedCharacter,
+                                  ? '${typedCharacterLabel(c.typedCharacter)}'
+                                      '  (archived)'
+                                  : typedCharacterLabel(c.typedCharacter),
                             ),
                             subtitle: Text(
                               c.definition,

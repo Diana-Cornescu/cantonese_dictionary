@@ -4,27 +4,46 @@ import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_colors.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/tag_chip.dart';
 import '../../widgets/tag_picker_dialog.dart';
+import '../../widgets/typed_character.dart';
 import '../photos/photo_picking.dart';
 
-/// Screen for creating a brand-new character: draw it, type it, define it.
-/// There is deliberately NO handwriting-recognition/auto-suggestion step —
-/// the user always types or pastes the character directly.
+/// Which face of the box is showing while adding a character. Mirrors the
+/// character screen's Typed / Handwritten / Photos switcher (2026-09-21).
+enum _AddView { typed, handwritten, photo }
+
+/// Screen for creating a brand-new character. There is deliberately NO
+/// handwriting-recognition/auto-suggestion step — the user always types or
+/// pastes the character directly.
 ///
-/// The handwritten sample is the only mandatory field (it's what makes the
-/// row "a character" at all); the typed text is optional and defaults to
-/// `"?"` if left blank, since the row-list screen uses the typed text as
-/// its preview and needs something to show.
+/// **One box, three faces** (2026-09-21), laid out like the character
+/// screen: type the character, draw it, or attach a photo of it, switching
+/// freely between them. Before this the drawing was the only way in and
+/// was mandatory.
 ///
-/// Tags, a photo and references can all be set here (2026-09-20). They
-/// can't be *stored* until the character exists — a photo link and a
-/// reference both need its id — so they're held in this screen's state and
-/// written straight after [DictionaryStore.addCharacter] returns the saved
-/// entry. Cancelling writes nothing at all: no half-made character, no
-/// stray photo copied into the app's folder.
+/// **What's required:** a definition, plus **at least one** of typed,
+/// drawing or photo. Which one is up to you — a character seen on a menu
+/// can start as a photo and be drawn later; one copied from a text can
+/// start as typed. A tick on a button marks a face that has something in
+/// it, so the requirement is visible without clicking through all three.
+///
+/// The definition stays required (decided 2026-09-20) so every card works
+/// in Definition → Character flashcards.
+///
+/// Exactly one photo can be attached here. Photos are linked to several
+/// characters, and characters to several photos, from the photo's own
+/// screen — this is just the first one.
+///
+/// Tags, the photo and references can all be set here. None of them can be
+/// *stored* until the character exists — a photo link and a reference both
+/// need its id — so they're held in this screen's state and written
+/// straight after [DictionaryStore.addCharacter] returns the saved entry.
+/// Cancelling writes nothing at all: no half-made character, no stray photo
+/// copied into the app's folder.
 class AddCharacterScreen extends StatefulWidget {
   const AddCharacterScreen({super.key, required this.store});
 
@@ -35,6 +54,8 @@ class AddCharacterScreen extends StatefulWidget {
 }
 
 class _AddCharacterScreenState extends State<AddCharacterScreen> {
+  _AddView _view = _AddView.typed;
+
   final _typedController = TextEditingController();
   final _definitionController = TextEditingController();
 
@@ -43,8 +64,9 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
   /// so existing tags get reused instead of near-duplicated.
   List<String> _tags = [];
 
-  /// A photo waiting to be attached. Still the picker's temporary file —
-  /// the store copies it into the app's photos folder on save.
+  /// The one photo this character starts with. Still the picker's
+  /// temporary file — the store copies it into the app's photos folder on
+  /// save, so backing out leaves nothing behind.
   File? _photo;
 
   /// Characters this one will reference. Written with [addReference] after
@@ -62,6 +84,22 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
     _definitionController.dispose();
     super.dispose();
   }
+
+  bool get _hasTyped => _typedController.text.trim().isNotEmpty;
+  bool get _hasDrawing =>
+      _capturedStrokes != null && _capturedStrokes!.isNotEmpty;
+  bool get _hasPhoto => _photo != null;
+
+  /// A definition, and at least one of the three faces.
+  bool get _canSave =>
+      _definitionController.text.trim().isNotEmpty &&
+      (_hasTyped || _hasDrawing || _hasPhoto);
+
+  bool _filled(_AddView view) => switch (view) {
+        _AddView.typed => _hasTyped,
+        _AddView.handwritten => _hasDrawing,
+        _AddView.photo => _hasPhoto,
+      };
 
   List<CharacterEntry> get _referenced => [
         for (final id in _referenceIds)
@@ -100,23 +138,17 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
     });
   }
 
-  /// A drawing and a definition are both required (definition required
-  /// since 2026-09-20, so every card works in Definition -> Character
-  /// flashcards).
-  bool get _canSave =>
-      _capturedStrokes != null &&
-      _capturedStrokes!.isNotEmpty &&
-      _definitionController.text.trim().isNotEmpty;
-
   Future<void> _save() async {
     if (!_canSave) return;
     final now = DateTime.now(); // overwritten by addCharacter, but required here
-    final typedText = _typedController.text.trim();
     final draft = CharacterEntry(
       id: -1,
-      // Defaults to "?" rather than staying blank, since the row-list
-      // screen previews entries by typed character.
-      typedCharacter: typedText.isEmpty ? '?' : typedText,
+      // May be empty now that a drawing or a photo is enough on its own.
+      // It is NOT defaulted to "?" any more (2026-09-21): that was
+      // indistinguishable from someone typing a question mark. Everywhere
+      // it's displayed uses TypedCharacterText, which shows a "missing"
+      // icon instead.
+      typedCharacter: _typedController.text.trim(),
       handwrittenSample: _capturedStrokes,
       definition: _definitionController.text.trim(),
       notes: '',
@@ -145,6 +177,32 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
     if (mounted) Navigator.pop(context);
   }
 
+  /// The selected face fills with the color theme, as on the character
+  /// screen. A face with something in it also gets a tick, so "at least
+  /// one of these" can be checked without opening all three.
+  Widget _viewButton(_AddView view, String label) {
+    final filled = _filled(view);
+    return OutlinedButton(
+      style: _view == view
+          ? OutlinedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            )
+          : null,
+      onPressed: () => setState(() => _view = view),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          if (filled) ...[
+            const SizedBox(width: 6),
+            const Icon(Icons.check_circle,
+                size: 14, color: AppColors.success),
+          ],
+        ],
+      ),
+    );
+  }
+
   /// A section title with its action button on the right.
   Widget _sectionHeader(String title, Widget action) {
     return Row(
@@ -155,6 +213,55 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
         action,
       ],
     );
+  }
+
+  Widget _buildBox() {
+    switch (_view) {
+      case _AddView.typed:
+        return Center(
+          child: TextField(
+            controller: _typedController,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 72),
+            maxLines: 1,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              hintText: '字',
+              hintStyle: TextStyle(fontSize: 72, color: AppColors.inactive),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        );
+      case _AddView.handwritten:
+        return Container(
+          decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+          child: HandwritingCanvas(
+            readOnly: false,
+            onStrokesChanged: (strokes) =>
+                setState(() => _capturedStrokes = strokes),
+          ),
+        );
+      case _AddView.photo:
+        final photo = _photo;
+        if (photo == null) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('No photo yet'),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: _pickPhoto,
+                icon: const Icon(Icons.add_a_photo_outlined),
+                label: const Text('Add photo'),
+              ),
+            ],
+          );
+        }
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(photo, fit: BoxFit.contain),
+        );
+    }
   }
 
   @override
@@ -176,29 +283,43 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Draw the character *'),
+            // A Wrap, so the third button drops to its own line rather than
+            // overflowing on a narrow phone.
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _viewButton(_AddView.typed, 'Typed'),
+                _viewButton(_AddView.handwritten, 'Handwritten'),
+                _viewButton(_AddView.photo, 'Photo'),
+              ],
+            ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: 240,
-              child: Container(
-                decoration:
-                    BoxDecoration(border: Border.all(color: Colors.grey)),
-                child: HandwritingCanvas(
-                  readOnly: false,
-                  onStrokesChanged: (strokes) =>
-                      setState(() => _capturedStrokes = strokes),
-                ),
+            if (!_hasTyped && !_hasDrawing && !_hasPhoto)
+              Text(
+                'Add at least one of these *',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _typedController,
-              decoration: const InputDecoration(
-                labelText: 'Typed character (optional)',
-                border: OutlineInputBorder(),
-                helperText: 'Defaults to "?" if left blank',
+            const SizedBox(height: 8),
+            SizedBox(height: 240, child: _buildBox()),
+            if (_view == _AddView.photo && _photo != null)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: _pickPhoto,
+                    icon: const Icon(Icons.add_a_photo_outlined),
+                    label: const Text('Replace'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _photo = null),
+                    icon: const Icon(Icons.close),
+                    label: const Text('Remove'),
+                  ),
+                ],
               ),
-            ),
             const SizedBox(height: 16),
             TextField(
               controller: _definitionController,
@@ -207,9 +328,9 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
                 border: OutlineInputBorder(),
               ),
               // One line since 2026-09-20: Enter closes the keyboard instead
-              // of adding a newline. It does NOT tap Save for you — the
-              // drawing above may not be finished, and Save is the one
-              // deliberate commit for a new character.
+              // of adding a newline. It does NOT tap Save for you — the box
+              // above may not be filled in, and Save is the one deliberate
+              // commit for a new character.
               maxLines: 1,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
@@ -233,41 +354,6 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
             ),
             const SizedBox(height: 16),
             _sectionHeader(
-              'Photo',
-              TextButton.icon(
-                onPressed: _pickPhoto,
-                icon: const Icon(Icons.add_a_photo_outlined),
-                label: Text(_photo == null ? 'Add' : 'Replace'),
-              ),
-            ),
-            if (_photo == null)
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('(no photo)'),
-              )
-            else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      _photo!,
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () => setState(() => _photo = null),
-                    icon: const Icon(Icons.close),
-                    label: const Text('Remove'),
-                  ),
-                ],
-              ),
-            const SizedBox(height: 16),
-            _sectionHeader(
               'References',
               TextButton.icon(
                 onPressed: _editReferences,
@@ -285,7 +371,7 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
                       children: [
                         for (final c in _referenced)
                           Chip(
-                            label: Text(c.typedCharacter),
+                            label: Text(typedCharacterLabel(c.typedCharacter)),
                             onDeleted: () => setState(
                                 () => _referenceIds.remove(c.id)),
                           ),

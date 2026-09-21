@@ -4,6 +4,7 @@ import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../../widgets/typed_character.dart';
 import '../../widgets/text_prompt_dialog.dart';
 import '../character_detail/character_detail_screen.dart';
 import 'photo_image.dart';
@@ -167,8 +168,9 @@ class PhotoViewerScreen extends StatelessWidget {
                                     children: [
                                       for (final c in linked)
                                         ActionChip(
-                                          label: Text(c.typedCharacter),
-                                          tooltip: 'Open ${c.typedCharacter}',
+                                          label: Text(typedCharacterLabel(
+                                              c.typedCharacter)),
+                                          tooltip: 'Open ${typedCharacterLabel(c.typedCharacter)}',
                                           onPressed: () => Navigator.push(
                                             context,
                                             MaterialPageRoute(
