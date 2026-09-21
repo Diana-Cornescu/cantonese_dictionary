@@ -1,6 +1,13 @@
-# Cantonese Dictionary App — Future Ideas / Parked Features
+# Parked designs
 
-Concepts that came up while planning the app but were deliberately left out of v1. Keeping them here in full so they aren't lost and can be picked back up later.
+**Long write-ups for work that was designed properly and then deliberately
+not built.** One entry per idea, kept in full so picking it back up doesn't
+mean re-deciding everything.
+
+This is not the list of what's next — that's **`roadmap.md`**, which names
+each of these in one line and links here. An idea only earns a place in this
+file once it has a real design behind it; a one-line "wouldn't it be nice"
+belongs in the roadmap's Inbox.
 
 ## Handwriting recognition — self-learning template matching
 
@@ -16,16 +23,16 @@ Concepts that came up while planning the app but were deliberately left out of v
 
 **Possible future refinement, if revisited:** let the app save additional handwriting templates per character over time — e.g., each time a character is redrawn correctly during recognition — so matching accuracy for frequently-practiced characters keeps improving rather than staying pinned to a single original sample.
 
-## Managed / reusable tag list
+## Managed / reusable tag list — BUILT
 
-**Status:** parked on 2026-07-19. v1 ships with simple free-text tags (a plain label typed directly onto a character, no master list) since that matches how you described using tags — short, casual, informal labels rather than a controlled taxonomy.
+**Shipped in 1.3.0** (2026-09-21). Parked on 2026-07-19, built two months
+later: a Tags screen in the side menu, a picker replacing free-text entry,
+rename-with-merge, delete, and per-tag character lists.
 
-**The idea:** instead of free text, the app would keep a master table of tags. Tagging a character means picking from existing tags (with an inline "create new" option if the one you want doesn't exist yet) rather than typing a fresh string every time.
+The design write-up that used to live here has been superseded by what was
+actually built — see **`decisions_log_tags.md`**, which records the eleven
+decisions taken, the ordering trap in `renameTag`, and the disposed-controller
+bug found while testing.
 
-**What it would add over free-text:**
-- Consistent spelling/casing — no more "food" on one row and "Food" (or a typo) on another being silently treated as two different tags.
-- Rename once, updates everywhere — renaming a tag in the master list updates every character using it, instead of having to hunt down and retype it on each row.
-- A place to browse every tag in use, and later, filter/search the dictionary by tag.
-- Deleting a tag that's currently in use would go through the app's confirm-before-edit dialog, same as any other destructive action.
-
-**Why it was parked:** it's a real, if modest, chunk of extra build — a tags table, a many-to-many join to characters, and a picker UI with inline creation — for a benefit (consistency, central rename, filtering) that's only worth it once the dictionary and its tag vocabulary have grown large enough for messy free-text tags to actually become a problem. Free-text can always be migrated into this structure later (the existing comma-separated tags on each character would just become the initial rows in the new tags table).
+Left here as a marker so the 2026-07-19 "parked" decision doesn't look like it
+was quietly dropped.

@@ -1,17 +1,26 @@
-# Cantonese Dictionary App — Limitations & Future Roadmap
+# Limitations & storage notes
 
-An honest account of where v1 falls short, plus concrete ideas for later. This is a living document — update it whenever a limitation gets fixed or a new one is discovered, per the "docs travel with every change" convention in the root `README.md`.
+An honest account of where the app falls short today, and why the storage
+layer looks the way it does. A living document — update it whenever a
+limitation gets fixed or a new one turns up, per the "docs travel with every
+change" convention in the root `README.md`.
+
+**What to build next is not here any more** — that's **`roadmap.md`**. This
+file says what's *true of the app today*; the roadmap says what's next.
+(The filename still says "roadmap" for now; rename it with `git mv` when
+convenient.)
 
 ## Current limitations (v1)
 
 - **Screens still hold everything in memory** — since 2026-09-19 the data lives in SQLite, but `DictionaryStore` still loads every character into memory at startup and filters in Dart ("storage swap only", decision 6 in `decisions_log_sqlite_drift.md`). Fine at personal-dictionary scale; see the storage section below for when to switch to live database queries.
 - **No handwriting recognition** — adding a character means typing/pasting it directly; the app doesn't guess it from your drawing. Fully designed and parked, not forgotten — see `future_ideas.md`.
 - **No cloud backup or automatic sync.** Data lives on the device. Since 2026-09-19 you can back up everything (database + photos) to one `.zip` file through Settings and restore it on any device, including after reinstalling. You choose where the file goes (e.g. Google Drive), and it's manual only: nothing backs up automatically.
-- **Tags are still typed as free text.** Since 2026-09-19 they're stored properly in their own `tags` table, but the UI for a managed list (pick-from-existing, rename-once-updates-everywhere, browse/filter by tag) hasn't been built yet — see `future_ideas.md`. Tags that no character uses any more stay in the table (so a future picker can offer them).
+- ~~**Tags are still typed as free text.**~~ Fixed in 1.3.0: a Tags screen, a pick-from-existing picker, rename-with-merge and delete. Tags no character uses stay in the table and show greyed at 0. **Still missing: filtering the dictionary by tag** — see `roadmap.md`.
 - **Single-device, single-user only** — no accounts, no concept of syncing between your phone and desktop copies; they're two independent dictionaries. You can copy one to the other with backup & restore, but restore replaces everything (no merging).
 - **Dynamic resizing is breakpoint-based, not a manual drag handle** — the character/translation windows switch between side-by-side and stacked based on screen width, but there's no draggable divider to fine-tune the split yet (deliberately deferred until a working prototype showed what was actually worth making resizable).
 - **No Jyutping/romanization field, no audio pronunciation, no stroke-order playback** — the handwriting data model already records a timestamp per point specifically so stroke-order playback could be added later without changing what's stored; it just isn't built yet.
 - **No batch import** — characters are added one at a time through the Add screen.
+- **Every change repaints the whole app.** `main.dart` wraps `MaterialApp` in a `ListenableBuilder` on the store, so any save rebuilds the Navigator and its overlay too. Works, but it's the one known source of fragility — see Chores in `roadmap.md`.
 - **Hand-written without a working compiler** — the environment this app was built in couldn't install the Flutter/Dart tooling, so v1's code (and the 2026-09-19 SQLite + Drift change) was hand-reviewed before reaching you, then compiled and verified on your own laptop. The SQLite change was verified on 2026-09-19. See `decisions_log.md`'s 2026-07-20 entry for the full story.
 
 ## Storage architecture: SQLite + Drift (since 2026-09-19)
@@ -38,16 +47,8 @@ v1 stored everything in one hand-written JSON file, rewritten in full on every c
 2. The dictionary grows to many thousands of entries, and startup or search gets noticeably slow.
 3. Multi-device sync or a shared version is ever wanted (not a current goal).
 
-## Future improvement ideas
+## What's next
 
-Two are already fully designed and parked, not just brainstormed — see `future_ideas.md` for the complete write-up of each:
-- Handwriting recognition (self-learning template matching against your own saved samples).
-- A managed/reusable tag list (storage done 2026-09-19; UI still to build).
-
-Others, not yet designed in detail:
-- Jyutping (romanization) field per character.
-- Audio pronunciation recording/playback.
-- Stroke-order playback (the data needed for this is already being captured — see the limitations list above).
-- Batch import of characters (e.g., from a spreadsheet).
-- ~~Backup/restore via a file picker~~ (done 2026-09-19). Possible later: a "last backed up X days ago" reminder, or merging a backup instead of replacing.
-- A manual draggable resize handle between the character and translation windows, once real usage shows what's worth making resizable.
+Not listed here any more, to stop the same idea living in three files with
+three different amounts of detail. **`roadmap.md`** holds everything ahead;
+**`future_ideas.md`** holds the long write-ups for the big parked designs.

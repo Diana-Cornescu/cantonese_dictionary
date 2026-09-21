@@ -10,16 +10,16 @@ v1 implemented — all screens, local storage, and tests are written, and this i
 
 ## Documentation
 
-- `docs/backlog.md` — **what's next**: remaining work in priority order.
+- `docs/roadmap.md` — **what's next**: everything ahead, in release-sized buckets. Nothing that already shipped.
 
 - `docs/design_plan.md` — the living architecture/design plan for the app.
-- `docs/future_ideas.md` — features considered and deliberately parked for a later version (e.g., handwriting recognition, a managed tag list), kept in full so they aren't lost.
+- `docs/future_ideas.md` — long write-ups for work that was designed properly and then deliberately not built (handwriting recognition). Named in one line from the roadmap; the detail lives here.
 - `docs/decisions_log_photo_gallery.md` — decisions and reasoning for the photo gallery (schema version 2).
 - `docs/decisions_log_backup_and_release.md` — decisions and reasoning for backup & restore, the signing key, and versioning releases.
 - `CHANGELOG.md` — what changed in each release installed on the phone.
 - `docs/decisions_log_sqlite_drift.md` — the dated decisions, reasoning and TL;DR for the move from a JSON file to SQLite + Drift (kept separate so it's easy to find).
 - `docs/decisions_log.md` — a running, dated record of notable decisions, pivots, and challenges as the app moves from plan to build.
-- `docs/limitations_and_roadmap.md` — current limitations, storage trade-offs, and the future roadmap.
+- `docs/limitations_and_roadmap.md` — what's true of the app today: current limitations and storage trade-offs. (No longer holds a roadmap.)
 - `docs/setup_manual.md` — a running checklist of everything needed to develop and run the app, and the steps to set each piece up.
 
 ## Development conventions
