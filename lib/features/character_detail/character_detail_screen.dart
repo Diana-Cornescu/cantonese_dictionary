@@ -372,6 +372,48 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
               onPressed: () => _editTypedCharacter(entry),
               child: const Text('Edit character'),
             ),
+          const SizedBox(height: 8),
+          // Favorite and hard, directly under the character box
+          // (2026-09-20), so a character can be flagged while you're
+          // looking at it instead of only from the list.
+          //
+          // Styled like the Typed/Handwritten pair at the top of this same
+          // box — an outlined button that fills in when it's on — rather
+          // than as bare icons, since in the body of a screen an unlabelled
+          // icon doesn't say what it does. A Wrap, not a Row, so the two
+          // drop onto separate lines instead of overflowing on a narrow
+          // phone.
+          //
+          // Instant and unconfirmed, like the same two flags on the list
+          // rows: the app's one deliberate exception to "confirm before
+          // committing an edit", since one more tap undoes them.
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                style: entry.isStarred ? _selectedButtonStyle(context) : null,
+                onPressed: () => widget.store.toggleStarred(entry.id),
+                icon: Icon(
+                  entry.isStarred ? Icons.star : Icons.star_border,
+                  color: entry.isStarred ? AppColors.star : null,
+                ),
+                label: const Text('Favorite'),
+              ),
+              OutlinedButton.icon(
+                style: entry.isHard ? _selectedButtonStyle(context) : null,
+                onPressed: () => widget.store.toggleHard(entry.id),
+                icon: Icon(
+                  entry.isHard
+                      ? Icons.local_fire_department
+                      : Icons.local_fire_department_outlined,
+                  color: entry.isHard ? AppColors.danger : null,
+                ),
+                label: const Text('Hard'),
+              ),
+            ],
+          ),
         ],
       ),
     );

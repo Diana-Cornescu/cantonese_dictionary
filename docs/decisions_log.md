@@ -156,3 +156,9 @@ No open questions remain from the initial planning round. Ready to move into imp
 - **Details:** it's a `Material` with elevation so rows scrolling under it get a shadow edge, inside a `SafeArea(top: false)` to clear the phone's gesture bar, and the button has a 48 px minimum height.
 - **The archive view keeps no bar** — you don't add characters there.
 - The photo gallery still uses a floating button. That one is fine: its grid already reserves 88 px of bottom padding to scroll past it.
+
+## 2026-09-20 — 1.4.0 round
+
+- **Star / hard on the character screen:** **Favorite** and **Hard** buttons placed **directly under the character box**, not in the top bar. In the body of a screen a bare icon doesn't say what it does, so they're outlined buttons with icon + label, styled like the Typed/Handwritten pair at the top of the same box and filling in when on. Same icons and colors as the list rows, and the same **instant, no-confirmation** behaviour — these two have been the app's one deliberate exception to "confirm before committing an edit" since 2026-07-19, because one more tap undoes them.
+  - A `Wrap` rather than a `Row`, so on a narrow phone the two buttons stack instead of overflowing.
+  - They are **flags on this character**, not filters. The ⭐/🔥 buttons by the home screen's search box are a different thing: those filter the list. Both were asked for in the same breath, so the distinction is written down here.
