@@ -40,6 +40,15 @@ class DictionaryListScreen extends StatefulWidget {
 class _DictionaryListScreenState extends State<DictionaryListScreen> {
   final _searchController = TextEditingController();
 
+  /// Filters sitting right of the search box (2026-09-20). Independent, not
+  /// exclusive: with both on you get characters that are starred AND hard,
+  /// and either one narrows further with whatever is typed in the box.
+  bool _starredOnly = false;
+  bool _hardOnly = false;
+
+  bool get _isFiltering =>
+      _starredOnly || _hardOnly || _searchController.text.trim().isNotEmpty;
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -51,8 +60,10 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
         ? widget.store.archivedCharacters
         : widget.store.activeCharacters;
     final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) return source;
     return source.where((c) {
+      if (_starredOnly && !c.isStarred) return false;
+      if (_hardOnly && !c.isHard) return false;
+      if (query.isEmpty) return true;
       return c.typedCharacter.toLowerCase().contains(query) ||
           c.definition.toLowerCase().contains(query) ||
           c.tags.toLowerCase().contains(query);
@@ -127,6 +138,39 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
+  /// One filter toggle for the row above the list. Off, it's a plain
+  /// outlined icon; on, it fills with the theme's container color, keeps a
+  /// primary-colored border and the icon itself switches to the filled,
+  /// colored version — so "this is filtering" is readable at a glance
+  /// rather than a subtle tint.
+  Widget _filterButton({
+    required String tooltip,
+    required bool on,
+    required IconData onIcon,
+    required IconData offIcon,
+    required Color activeColor,
+    required VoidCallback onPressed,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: IconButton(
+        tooltip: on ? '$tooltip (filtering)' : tooltip,
+        onPressed: onPressed,
+        icon: Icon(on ? onIcon : offIcon, color: on ? activeColor : null),
+        style: IconButton.styleFrom(
+          backgroundColor: on ? colors.primaryContainer : null,
+          minimumSize: const Size(40, 40),
+          padding: const EdgeInsets.all(8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: on ? colors.primary : colors.outline),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// The fixed **Add character** bar under the list. A [Material] rather
   /// than a plain [Container] so it draws a shadow over the rows as they
   /// scroll under it, making it read as a separate section; [SafeArea]
@@ -186,24 +230,53 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Search characters, definitions, tags',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onChanged: (_) => setState(() {}),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.search),
+                          hintText: 'Search characters, definitions, tags',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    _filterButton(
+                      tooltip: 'Favorites only',
+                      on: _starredOnly,
+                      onIcon: Icons.star,
+                      offIcon: Icons.star_border,
+                      activeColor: AppColors.star,
+                      onPressed: () =>
+                          setState(() => _starredOnly = !_starredOnly),
+                    ),
+                    _filterButton(
+                      tooltip: 'Hard only',
+                      on: _hardOnly,
+                      onIcon: Icons.local_fire_department,
+                      offIcon: Icons.local_fire_department_outlined,
+                      activeColor: AppColors.danger,
+                      onPressed: () => setState(() => _hardOnly = !_hardOnly),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
                 child: entries.isEmpty
                     ? Center(
-                        child: Text(
-                          widget.isArchiveView
-                              ? 'No archived characters.'
-                              : 'No characters match.',
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            _isFiltering
+                                ? 'No characters match.'
+                                : widget.isArchiveView
+                                    ? 'No archived characters.'
+                                    : 'No characters yet.',
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       )
                     : ListView.separated(

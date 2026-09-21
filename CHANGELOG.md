@@ -6,6 +6,7 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
 ## 1.4.0 — 2026-09-20
 
+- **Filter the home list by favorite or hard.** ⭐ and 🔥 buttons sit to the right of the search box. Tap one and it fills in — coloured icon, tinted background, highlighted border — so it's obvious the list is being filtered. They work independently (both on = starred *and* hard) and combine with whatever you've typed in the search box.
 - **Star and hard from a character's own screen.** **Favorite** and **Hard** buttons sit right under the character box, styled like the Typed/Handwritten pair above them — they fill in when on. Same instant, no-confirmation toggles as the list rows, so you no longer have to go back to the list to flag something you're looking at.
 
 ## 1.3.1 — 2026-09-20
