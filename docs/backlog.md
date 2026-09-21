@@ -58,23 +58,25 @@ _Nothing left. Everything below moves up._
 
 ## Done
 
-- **Photo gallery filters** (Priority 4, 2026-09-21): ⭐ and 🔥 buttons right of the gallery's search box — for a photo, "linked to a character that is" — and the **Unlinked only** chip became a grey broken-link button in the same style. The shared button moved to `lib/widgets/filter_icon_button.dart`. Goes out in 1.4.0.
+- **Released 1.5.0** (2026-09-21): a **Photos** carousel as the third face of the character box (replacing the thumbnail strip), the Add character screen rebuilt around the same Typed / Handwritten / Photo switcher with **any one of the three** required instead of a mandatory drawing, `typedCharacter` allowed to be empty and shown as a grey "missing" icon, **Notes** moved above the flashcard stats, **Characters list** added at the top of the ☰ menu, and a styling pass taking the theme colors out of the filter buttons and the Favorite / Hard toggles. See `decisions_log.md`.
 
-- **Flashcards: text-only vs text + handwriting** (Priority 4, 2026-09-20): a third dropdown pill on the flashcard options bar, saved in the `app_settings` table so it survives a restart and rides along in backups. Goes out in 1.4.0.
+- **Photo gallery filters** (Priority 4, 2026-09-21): ⭐ and 🔥 buttons right of the gallery's search box — for a photo, "linked to a character that is" — and the **Unlinked only** chip became a grey broken-link button in the same style. The shared button moved to `lib/widgets/filter_icon_button.dart`. Released in 1.4.0.
 
-- **Enter saves the definition** (Priority 4, 2026-09-20): the definition box is single-line on the Add character screen and in the character screen's edit dialog; Enter closes the keyboard, and in the dialog it saves. Notes stay multi-line. Goes out in 1.4.0.
+- **Flashcards: text-only vs text + handwriting** (Priority 4, 2026-09-20): a third dropdown pill on the flashcard options bar, saved in the `app_settings` table so it survives a restart and rides along in backups. Released in 1.4.0.
 
-- **Filter the home list by favorite / hard** (Priority 4, 2026-09-20): ⭐ and 🔥 toggle buttons right of the search box, independent of each other and combining with the search text. Active ones fill in with a tinted background and coloured icon. The photo gallery and tag filtering are still open — see the remaining Priority 4 row. Goes out in 1.4.0.
+- **Enter saves the definition** (Priority 4, 2026-09-20): the definition box is single-line on the Add character screen and in the character screen's edit dialog; Enter closes the keyboard, and in the dialog it saves. Notes stay multi-line. Released in 1.4.0.
 
-- **Star / hard from the character screen** (Priority 4, 2026-09-20): **Favorite** and **Hard** buttons directly under the character box, styled like the Typed/Handwritten pair, with the same icons, colors and instant behaviour as the list rows. Goes out in 1.4.0.
+- **Filter the home list by favorite / hard** (Priority 4, 2026-09-20): ⭐ and 🔥 toggle buttons right of the search box, independent of each other and combining with the search text. Active ones fill in with a tinted background and coloured icon. The photo gallery and tag filtering are still open — see the remaining Priority 4 row. Released in 1.4.0.
 
-- **"Add character" in a fixed bottom bar** (Priority 3, 2026-09-20): the floating round button in the corner became a full-width **Add character** bar pinned under the list, so it no longer covers the last row's star and fire icons. The list scrolls in its own space above it. The archive view has no bar. Not released yet.
+- **Star / hard from the character screen** (Priority 4, 2026-09-20): **Favorite** and **Hard** buttons directly under the character box, styled like the Typed/Handwritten pair, with the same icons, colors and instant behaviour as the list rows. Released in 1.4.0.
 
-- **Photo + references while adding a character** (Priority 3, 2026-09-20): the Add character screen now has **Photo** and **References** sections alongside Tags. Both need the character's id, so they're held in the screen's state and written straight after `addCharacter` returns — cancelling writes nothing, not even a stray photo copy. See `decisions_log.md`. Not released yet.
+- **"Add character" in a fixed bottom bar** (Priority 3, 2026-09-20): the floating round button in the corner became a full-width **Add character** bar pinned under the list, so it no longer covers the last row's star and fire icons. The list scrolls in its own space above it. The archive view has no bar. Released in 1.3.1.
 
-- **Tags screen / managed tags** (Priority 3, 2026-09-20): **Tags** in the ☰ side menu — every tag with its character count, orphans greyed at 0. A tag's own screen lists its characters, adds or removes them in one checklist, renames (merging if the name exists) and deletes. Tags are now chosen with a picker on the Add and character screens instead of typed as free text, and tag chips open the tag. No database change. See `decisions_log_tags.md`. Not released yet.
+- **Photo + references while adding a character** (Priority 3, 2026-09-20): the Add character screen now has **Photo** and **References** sections alongside Tags. Both need the character's id, so they're held in the screen's state and written straight after `addCharacter` returns — cancelling writes nothing, not even a stray photo copy. See `decisions_log.md`. Released in 1.3.1.
 
-- **Photo delete button moved away from Home** (Priority 4, 2026-09-20): on a photo's screen, **Delete photo** left the app bar and became a labelled button at the bottom, below the linked characters, next to a new **Unlink all** button. The app bar now holds only Home. See `decisions_log_photo_gallery.md`. Not released yet.
+- **Tags screen / managed tags** (Priority 3, 2026-09-20): **Tags** in the ☰ side menu — every tag with its character count, orphans greyed at 0. A tag's own screen lists its characters, adds or removes them in one checklist, renames (merging if the name exists) and deletes. Tags are now chosen with a picker on the Add and character screens instead of typed as free text, and tag chips open the tag. No database change. See `decisions_log_tags.md`. Released in 1.3.0.
+
+- **Photo delete button moved away from Home** (Priority 4, 2026-09-20): on a photo's screen, **Delete photo** left the app bar and became a labelled button at the bottom, below the linked characters, next to a new **Unlink all** button. The app bar now holds only Home. See `decisions_log_photo_gallery.md`. Released in 1.3.0.
 
 - **Released 1.2.0** (2026-09-20): photo gallery (with feedback round), side menu, "Go to character screen" in flashcards (shown after revealing), drawing on both flashcard sides, a Home button in the gallery, redesigned flashcard options (card dropdown: All / Hard only / Favorites only; direction dropdown with Bidirectional), 🔥 fire icon for hard, color themes in Settings (8 palettes, schema version 3).
 
