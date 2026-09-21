@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../data/photo_entry.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
@@ -15,7 +16,7 @@ import '../tags/tag_detail_screen.dart';
 
 /// Detail screen for one character: a character window (typed/handwritten
 /// toggle) and a translation window (definition, flashcard stats, notes,
-/// tags, references, photos), side by side on wide screens or stacked on narrow
+/// tags, references), side by side on wide screens or stacked on narrow
 /// ones — a responsive breakpoint stands in for a custom draggable divider,
 /// which was explicitly deferred to a later version. Archive/delete for
 /// this character live at the very bottom of the screen.
@@ -33,12 +34,24 @@ class CharacterDetailScreen extends StatefulWidget {
   State<CharacterDetailScreen> createState() => _CharacterDetailScreenState();
 }
 
+/// Which face of the character the box at the top is showing.
+///
+/// Was a single `_showHandwritten` bool until 2026-09-21, when photos
+/// became the third option.
+enum _CharacterView { typed, handwritten, photos }
+
 class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
-  bool _showHandwritten = false;
+  _CharacterView _view = _CharacterView.typed;
   final _referenceSearchController = TextEditingController();
+
+  /// Drives the photo carousel. The arrows either side of the box animate
+  /// it; a swipe moves it directly and reports back through onPageChanged.
+  final _photoPageController = PageController();
+  int _photoPage = 0;
 
   @override
   void dispose() {
+    _photoPageController.dispose();
     _referenceSearchController.dispose();
     super.dispose();
   }
@@ -325,67 +338,219 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     );
   }
 
+  /// One of the three buttons above the box. The selected one fills in,
+  /// the same look the Favorite/Hard pair below the box uses.
+  Widget _viewButton(_CharacterView view, String label) {
+    return OutlinedButton(
+      style: _view == view ? _selectedButtonStyle(context) : null,
+      onPressed: () => setState(() => _view = view),
+      child: Text(label),
+    );
+  }
+
+  /// Steps the carousel, **wrapping around** at either end: forward from
+  /// the last photo lands on the first (2026-09-21).
+  ///
+  /// A wrap is a [jumpToPage], not an animation — animating from the last
+  /// photo to the first would scroll backwards past every photo in between,
+  /// which looks like the arrow did the opposite of what you asked. Normal
+  /// steps still animate.
+  void _movePhoto(int delta, int count) {
+    if (count < 2) return;
+    final next = (_photoPage + delta) % count; // Dart's % is never negative
+    final wrapping = (delta > 0 && _photoPage == count - 1) ||
+        (delta < 0 && _photoPage == 0);
+    if (wrapping) {
+      _photoPageController.jumpToPage(next);
+    } else {
+      _photoPageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  /// A round, outlined arrow either side of the carousel. It both says
+  /// "this swipes" and does the swipe, for anyone who'd rather tap.
+  /// Chosen over dots (2026-09-21).
+  ///
+  /// Only disabled when there is nothing to move between — one photo, or
+  /// none. Otherwise both arrows always work, because the run wraps.
+  Widget _carouselArrow({
+    required bool forward,
+    required bool enabled,
+    required int count,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: IconButton(
+        tooltip: forward ? 'Next photo' : 'Previous photo',
+        onPressed: enabled ? () => _movePhoto(forward ? 1 : -1, count) : null,
+        icon: Icon(forward ? Icons.chevron_right : Icons.chevron_left),
+        style: IconButton.styleFrom(
+          shape: CircleBorder(side: BorderSide(color: colors.outline)),
+          minimumSize: const Size(36, 36),
+          padding: EdgeInsets.zero,
+        ),
+      ),
+    );
+  }
+
+  /// The carousel, flanked by its arrows. The arrows sit OUTSIDE the box
+  /// (and only exist in this view), so the typed and handwritten faces keep
+  /// the exact layout they always had.
+  Widget _buildPhotoRow(CharacterEntry entry, List<PhotoEntry> photos) {
+    // Both arrows stay live whenever there's more than one photo, since
+    // the run wraps; with a single photo there is nowhere to go.
+    final canMove = photos.length > 1;
+    return Row(
+      children: [
+        if (photos.isNotEmpty)
+          _carouselArrow(
+            forward: false,
+            enabled: canMove,
+            count: photos.length,
+          ),
+        Expanded(
+          child: SizedBox(
+            height: 240,
+            child: _buildPhotoCarousel(entry, photos),
+          ),
+        ),
+        if (photos.isNotEmpty)
+          _carouselArrow(
+            forward: true,
+            enabled: canMove,
+            count: photos.length,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPhotoCarousel(CharacterEntry entry, List<PhotoEntry> photos) {
+    // A photo can be deleted from its own screen while _photoPage still
+    // points past the end of the list, so the index is corrected rather
+    // than trusted.
+    if (_photoPage >= photos.length) _photoPage = 0;
+    if (photos.isEmpty) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('No photos of this character yet'),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () => _addPhoto(entry),
+            icon: const Icon(Icons.add_a_photo_outlined),
+            label: const Text('Add photo'),
+          ),
+        ],
+      );
+    }
+    return PageView.builder(
+      controller: _photoPageController,
+      itemCount: photos.length,
+      onPageChanged: (index) => setState(() => _photoPage = index),
+      itemBuilder: (context, index) {
+        final photo = photos[index];
+        return InkWell(
+          // The photo's own screen is where the note, its other characters
+          // and delete live; this is only a viewer.
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PhotoViewerScreen(
+                store: widget.store,
+                photoId: photo.id,
+              ),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: PhotoImage(
+              store: widget.store,
+              photo: photo,
+              fit: BoxFit.contain,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildCharacterWindow(CharacterEntry entry) {
+    final photos = widget.store.photosFor(entry.id);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Three faces of the same box: the typed character, your drawing,
+          // and (2026-09-21) the photos linked to this character. A Wrap so
+          // the third button drops to its own line rather than overflowing
+          // on a narrow phone.
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              OutlinedButton(
-                style: _showHandwritten ? null : _selectedButtonStyle(context),
-                onPressed: () => setState(() => _showHandwritten = false),
-                child: const Text('Typed'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                style: _showHandwritten ? _selectedButtonStyle(context) : null,
-                onPressed: () => setState(() => _showHandwritten = true),
-                child: const Text('Handwritten'),
-              ),
+              _viewButton(_CharacterView.typed, 'Typed'),
+              _viewButton(_CharacterView.handwritten, 'Handwritten'),
+              _viewButton(_CharacterView.photos, 'Photos'),
             ],
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            height: 240,
-            child: !_showHandwritten
-                ? Center(
-                    child: Text(
-                      entry.typedCharacter,
-                      style: const TextStyle(fontSize: 96),
-                    ),
-                  )
-                : entry.handwrittenSample != null
-                    ? Container(
-                        decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey)),
-                        child: HandwritingCanvas(
-                          readOnly: true,
-                          initialStrokes: entry.handwrittenSample,
-                        ),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text('No handwriting saved yet'),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () => _redrawHandwriting(entry),
-                            child: const Text('Draw now'),
-                          ),
-                        ],
+          if (_view == _CharacterView.photos)
+            _buildPhotoRow(entry, photos)
+          else
+            SizedBox(
+              height: 240,
+              child: _view == _CharacterView.typed
+                  ? Center(
+                      child: Text(
+                        entry.typedCharacter,
+                        style: const TextStyle(fontSize: 96),
                       ),
-          ),
-          if (_showHandwritten && entry.handwrittenSample != null)
+                    )
+                  : entry.handwrittenSample != null
+                      ? Container(
+                          decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey)),
+                          child: HandwritingCanvas(
+                            readOnly: true,
+                            initialStrokes: entry.handwrittenSample,
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('No handwriting saved yet'),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () => _redrawHandwriting(entry),
+                              child: const Text('Draw now'),
+                            ),
+                          ],
+                        ),
+            ),
+          if (_view == _CharacterView.handwritten &&
+              entry.handwrittenSample != null)
             TextButton(
               onPressed: () => _redrawHandwriting(entry),
               child: const Text('Redraw'),
             ),
-          if (!_showHandwritten)
+          if (_view == _CharacterView.typed)
             TextButton(
               onPressed: () => _editTypedCharacter(entry),
               child: const Text('Edit character'),
+            ),
+          // The empty state has its own Add photo button, so this one only
+          // shows when there's already something in the carousel.
+          if (_view == _CharacterView.photos && photos.isNotEmpty)
+            TextButton.icon(
+              onPressed: () => _addPhoto(entry),
+              icon: const Icon(Icons.add_a_photo_outlined),
+              label: const Text('Add photo'),
             ),
           const SizedBox(height: 8),
           // Favorite and hard, directly under the character box
@@ -600,75 +765,28 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
               },
             ),
           const Divider(height: 24),
-          _buildPhotosSection(entry),
         ],
       ),
     );
   }
 
-  /// Photos of this character seen out and about: a row of thumbnails
-  /// (tap to open) and an "add" tile. New photos are linked to this
-  /// character; link more characters from the photo's own screen.
-  Widget _buildPhotosSection(CharacterEntry entry) {
-    final photos = widget.store.photosFor(entry.id);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Photos', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 88,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              for (final photo in photos)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: InkWell(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PhotoViewerScreen(
-                          store: widget.store,
-                          photoId: photo.id,
-                        ),
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: SizedBox(
-                        width: 88,
-                        height: 88,
-                        child: PhotoImage(store: widget.store, photo: photo),
-                      ),
-                    ),
-                  ),
-                ),
-              InkWell(
-                onTap: () => _addPhoto(entry),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.add_a_photo_outlined),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
+  /// Adds a photo already linked to this character. `photosFor` is newest
+  /// first, so the new one becomes page 0 and the carousel jumps to it.
   Future<void> _addPhoto(CharacterEntry entry) async {
     final file = await pickPhoto(context);
     if (file == null) return;
     await widget.store.addPhoto(file, characterIds: [entry.id]);
     if (!mounted) return;
+    setState(() => _photoPage = 0);
+    // After the frame: the PageView has to rebuild with the new photo in it
+    // before the controller can be moved onto it. Without this the viewport
+    // keeps its old offset and you'd be looking at a different photo than
+    // the one you just took.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _photoPageController.hasClients) {
+        _photoPageController.jumpToPage(0);
+      }
+    });
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
       content: Text('Photo added. Tap it to add a note or link more '
           'characters.'),

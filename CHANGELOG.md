@@ -4,6 +4,11 @@ What changed in each release installed on the phone. Newest first.
 How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
+## 1.5.0 — 2026-09-21
+
+- **A Photos button on the character screen.** A third button next to **Typed** and **Handwritten**. It turns the same box into a carousel of the photos linked to this character — swipe between them, or use the round arrows either side. Tap one to open its full screen, where the note, its other characters and delete live.
+  - The old strip of small thumbnails further down the screen is gone; this replaces it. **Add photo** is now under the carousel, and the empty state offers it too.
+
 ## 1.4.0 — 2026-09-20
 
 - **Flashcards: show the character as text only, or text + your drawing.** A third dropdown next to the other two. Recognising your own handwriting is a way of cheating — it doesn't help when the same character turns up on a menu — so **Text only** takes that away. Unlike the other two dropdowns this one is **remembered between sessions**, and it's included in backups.
