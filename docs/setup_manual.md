@@ -2,7 +2,7 @@
 
 This is a living checklist of everything needed to develop and run this app, kept up to date as the project grows (see the documentation convention in the root `README.md`). Windows-specific, since that's the machine this project lives on. Work through the phases in order — later phases build on earlier ones.
 
-One important thing to know going in (this applies again to the 2026-09-19 SQLite + Drift change): the code in this project was hand-written and carefully hand-reviewed, but it was never compiled or run anywhere before reaching you — the environment used to build it has no path to installing Flutter or reaching pub.dev (see `docs/decisions_log.md`'s "Sandbox constraint" entry for the full story). That means step 7 below (`flutter pub get` + `flutter analyze` + `flutter test`) is this code's real first check, not a formality. If `flutter analyze` turns up anything, that's expected to be genuinely possible, not a sign something went wrong on your end — just paste the output back and it'll get fixed.
+One thing to know going in: code written for this project in an assistant session is **never compiled or run before it reaches you** — that environment can't install Flutter or reach pub.dev (see `docs/known_limitations.md`). So `flutter analyze` + `flutter test` on your own machine is the real first check, not a formality. If analyze turns something up, that's genuinely possible rather than a sign something went wrong on your end — paste the output back and it gets fixed.
 
 ## Phase 1 — Core Flutter setup
 
@@ -150,10 +150,18 @@ After this, future releases install over the top and keep your data.
    ```
    git add -A
    git commit -m "Release 1.1.0"
-   git tag v1.1.0
-   git push --tags
+   git tag -a v1.1.0 -m "What changed in one line"
+   git push
+   git push origin v1.1.0
    ```
    The tag marks exactly which code is on your phone.
+   - ⚠️ **`git push --tags` on its own is not enough** — it pushes tags and
+     *not* your commits, so GitHub ends up with a tag pointing at a commit
+     it doesn't have. Push the commits first, then the tag. (`git push
+     --follow-tags` does both in one go, for annotated tags only.)
+   - `-a` makes an **annotated** tag, which stores who made it, when, and a
+     message. `git tag v1.1.0` alone makes a lightweight tag — just a
+     pointer, no metadata. Use `-a` for anything you release.
 
 ---
 

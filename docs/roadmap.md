@@ -16,6 +16,8 @@ logs hold the reasoning.
 - **New ideas go straight to Inbox, unsorted.** Triage later; don't let
   "where does this go" stop you writing it down.
 
+**What's *true today*, rather than planned, is in `known_limitations.md`.**
+
 ---
 
 ## Next up — 1.6.0
@@ -51,12 +53,48 @@ Each of these is a project, not an afternoon.
 
 | What | Notes |
 |------|-------|
-| **Handwriting recognition** | Fully designed and parked. Self-learning template matching against your own saved drawings — no internet, no bundled model. The complete write-up, including the data-model implication, is in **`future_ideas.md`**. |
+| **Handwriting recognition** | Fully designed and parked, 2026-07-19. The design is written out under the table below. |
 | **Audio pronunciation** | Record and play back a character. Never designed. |
 | **Stroke-order playback** | The data is already being captured — the handwriting model records a timestamp per point precisely so this could be added later without changing what's stored. |
 | **Backup merging, or a "last backed up N days ago" nudge** | Restore replaces everything today; merging two dictionaries is a different and much harder job. |
 | **Draggable divider between the character and translation windows** | Deliberately deferred until real usage showed what was worth making resizable. It still hasn't. |
-| **Live database queries instead of loading everything into memory** | `DictionaryStore` still loads every character at startup and filters in Dart. Fine at personal scale. `limitations_and_roadmap.md` lists the three things that would make this worth doing. |
+| **Live database queries instead of loading everything into memory** | `DictionaryStore` still loads every character at startup and filters in Dart. Fine at personal scale. `known_limitations.md` lists the three things that would make this worth doing. |
+
+### Handwriting recognition — the parked design
+
+Kept here in full so picking it up doesn't mean re-deciding it. Parked
+2026-07-19 as too much engineering for what it would add to a nearly-empty
+dictionary.
+
+**The idea.** With no internet and no bundled model, recognition works by
+comparing a new drawing against the handwriting samples already stored for
+*your own* characters. Nothing leaves the device. This fits the app's
+self-building framing: a brand-new dictionary recognises almost nothing,
+and accuracy grows as you add characters — entirely from your own data.
+
+**How it would work.** Resample each stroke to a fixed number of evenly
+spaced points and normalise the character to a fixed bounding box, so
+drawings compare regardless of size, speed or position. Match with a
+point-cloud approach in the spirit of the **$P recognizer**, which tolerates
+strokes drawn in a different order or count from the stored sample — a real
+concern for handwritten Chinese, where stroke order varies person to
+person. The lowest-distance templates become the top-3 suggestions.
+
+**Why it was parked.** It's a genuine algorithm to design and tune —
+resampling, normalisation, distance scoring, and a sensible threshold for
+"no good match". And it's least useful exactly when it's hardest to get
+right: a new dictionary has nothing to compare against.
+
+**The data-model implication, which is the easy thing to forget.** The app
+stores **one** drawing per character, overwritten on every redraw, no
+history. Recognition needs its own store of *one or more reference
+templates* per character, separate from the single current drawing. That's
+a schema change, not just a new screen.
+
+**A refinement if revisited:** save an extra template each time a character
+is redrawn correctly during recognition, so frequently-practised characters
+keep getting easier to match instead of staying pinned to one original
+sample.
 
 ---
 

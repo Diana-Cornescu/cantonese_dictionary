@@ -4,26 +4,24 @@ A fully local, offline-first dictionary app for Cantonese characters — you add
 
 ## Status
 
-v1 implemented — all screens, local storage, and tests are written, and this is the first version ready for you to build and run. It was hand-written and hand-reviewed without a compiler available (the build environment couldn't reach the Flutter/Dart tooling — see `docs/decisions_log.md`'s 2026-07-20 entry), so your first `flutter pub get` / `flutter analyze` / `flutter test` on your own machine, per `docs/setup_manual.md`, is this code's real first verification pass. See `docs/design_plan.md` for the full architecture (tech stack, data model, screens, export format) and `docs/decisions_log.md` for a dated record of how we got here.
+Released and in daily use on an Android phone, and runnable on Windows for development. See `CHANGELOG.md` for what shipped when, `docs/roadmap.md` for what's next, and `docs/known_limitations.md` for what it still can't do.
 
-**2026-09-19:** storage moved from a single JSON file to a local **SQLite database via Drift**, still fully offline and on-device. The screens are unchanged. Verified working on 2026-09-19. After changing any table, rerun code generation (see "Database code generation" in `docs/setup_manual.md`). Full reasoning is in `docs/decisions_log_sqlite_drift.md`.
+**Storage** is a local **SQLite database via Drift**, fully offline and on-device. After changing any table, rerun code generation (see "Database code generation" in `docs/setup_manual.md`). Full reasoning is in `docs/decisions/storage.md`.
 
 ## Documentation
 
 - `docs/roadmap.md` — **what's next**: everything ahead, in release-sized buckets. Nothing that already shipped.
+- `docs/known_limitations.md` — what's true of the app *today*: what it can't do, and why.
+- `docs/setup_manual.md` — a running checklist of everything needed to develop, run and release the app. Phase 6 is the release process.
+- `docs/decisions/` — **one file per area, recording what was decided and why.** Read the code for *how*; these explain what the code can't tell you.
+  - `ui-conventions.md` — the rules that apply across every screen (confirmations, what the three colors mean, the two "selected" looks, where destructive actions go).
+  - `tags.md`, `photos.md`, `storage.md`, `backup-and-release.md` — one per feature area.
+- `CHANGELOG.md` (repo root) — what changed in each release, in plain language. This is the project's history; the docs above only describe the present and the future.
 
-- `docs/design_plan.md` — the living architecture/design plan for the app.
-- `docs/future_ideas.md` — long write-ups for work that was designed properly and then deliberately not built (handwriting recognition). Named in one line from the roadmap; the detail lives here.
-- `docs/decisions_log_photo_gallery.md` — decisions and reasoning for the photo gallery (schema version 2).
-- `docs/decisions_log_backup_and_release.md` — decisions and reasoning for backup & restore, the signing key, and versioning releases.
-- `CHANGELOG.md` — what changed in each release installed on the phone.
-- `docs/decisions_log_sqlite_drift.md` — the dated decisions, reasoning and TL;DR for the move from a JSON file to SQLite + Drift (kept separate so it's easy to find).
-- `docs/decisions_log.md` — a running, dated record of notable decisions, pivots, and challenges as the app moves from plan to build.
-- `docs/limitations_and_roadmap.md` — what's true of the app today: current limitations and storage trade-offs. (No longer holds a roadmap.)
-- `docs/setup_manual.md` — a running checklist of everything needed to develop and run the app, and the steps to set each piece up.
+**Writing a decision log:** one file per area under `docs/decisions/`, named for the area rather than dated. Record **what was decided and why it mattered**, not how it was implemented — the code covers how. The exception is a *how* the code can't explain on its own: an ordering that isn't obvious, a trap that cost real time, a constant whose value matters. Those belong in the log.
 
 ## Development conventions
 
 - **No servers, no external services.** Everything the app does — storage, character lookups, backups — runs entirely on-device. No network permissions are requested.
-- **Docs travel with every change.** Any change to functionality, scope, or architecture gets a matching update to this README and to whichever file(s) under `docs/` it affects (the design plan, the setup manual, the decisions log, and/or the future-ideas doc), in the same pass — not as a separate follow-up step. If you're a future session picking this project back up: read `docs/decisions_log.md` first, it's the fastest way to get current.
+- **Docs travel with every change.** Any change to functionality, scope or architecture gets a matching update to this README and to whichever file(s) under `docs/` it affects, in the same pass — not as a follow-up step. If you're a future session picking this project up: read `CHANGELOG.md`'s newest entry, then `docs/roadmap.md`. That's the fastest way to get current.
 - **Confirm before destructive/content edits.** Editing a definition, notes, or tags, archiving, or deleting always goes through a confirmation dialog. Star/hard shortlist toggles are the deliberate exception and stay instant.
