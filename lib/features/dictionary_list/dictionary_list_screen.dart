@@ -15,7 +15,7 @@ import '../tags/tags_screen.dart';
 /// The dictionary list screen, used both as the app's home/row-view screen
 /// (active characters, with search, and entry points into flashcard mode,
 /// photos, tags, settings (backup & restore), adding a new character, and
-/// the archive) and — when
+/// the archive; the menu also lists this screen itself) and — when
 /// [isArchiveView] is true — as a pushed "Archived characters" screen with
 /// its own back arrow and title, reached via the archive icon rather than
 /// an in-place toggle.
@@ -96,6 +96,16 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
               ),
             ),
             const Divider(),
+            // The screen the menu is on. It does nothing but close the
+            // menu, and it's marked selected — it's here so the menu lists
+            // every area of the app, including where you already are,
+            // rather than only the ways out (2026-09-21).
+            ListTile(
+              selected: true,
+              leading: const Icon(Icons.list_alt_outlined),
+              title: const Text('Characters list'),
+              onTap: () => Navigator.pop(context),
+            ),
             ListTile(
               // Rotated 90° clockwise, as on the old top-bar button.
               leading: const RotatedBox(

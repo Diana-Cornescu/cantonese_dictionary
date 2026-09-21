@@ -205,3 +205,5 @@ No open questions remain from the initial planning round. Ready to move into imp
 
 - **Typed / Handwritten / Photos kept the theme fill** (2026-09-21, after briefly losing it). They pick a *view*; they aren't flags on the character, so they have no gold or red of their own to compete with, and the theme fill is the one splash of color on the screen. Two different jobs, two different looks, in the same box on purpose.
 - The buttons' **label color is still the theme's**, deliberately: it's text on a plain background, not a block of color, and it keeps the screen from going entirely monochrome.
+- **Notes moved above the flashcard stats** on the character screen (2026-09-21). Notes expand on the definition, so they belong with it; the stats are a footer about how practice is going, not part of what the character means. Order is now Definition, Notes, Flashcard stats, Tags, References.
+- **The side menu lists "Characters list" first** (2026-09-21), marked selected. It only closes the menu — you're already there. The menu now names every area of the app including the one you're on, rather than only the ways out of it.

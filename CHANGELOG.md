@@ -6,6 +6,8 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
 ## 1.5.0 — 2026-09-21
 
+- **Notes moved up**, to sit under the definition instead of under the flashcard stats.
+- **"Characters list" at the top of the ☰ menu**, so the menu names every part of the app including the screen you're on.
 - **A Photos button on the character screen.** A third button next to **Typed** and **Handwritten**. It turns the same box into a carousel of the photos linked to this character — swipe between them, or use the round arrows either side. Tap one to open its full screen, where the note, its other characters and delete live.
   - The old strip of small thumbnails further down the screen is gone; this replaces it. **Add photo** is now under the carousel, and the empty state offers it too.
 

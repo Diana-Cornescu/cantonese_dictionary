@@ -686,6 +686,20 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           Text(
               entry.definition.isEmpty ? '(no definition yet)' : entry.definition),
           const Divider(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Text('Notes',
+                    style: Theme.of(context).textTheme.titleMedium),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => _editNotes(entry),
+              ),
+            ],
+          ),
+          Text(entry.notes.isEmpty ? '(no notes)' : entry.notes),
+          const Divider(height: 24),
           Text('Flashcard stats',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
@@ -702,20 +716,6 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           Text(stats.lastReviewedAt == null
               ? 'Never reviewed yet'
               : 'Last reviewed: ${_formatDate(stats.lastReviewedAt!)}'),
-          const Divider(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: Text('Notes',
-                    style: Theme.of(context).textTheme.titleMedium),
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () => _editNotes(entry),
-              ),
-            ],
-          ),
-          Text(entry.notes.isEmpty ? '(no notes)' : entry.notes),
           const Divider(height: 24),
           Row(
             children: [
