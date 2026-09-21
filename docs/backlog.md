@@ -20,7 +20,6 @@ _Nothing left. Everything below moves up._
 
 | Item | Notes | Source |
 |------|-------|--------|
-| **Photo + references while adding a character** | The Add character screen should be able to attach a photo and link references to other characters, instead of having to save first and then edit. | You, 2026-09-20 (phone note) |
 | **"Add character" in its own fixed bar at the bottom** | Today it's a small floating square in the bottom-right corner that sits on top of the character rows and hides them. Make it a proper bottom section of the home screen, frozen in place, with the list scrolling independently above it. | You, 2026-09-20 (phone note) |
 
 ## Priority 4
@@ -63,6 +62,8 @@ _Nothing left. Everything below moves up._
 - **Remove the debug banner** (2026-09-19): not needed. The "DEBUG" corner banner only appears in debug builds, and release builds never show it. If it ever showed up in a release build, it would come back here as Priority 2.
 
 ## Done
+
+- **Photo + references while adding a character** (Priority 3, 2026-09-20): the Add character screen now has **Photo** and **References** sections alongside Tags. Both need the character's id, so they're held in the screen's state and written straight after `addCharacter` returns — cancelling writes nothing, not even a stray photo copy. See `decisions_log.md`. Not released yet.
 
 - **Tags screen / managed tags** (Priority 3, 2026-09-20): **Tags** in the ☰ side menu — every tag with its character count, orphans greyed at 0. A tag's own screen lists its characters, adds or removes them in one checklist, renames (merging if the name exists) and deletes. Tags are now chosen with a picker on the Add and character screens instead of typed as free text, and tag chips open the tag. No database change. See `decisions_log_tags.md`. Not released yet.
 

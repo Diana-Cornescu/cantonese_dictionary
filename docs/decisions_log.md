@@ -138,3 +138,12 @@ No open questions remain from the initial planning round. Ready to move into imp
 - The 2026-07-19 decision "tags stay free-text for v1, a managed tag list is parked" is now **superseded**. Tags have their own screen, a picker instead of a free-text field, and rename/merge/delete.
 - **No tables changed** — the `tags` / `character_tags` tables from decision 2 already held everything; nothing had ever read the tag list as a whole. **No `build_runner` run needed.**
 - Full reasoning in **`decisions_log_tags.md`**.
+
+## 2026-09-20 — Photo and references while adding a character
+
+- **Request:** the Add character screen should attach a photo and link references there and then, instead of saving first and editing afterwards.
+- **The constraint:** both need the character's **id**, which SQLite only assigns on insert. A photo link is a `photo_characters` row and a reference is a `character_references` pair — neither can exist before the character does.
+- **Decision: hold them in the screen's state, write them straight after the insert.** `addCharacter` returns the stored entry, so `_save` then calls `addReference` for each chosen character and `addPhoto` for the picked file.
+- **Cancelling writes nothing.** In particular the photo is only the picker's temporary file until save, so backing out never leaves a stray copy in the app's photos folder.
+- **References are symmetric** (they always have been), so one added here also appears on the other character's screen.
+- The photo's **note** is not asked for here — it's one more field in the way of adding a character. Add it from the photo's own screen.

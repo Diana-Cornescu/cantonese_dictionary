@@ -5,8 +5,18 @@ How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
 ## 1.3.0 — 2026-09-20
+
+- **Add a photo and references while adding a character.** The Add character screen now has **Photo** and **References** sections next to Tags, so a new character can arrive complete instead of needing a second pass to edit it. Cancelling writes nothing at all.
+- **Tags have their own screen.** **Tags** in the ☰ side menu lists every tag with how many characters carry it. Tags nobody uses any more are shown greyed at "0 characters" rather than hidden, so a typo'd tag is findable instead of stuck in the database.
+  - Tap a tag for its own screen: the characters that have it (tap one to open it), **Add or remove characters** in a single checklist like the one the photo screen uses, **rename**, and **delete**.
+  - **Renaming onto a tag that already exists merges the two** (it asks first). That's the fix for ending up with both "food" and "Food".
+  - Deleting a tag removes it from every character; the characters themselves are kept.
+  - **+** makes an empty tag and opens it, so you can create one and fill it afterwards.
+- **Tags are now picked, not typed.** On the Add character screen and on a character's screen, the comma-separated text box is replaced by a picker: tick the tags that already exist, or type a new one to create it. A tag can no longer contain a comma, which would have silently split it in two.
+- **Tag chips open their tag.** Tapping a tag on a character's screen opens that tag's list, the same way a photo's linked characters open theirs.
 - **Photos**: move delete button and add a unlink all button.
-- 
+  - **Delete photo** left the top bar, where it sat right next to **Home** and was easy to hit by mistake. It's now a labelled button at the bottom of the photo screen, below the linked characters.
+  - **Unlink all** sits next to it: it drops every character link but keeps the photo, which then turns up under the gallery's "Unlinked only" filter.
 
 ## 1.2.0 — 2026-09-20
 
