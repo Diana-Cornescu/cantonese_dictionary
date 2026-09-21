@@ -1,9 +1,8 @@
-# Decisions Log — Photo Gallery
+# Photos
 
-**Started:** 2026-09-20
-**Status:** ✅ Released in **1.2.0** (2026-09-20).
+**Decided 2026-09-20. Shipped in 1.2.0**, with follow-ups in 1.3.0 and 1.5.0.
 
-This file is separate from the other decision logs on purpose, so these decisions are easy to find. Add a new dated section whenever a decision here changes.
+
 
 ---
 

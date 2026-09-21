@@ -1,9 +1,8 @@
-# Decisions Log — SQLite + Drift Backend Migration
+# Storage — SQLite + Drift
 
-**Started:** 2026-09-19
-**Status:** ✅ Done and verified 2026-09-19. Build, analyze, tests and manual testing all pass. Export/backup (#7) postponed.
+**Decided and shipped 2026-09-19.** Replaced a single hand-written JSON file.
 
-This file is kept separate from `decisions_log.md` on purpose, so the database migration decisions are easy to find. Add a new dated section whenever a decision here changes.
+
 
 ---
 
@@ -39,7 +38,7 @@ This file is kept separate from `decisions_log.md` on purpose, so the database m
 | # | Topic | Decision | Why |
 |---|-------|----------|-----|
 | 1 | Existing JSON data | **Start fresh.** No import step. | Current data is fake test data, so an importer would be wasted effort. |
-| 2 | Tags | **Separate `tags` table + `character_tags` link table**, built now. Tag-picker UI later. | Adding it now is cheap. Adding it later needs a data migration. Enables rename-once, filter-by-tag, and pick-from-existing (designed in `future_ideas.md`). |
+| 2 | Tags | **Separate `tags` table + `character_tags` link table**, built now. Tag-picker UI later. | Adding it now is cheap. Adding it later needs a data migration. Enables rename-once, filter-by-tag, and pick-from-existing (built in 1.3.0 — see `tags.md`). |
 | 3 | Handwriting strokes | **One blob per character**, stored as packed binary rather than JSON text. | Nothing needs to search inside individual points. Packed binary is roughly 3x smaller than JSON text. See the size notes below. |
 | 4 | Flashcard stats | **Counters only**: seen / correct / incorrect / last reviewed, updated in place (+1, new date). No per-answer history log. | Matches how the stats are actually used today. Progress-over-time and spaced repetition aren't wanted. If they ever are, a log table can be added then; history before that point just won't exist (accepted). |
 | 5 | Photo gallery | **Create a `character_photos` table now; build the screens later.** Photos are stored as **image files** in the app folder, and the database stores only each file's path and which character it belongs to. | Standard practice. Putting images inside the database bloats it and slows every query. |

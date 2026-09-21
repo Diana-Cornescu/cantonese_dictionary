@@ -12,6 +12,12 @@ Update this whenever a limitation is fixed or a new one turns up, per the
   it; the app doesn't guess it from your drawing. Fully designed and parked
   — the write-up is in `roadmap.md` under Someday.
 
+- **No internet, at all.** Not a limitation so much as a deliberate
+  guarantee — the Android manifest requests no permissions, so network
+  access is impossible rather than merely unused. See
+  `decisions/network.md`; it's the reason backups go through the system
+  file picker.
+
 - **No cloud backup or automatic sync.** Data lives on the device. You can
   back everything up (database + photos) to one `.zip` through Settings and
   restore it on any device, including after reinstalling, and you choose

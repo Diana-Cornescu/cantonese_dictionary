@@ -15,6 +15,7 @@ Released and in daily use on an Android phone, and runnable on Windows for devel
 - `docs/setup_manual.md` — a running checklist of everything needed to develop, run and release the app. Phase 6 is the release process.
 - `docs/decisions/` — **one file per area, recording what was decided and why.** Read the code for *how*; these explain what the code can't tell you.
   - `ui-conventions.md` — the rules that apply across every screen (confirmations, what the three colors mean, the two "selected" looks, where destructive actions go).
+  - `network.md` — why the Android manifest requests no permissions at all, and what that guarantees.
   - `tags.md`, `photos.md`, `storage.md`, `backup-and-release.md` — one per feature area.
 - `CHANGELOG.md` (repo root) — what changed in each release, in plain language. This is the project's history; the docs above only describe the present and the future.
 

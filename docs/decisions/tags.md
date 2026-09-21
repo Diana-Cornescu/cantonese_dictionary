@@ -1,11 +1,8 @@
-# Decisions Log — Tags
+# Tags
 
-**Started:** 2026-09-20
-**Status:** 🚧 Built, not released yet.
+**Decided 2026-09-20. Shipped in 1.3.0.**
 
-This file is separate from the other decision logs on purpose, so these
-decisions are easy to find. Add a new dated section whenever a decision
-here changes.
+
 
 ---
 
@@ -24,7 +21,7 @@ here changes.
   No more retyping a comma-separated string.
 - **Tag chips are tappable** on a character's screen and open that tag.
 - **No database changes.** The tables were already there (decision 2 in
-  `decisions_log.md`); they just had no UI. **No `build_runner` run needed.**
+  `storage.md`); they just had no UI. **No `build_runner` run needed.**
 
 ---
 
