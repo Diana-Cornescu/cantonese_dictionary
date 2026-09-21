@@ -56,8 +56,17 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
 
   /// Delegates to the shared dialog, which owns (and disposes) its own
   /// controller — see `widgets/text_prompt_dialog.dart`.
-  Future<String?> _promptForText(String title, String initialValue) =>
-      promptForText(context, title: title, initialValue: initialValue);
+  Future<String?> _promptForText(
+    String title,
+    String initialValue, {
+    int maxLines = 5,
+  }) =>
+      promptForText(
+        context,
+        title: title,
+        initialValue: initialValue,
+        maxLines: maxLines,
+      );
 
   Future<void> _editTypedCharacter(CharacterEntry entry) async {
     final newValue = await _promptForText('Edit character', entry.typedCharacter);
@@ -78,7 +87,13 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   }
 
   Future<void> _editDefinition(CharacterEntry entry) async {
-    final newValue = await _promptForText('Edit definition', entry.definition);
+    // One line, so Enter saves and closes the keyboard (2026-09-20).
+    // Notes keep their multi-line box — that's where longer writing goes.
+    final newValue = await _promptForText(
+      'Edit definition',
+      entry.definition,
+      maxLines: 1,
+    );
     if (newValue == null) return;
     // A definition is required (2026-09-20), so it can't be emptied.
     if (newValue.trim().isEmpty) {

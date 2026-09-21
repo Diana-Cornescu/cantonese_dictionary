@@ -206,7 +206,13 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
                 labelText: 'Definition *',
                 border: OutlineInputBorder(),
               ),
-              maxLines: 4,
+              // One line since 2026-09-20: Enter closes the keyboard instead
+              // of adding a newline. It does NOT tap Save for you — the
+              // drawing above may not be finished, and Save is the one
+              // deliberate commit for a new character.
+              maxLines: 1,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
               // Re-check whether Save can be enabled as you type.
               onChanged: (_) => setState(() {}),
             ),

@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 /// A plain "edit this text" dialog. Resolves to the text as typed (not
 /// trimmed — callers decide), or null if cancelled or dismissed.
 ///
+/// With [maxLines] set to 1 the box becomes single-line and **Enter saves**
+/// — the keyboard's action key reads "done" and closes, instead of adding a
+/// newline you can't see in a one-line box (2026-09-20). Any line breaks
+/// already in [initialValue] are flattened to spaces on save, so an older
+/// multi-line value doesn't survive invisibly.
+///
 /// A [StatefulWidget] so the controller belongs to the widget that uses it
 /// and is disposed with it. Building the controller in the calling method
 /// and disposing it after `await showDialog` returns looks right but is
@@ -54,10 +60,20 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
   late final TextEditingController _controller =
       TextEditingController(text: widget.initialValue);
 
+  bool get _singleLine => widget.maxLines == 1;
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    final text = _controller.text;
+    Navigator.pop(
+      context,
+      _singleLine ? text.replaceAll('\n', ' ') : text,
+    );
   }
 
   @override
@@ -68,6 +84,8 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
         controller: _controller,
         autofocus: true,
         maxLines: widget.maxLines,
+        textInputAction: _singleLine ? TextInputAction.done : null,
+        onSubmitted: _singleLine ? (_) => _submit() : null,
         decoration: widget.hintText == null
             ? null
             : InputDecoration(hintText: widget.hintText),
@@ -78,7 +96,7 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
+          onPressed: _submit,
           child: Text(widget.confirmLabel),
         ),
       ],
