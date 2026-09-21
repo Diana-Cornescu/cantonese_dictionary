@@ -17,6 +17,12 @@ import '../tags/tags_screen.dart';
 /// [isArchiveView] is true — as a pushed "Archived characters" screen with
 /// its own back arrow and title, reached via the archive icon rather than
 /// an in-place toggle.
+///
+/// **Add character** is a fixed bar pinned under the list (2026-09-20). It
+/// used to be a floating round button in the bottom-right corner, which
+/// covered the last row's star and fire icons — the list had nothing to
+/// scroll past it into. Now the list scrolls in its own space above the bar
+/// and the last row is always reachable. The archive view has no bar.
 class DictionaryListScreen extends StatefulWidget {
   const DictionaryListScreen({
     super.key,
@@ -119,6 +125,36 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
 
   void _goHome() {
     Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  /// The fixed **Add character** bar under the list. A [Material] rather
+  /// than a plain [Container] so it draws a shadow over the rows as they
+  /// scroll under it, making it read as a separate section; [SafeArea]
+  /// keeps it clear of the phone's gesture bar.
+  Widget _buildAddBar(BuildContext context) {
+    return Material(
+      elevation: 8,
+      color: Theme.of(context).colorScheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: FilledButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddCharacterScreen(store: widget.store),
+              ),
+            ),
+            icon: const Icon(Icons.add),
+            label: const Text('Add character'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -254,20 +290,9 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                         },
                       ),
               ),
+              if (!widget.isArchiveView) _buildAddBar(context),
             ],
           ),
-          floatingActionButton: widget.isArchiveView
-              ? null
-              : FloatingActionButton(
-                  tooltip: 'Add character',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddCharacterScreen(store: widget.store),
-                    ),
-                  ),
-                  child: const Icon(Icons.add),
-                ),
         );
       },
     );

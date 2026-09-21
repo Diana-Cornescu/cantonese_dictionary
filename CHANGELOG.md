@@ -4,9 +4,11 @@ What changed in each release installed on the phone. Newest first.
 How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
-## 1.3.0 — 2026-09-20
-
+## 1.3.1 — 2026-09-20
+- **"Add character" is now a bar at the bottom of the home screen.** It used to be a round button floating in the corner, covering the last character's star and fire buttons. The list now scrolls in its own space above the bar, so every row is reachable.
 - **Add a photo and references while adding a character.** The Add character screen now has **Photo** and **References** sections next to Tags, so a new character can arrive complete instead of needing a second pass to edit it. Cancelling writes nothing at all.
+
+## 1.3.0 — 2026-09-20
 - **Tags have their own screen.** **Tags** in the ☰ side menu lists every tag with how many characters carry it. Tags nobody uses any more are shown greyed at "0 characters" rather than hidden, so a typo'd tag is findable instead of stuck in the database.
   - Tap a tag for its own screen: the characters that have it (tap one to open it), **Add or remove characters** in a single checklist like the one the photo screen uses, **rename**, and **delete**.
   - **Renaming onto a tag that already exists merges the two** (it asks first). That's the fix for ending up with both "food" and "Food".

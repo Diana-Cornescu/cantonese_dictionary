@@ -18,9 +18,7 @@ _Nothing left. Everything below moves up._
 
 ## Priority 3
 
-| Item | Notes | Source |
-|------|-------|--------|
-| **"Add character" in its own fixed bar at the bottom** | Today it's a small floating square in the bottom-right corner that sits on top of the character rows and hides them. Make it a proper bottom section of the home screen, frozen in place, with the list scrolling independently above it. | You, 2026-09-20 (phone note) |
+_Nothing left. Everything below moves up._
 
 ## Priority 4
 
@@ -62,6 +60,8 @@ _Nothing left. Everything below moves up._
 - **Remove the debug banner** (2026-09-19): not needed. The "DEBUG" corner banner only appears in debug builds, and release builds never show it. If it ever showed up in a release build, it would come back here as Priority 2.
 
 ## Done
+
+- **"Add character" in a fixed bottom bar** (Priority 3, 2026-09-20): the floating round button in the corner became a full-width **Add character** bar pinned under the list, so it no longer covers the last row's star and fire icons. The list scrolls in its own space above it. The archive view has no bar. Not released yet.
 
 - **Photo + references while adding a character** (Priority 3, 2026-09-20): the Add character screen now has **Photo** and **References** sections alongside Tags. Both need the character's id, so they're held in the screen's state and written straight after `addCharacter` returns — cancelling writes nothing, not even a stray photo copy. See `decisions_log.md`. Not released yet.
 

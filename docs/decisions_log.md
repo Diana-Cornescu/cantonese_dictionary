@@ -147,3 +147,12 @@ No open questions remain from the initial planning round. Ready to move into imp
 - **Cancelling writes nothing.** In particular the photo is only the picker's temporary file until save, so backing out never leaves a stray copy in the app's photos folder.
 - **References are symmetric** (they always have been), so one added here also appears on the other character's screen.
 - The photo's **note** is not asked for here — it's one more field in the way of adding a character. Add it from the photo's own screen.
+
+## 2026-09-20 — "Add character" moved into a fixed bottom bar
+
+- **Problem:** the round **+** floated over the bottom-right corner of the home list, covering the last row's ⭐ and 🔥 buttons. A floating button assumes the list can scroll past it; this one couldn't, so the last character was permanently half-covered.
+- **Decision:** the button became a **full-width bar pinned below the list** — the last child of the screen's `Column`, not a `floatingActionButton`. The list gets its own `Expanded` space and scrolls independently above it, so every row reaches the top of the bar and stops.
+- **Why a bar and not just bottom padding on the list:** padding would have kept the aim-for-the-corner target and the "is there more below?" ambiguity. A labelled bar says what it does and is a bigger target on a phone.
+- **Details:** it's a `Material` with elevation so rows scrolling under it get a shadow edge, inside a `SafeArea(top: false)` to clear the phone's gesture bar, and the button has a 48 px minimum height.
+- **The archive view keeps no bar** — you don't add characters there.
+- The photo gallery still uses a floating button. That one is fine: its grid already reserves 88 px of bottom padding to scroll past it.
