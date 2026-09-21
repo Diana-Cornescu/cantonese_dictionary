@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/dictionary_store.dart';
+import 'clear_text_button.dart';
 
 /// A dialog listing every character with a checkbox, plus a search box.
 /// Returns the chosen character ids, or null if cancelled.
@@ -70,11 +71,12 @@ class _CharacterPickerDialogState extends State<_CharacterPickerDialog> {
           children: [
             TextField(
               controller: _search,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Search characters or definitions',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: clearTextButton(_search, () => setState(() {})),
               ),
               onChanged: (_) => setState(() {}),
             ),

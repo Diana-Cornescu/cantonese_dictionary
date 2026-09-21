@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../widgets/clear_text_button.dart';
 import '../../widgets/tag_name_dialog.dart';
 import 'tag_detail_screen.dart';
 
@@ -93,10 +94,11 @@ class _TagsScreenState extends State<TagsScreen> {
                 padding: const EdgeInsets.all(8.0),
                 child: TextField(
                   controller: _search,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
                     hintText: 'Search tags',
-                    border: OutlineInputBorder(),
+                    suffixIcon: clearTextButton(_search, () => setState(() {})),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   onChanged: (_) => setState(() {}),

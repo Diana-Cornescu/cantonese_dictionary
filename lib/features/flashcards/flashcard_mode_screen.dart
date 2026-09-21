@@ -41,16 +41,54 @@ enum CardPool {
   final Color? color;
 }
 
+/// What the character side of a card shows, chosen in the third dropdown.
+///
+/// Recognising your own handwriting is a way of cheating: it doesn't
+/// generalise to the same character printed on a menu. **Text only** takes
+/// that crutch away. Added 2026-09-20.
+enum CharacterFace {
+  typedAndDrawing('Text + drawing', Icons.draw_outlined),
+  typedOnly('Text only', Icons.text_fields);
+
+  const CharacterFace(this.label, this.icon);
+  final String label;
+  final IconData icon;
+
+  /// The key this choice is saved under in the settings table, so it
+  /// survives a restart and rides along in backups — the same mechanism
+  /// the color theme uses.
+  static const settingKey = 'flashcard_character_face';
+
+  /// The choice stored under [settingKey]. Anything unrecognised (never
+  /// set, or written by a newer version) falls back to showing both.
+  ///
+  /// The stored string is the enum's `name`, so **renaming a constant here
+  /// silently resets everyone's setting** — `test/flashcard_face_test.dart`
+  /// pins the two strings for that reason.
+  static CharacterFace byId(String? id) {
+    for (final face in values) {
+      if (face.name == id) return face;
+    }
+    return typedAndDrawing;
+  }
+}
+
 /// Flashcard practice (see docs/decisions_log.md, 2026-09-20).
 ///
-/// Options bar at the top (redesigned 2026-09-20): two matching outlined
+/// Options bar at the top (redesigned 2026-09-20): three matching outlined
 /// dropdown pills:
 ///  - which cards: **All characters**, **Hard only** or **Favorites only**,
 ///  - which way: **Character → Definition**, **Definition → Character** or
-///    **Bidirectional** (each card randomly picks a direction).
+///    **Bidirectional** (each card randomly picks a direction),
+///  - what the character side shows: **Text + drawing** or **Text only**.
 ///
 /// Every time the screen opens it starts with All characters and Character
-/// → Definition. Changing either option reshuffles and starts from the top.
+/// → Definition. Changing either of those reshuffles and starts from the
+/// top. The third one is only about what's drawn on the card, so it doesn't
+/// reshuffle — and unlike the other two it is **remembered between
+/// sessions**, because it's a standing preference about how you want to be
+/// tested rather than a per-session choice.
+///
 /// Both directions add to the same seen/correct/incorrect stats.
 class FlashcardModeScreen extends StatefulWidget {
   const FlashcardModeScreen({super.key, required this.store});
@@ -66,6 +104,8 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
 
   CardPool _cardPool = CardPool.all;
   StudyDirection _study = StudyDirection.characterToDefinition;
+  late CharacterFace _face =
+      CharacterFace.byId(widget.store.setting(CharacterFace.settingKey));
 
   bool get _charToDef => _study != StudyDirection.definitionToCharacter;
   bool get _defToChar => _study != StudyDirection.characterToDefinition;
@@ -122,6 +162,14 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
       _cardPool = value;
       _rebuildPool();
     });
+  }
+
+  /// Unlike the other two, this one is saved: it's a standing preference,
+  /// and it changes nothing about the pool, so no reshuffle.
+  Future<void> _setFace(CharacterFace value) async {
+    if (value == _face) return;
+    setState(() => _face = value);
+    await widget.store.setSetting(CharacterFace.settingKey, value.name);
   }
 
   void _setStudy(StudyDirection value) {
@@ -210,8 +258,10 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
     );
   }
 
-  /// The options bar: two matching outlined dropdown pills (which cards,
-  /// which direction), the same height and style.
+  /// The options bar: three matching outlined dropdown pills (which cards,
+  /// which direction, what the character side shows), the same height and
+  /// style. A [Wrap], so the third drops to its own line on a narrow phone
+  /// instead of squeezing the other two.
   Widget _buildToggles() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -234,6 +284,13 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
             options: StudyDirection.values,
             label: (option) => option.label,
             onChanged: _setStudy,
+          ),
+          _dropdownPill<CharacterFace>(
+            leading: Icon(_face.icon, size: 20),
+            value: _face,
+            options: CharacterFace.values,
+            label: (option) => option.label,
+            onChanged: _setFace,
           ),
         ],
       ),
@@ -406,8 +463,8 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
 
   /// One side of the card. [showCharacter] is true for the character side
   /// (the front in Character → Definition, the answer in Definition →
-  /// Character). The character side always shows the typed character and,
-  /// if there is one, your drawing.
+  /// Character). The character side shows the typed character, and your
+  /// drawing under it unless the third pill is set to **Text only**.
   Widget _cardFace(CharacterEntry card, {required bool showCharacter}) {
     if (!showCharacter) {
       return Text(
@@ -416,10 +473,16 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
       );
     }
     final strokes = card.handwrittenSample;
-    final hasDrawing = strokes != null && strokes.isNotEmpty;
     // Typed character plus your drawing underneath, whichever side of the
     // card the character is on (question in Character → Definition, answer
     // in Definition → Character). Since 2026-09-20.
+    //
+    // Text only hides the drawing everywhere it would appear, on both the
+    // question and the answer side — half-hiding it would just move the
+    // crutch rather than remove it.
+    final hasDrawing = _face == CharacterFace.typedAndDrawing &&
+        strokes != null &&
+        strokes.isNotEmpty;
     if (!hasDrawing) {
       return Text(card.typedCharacter, style: const TextStyle(fontSize: 72));
     }

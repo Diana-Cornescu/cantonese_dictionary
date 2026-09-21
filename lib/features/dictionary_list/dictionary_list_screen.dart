@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/clear_text_button.dart';
+import '../../widgets/filter_icon_button.dart';
 import '../add_character/add_character_screen.dart';
 import '../character_detail/character_detail_screen.dart';
 import '../flashcards/flashcard_mode_screen.dart';
@@ -138,39 +140,6 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  /// One filter toggle for the row above the list. Off, it's a plain
-  /// outlined icon; on, it fills with the theme's container color, keeps a
-  /// primary-colored border and the icon itself switches to the filled,
-  /// colored version — so "this is filtering" is readable at a glance
-  /// rather than a subtle tint.
-  Widget _filterButton({
-    required String tooltip,
-    required bool on,
-    required IconData onIcon,
-    required IconData offIcon,
-    required Color activeColor,
-    required VoidCallback onPressed,
-  }) {
-    final colors = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: IconButton(
-        tooltip: on ? '$tooltip (filtering)' : tooltip,
-        onPressed: onPressed,
-        icon: Icon(on ? onIcon : offIcon, color: on ? activeColor : null),
-        style: IconButton.styleFrom(
-          backgroundColor: on ? colors.primaryContainer : null,
-          minimumSize: const Size(40, 40),
-          padding: const EdgeInsets.all(8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: on ? colors.primary : colors.outline),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// The fixed **Add character** bar under the list. A [Material] rather
   /// than a plain [Container] so it draws a shadow over the rows as they
   /// scroll under it, making it read as a separate section; [SafeArea]
@@ -235,16 +204,18 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.search),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.search),
                           hintText: 'Search characters, definitions, tags',
-                          border: OutlineInputBorder(),
+                          suffixIcon: clearTextButton(
+                              _searchController, () => setState(() {})),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         onChanged: (_) => setState(() {}),
                       ),
                     ),
-                    _filterButton(
+                    FilterIconButton(
                       tooltip: 'Favorites only',
                       on: _starredOnly,
                       onIcon: Icons.star,
@@ -253,7 +224,7 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
                       onPressed: () =>
                           setState(() => _starredOnly = !_starredOnly),
                     ),
-                    _filterButton(
+                    FilterIconButton(
                       tooltip: 'Hard only',
                       on: _hardOnly,
                       onIcon: Icons.local_fire_department,

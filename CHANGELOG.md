@@ -6,7 +6,10 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
 ## 1.4.0 — 2026-09-20
 
+- **Flashcards: show the character as text only, or text + your drawing.** A third dropdown next to the other two. Recognising your own handwriting is a way of cheating — it doesn't help when the same character turns up on a menu — so **Text only** takes that away. Unlike the other two dropdowns this one is **remembered between sessions**, and it's included in backups.
 - **Enter saves the definition and closes the keyboard.** The definition box is now one line, on both the Add character screen and the character screen's edit dialog, so Enter finishes it instead of adding a line break you can't see. Notes keep their multi-line box for longer writing.
+- **Every search box has an ✕ to clear it.** Home list, photo gallery, tags, and the two pickers. It only appears once there's something to clear.
+- **The photo gallery gets the same filters.** ⭐ and 🔥 buttons to the right of the gallery's search box, matching the home screen. For a photo they mean "linked to a character that's starred / hard". The **Unlinked only** box became a grey broken-link 🔗 button in the same row, so all three look and behave alike. Unlinked clears the other two and the search box when you turn it on — an unlinked photo has no characters, so those combinations could only ever show nothing.
 - **Filter the home list by favorite or hard.** ⭐ and 🔥 buttons sit to the right of the search box. Tap one and it fills in — coloured icon, tinted background, highlighted border — so it's obvious the list is being filtered. They work independently (both on = starred *and* hard) and combine with whatever you've typed in the search box.
 - **Star and hard from a character's own screen.** **Favorite** and **Hard** buttons sit right under the character box, styled like the Typed/Handwritten pair above them — they fill in when on. Same instant, no-confirmation toggles as the list rows, so you no longer have to go back to the list to flag something you're looking at.
 

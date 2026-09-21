@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/character_entry.dart';
 import '../data/dictionary_store.dart';
+import 'clear_text_button.dart';
 
 /// A dialog for choosing a character's tags from the ones that already
 /// exist, instead of retyping them and risking a near-miss ("food" vs
@@ -96,11 +97,12 @@ class _TagPickerDialogState extends State<_TagPickerDialog> {
           children: [
             TextField(
               controller: _search,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Search or type a new tag',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: clearTextButton(_search, () => setState(() {})),
               ),
               onChanged: (_) => setState(() {}),
               onSubmitted: (_) {

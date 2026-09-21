@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
+import '../../theme/app_colors.dart';
 import '../../widgets/character_picker_dialog.dart';
+import '../../widgets/clear_text_button.dart';
+import '../../widgets/filter_icon_button.dart';
 import 'photo_image.dart';
 import 'photo_picking.dart';
 import 'photo_viewer_screen.dart';
@@ -11,9 +15,19 @@ import 'photo_viewer_screen.dart';
 /// see it full size; the + button adds a new one and asks which characters
 /// it shows.
 ///
-/// Filters (2026-09-20): an "Unlinked only" box (photos with no character,
-/// e.g. to tidy up) and a search box matching the linked characters'
-/// typed character, definition or tags, or the photo's own note.
+/// Filters: a search box matching the linked characters' typed character,
+/// definition or tags, or the photo's own note, plus three toggle buttons
+/// to its right — **favorites**, **hard** and **unlinked** — in the same
+/// style as the home list's (2026-09-21; the unlinked one was a labelled
+/// chip and the other two are new).
+///
+/// A photo has no star or hard flag of its own, so those two mean "linked
+/// to at least one character that is". That makes them **mutually
+/// exclusive with unlinked**, which the buttons enforce rather than leave
+/// to you (2026-09-21): an unlinked photo has no characters to be starred,
+/// so the combination could only ever show nothing. Turning on unlinked
+/// also clears the search box, since "show me the loose ends" is a fresh
+/// question rather than a narrowing of the last one.
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key, required this.store});
 
@@ -26,6 +40,8 @@ class GalleryScreen extends StatefulWidget {
 class _GalleryScreenState extends State<GalleryScreen> {
   final _search = TextEditingController();
   bool _unlinkedOnly = false;
+  bool _starredOnly = false;
+  bool _hardOnly = false;
 
   DictionaryStore get store => widget.store;
 
@@ -35,10 +51,51 @@ class _GalleryScreenState extends State<GalleryScreen> {
     super.dispose();
   }
 
+  /// Whether any character linked to [photo] satisfies [test].
+  bool _anyLinked(PhotoEntry photo, bool Function(CharacterEntry) test) {
+    for (final c in store.characters) {
+      if (photo.characterIds.contains(c.id) && test(c)) return true;
+    }
+    return false;
+  }
+
+  /// Unlinked is the odd one out: it clears the other two and the search
+  /// box on the way on, so it always shows every loose photo.
+  void _toggleUnlinked() {
+    final turningOn = !_unlinkedOnly;
+    // Outside setState: clear() notifies the search field's own listeners.
+    if (turningOn) _search.clear();
+    setState(() {
+      _unlinkedOnly = turningOn;
+      if (turningOn) {
+        _starredOnly = false;
+        _hardOnly = false;
+      }
+    });
+  }
+
+  /// Starred and hard turn unlinked off for the same reason — together they
+  /// would guarantee an empty grid.
+  void _toggleStarred() {
+    setState(() {
+      _starredOnly = !_starredOnly;
+      if (_starredOnly) _unlinkedOnly = false;
+    });
+  }
+
+  void _toggleHard() {
+    setState(() {
+      _hardOnly = !_hardOnly;
+      if (_hardOnly) _unlinkedOnly = false;
+    });
+  }
+
   List<PhotoEntry> _visiblePhotos() {
     final query = _search.text.trim().toLowerCase();
     return store.photos.where((photo) {
       if (_unlinkedOnly && photo.characterIds.isNotEmpty) return false;
+      if (_starredOnly && !_anyLinked(photo, (c) => c.isStarred)) return false;
+      if (_hardOnly && !_anyLinked(photo, (c) => c.isHard)) return false;
       if (query.isEmpty) return true;
       if (photo.note.toLowerCase().contains(query)) return true;
       for (final c in store.characters) {
@@ -67,7 +124,10 @@ class _GalleryScreenState extends State<GalleryScreen> {
       listenable: store,
       builder: (context, _) {
         final photos = _visiblePhotos();
-        final filtering = _unlinkedOnly || _search.text.trim().isNotEmpty;
+        final filtering = _unlinkedOnly ||
+            _starredOnly ||
+            _hardOnly ||
+            _search.text.trim().isNotEmpty;
         return Scaffold(
           appBar: AppBar(
             title: const Text('Photos'),
@@ -94,20 +154,42 @@ class _GalleryScreenState extends State<GalleryScreen> {
                     Expanded(
                       child: TextField(
                         controller: _search,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Search character, definition, tag, note',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon:
+                              clearTextButton(_search, () => setState(() {})),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         onChanged: (_) => setState(() {}),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Unlinked only'),
-                      selected: _unlinkedOnly,
-                      onSelected: (on) => setState(() => _unlinkedOnly = on),
+                    FilterIconButton(
+                      tooltip: 'Favorites only',
+                      on: _starredOnly,
+                      onIcon: Icons.star,
+                      offIcon: Icons.star_border,
+                      activeColor: AppColors.star,
+                      onPressed: _toggleStarred,
+                    ),
+                    FilterIconButton(
+                      tooltip: 'Hard only',
+                      on: _hardOnly,
+                      onIcon: Icons.local_fire_department,
+                      offIcon: Icons.local_fire_department_outlined,
+                      activeColor: AppColors.danger,
+                      onPressed: _toggleHard,
+                    ),
+                    // A broken link, with no color of its own: "unlinked"
+                    // isn't one of the app's three meaningful colors (red
+                    // hard, gold favorite, green correct), so it leans on
+                    // the filled background to show it's on.
+                    FilterIconButton(
+                      tooltip: 'Unlinked only',
+                      on: _unlinkedOnly,
+                      onIcon: Icons.link_off,
+                      onPressed: _toggleUnlinked,
                     ),
                   ],
                 ),
