@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 /// One filter toggle for a list screen's search row.
 ///
-/// Off, it's a plain outlined icon that sits quietly next to the search
-/// box. On, it fills with the theme's container color, keeps a
-/// primary-colored border and switches to [onIcon] in [activeColor] — three
-/// signals at once, because "this list is being filtered" has to be
-/// readable at a glance. A colour tint on its own reads as a hover state.
+/// Off: a light grey icon in a light grey outline, sitting quietly next to
+/// the search box. On: the icon switches to [onIcon] in [activeColor] —
+/// gold for favorites, red for hard — the outline goes **black** and the
+/// button takes a **pale grey background**.
+///
+/// **Nothing here is theme-colored** (revised 2026-09-21). The first
+/// version filled the background and border with the current palette while
+/// filtering: loud, different in every color theme, and competing with the
+/// gold and red that carry the actual meaning. The greys and the black are
+/// fixed, so the only color in the button is the one that means something.
+///
+/// The character screen's toggle buttons wear the same three signals —
+/// see `_toggleButtonStyle` there.
 ///
 /// Shared by the home list and the photo gallery since 2026-09-21; it
 /// started as a private helper on the home list a day earlier.
@@ -21,7 +31,9 @@ class FilterIconButton extends StatelessWidget {
     this.activeColor,
   }) : offIcon = offIcon ?? onIcon;
 
-  /// Shown on hover/long-press. " (filtering)" is appended while [on].
+  /// Shown on hover/long-press. The same text whether or not it's on —
+  /// the icon already says that — so two of these side by side describe
+  /// themselves the same way.
   final String tooltip;
 
   final bool on;
@@ -34,32 +46,35 @@ class FilterIconButton extends StatelessWidget {
   /// The glyph while not filtering. Defaults to [onIcon].
   final IconData offIcon;
 
-  /// The icon's color while filtering. Left null it uses the container's
-  /// own foreground color, which is right for a filter with no meaning of
-  /// its own; star and hard pass the colors those two flags always use.
+  /// The icon's color while filtering. Left null it darkens to the app's
+  /// default icon grey, which is right for a filter with no color of its
+  /// own (the gallery's "unlinked"); star and hard pass the gold and red
+  /// those two flags always wear.
   final Color? activeColor;
 
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: IconButton(
-        tooltip: on ? '$tooltip (filtering)' : tooltip,
+        tooltip: tooltip,
         onPressed: onPressed,
         icon: Icon(
           on ? onIcon : offIcon,
-          color: on ? (activeColor ?? colors.onPrimaryContainer) : null,
+          color: on ? (activeColor ?? AppColors.ironGrey) : AppColors.inactive,
         ),
         style: IconButton.styleFrom(
-          backgroundColor: on ? colors.primaryContainer : null,
+          backgroundColor: on ? AppColors.selectedFill : null,
           minimumSize: const Size(40, 40),
           padding: const EdgeInsets.all(8),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: on ? colors.primary : colors.outline),
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+            side: BorderSide(
+              color: on ? AppColors.selectedOutline : AppColors.inactive,
+              width: on ? 2 : 1,
+            ),
           ),
         ),
       ),

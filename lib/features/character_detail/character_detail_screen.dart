@@ -332,14 +332,45 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     );
   }
 
+  /// Which face of the box is showing — Typed / Handwritten / Photos. The
+  /// selected one fills with the current color theme.
+  ///
+  /// These stay theme-colored on purpose. They pick a view; they aren't
+  /// flags on the character, so they have no gold or red of their own to
+  /// compete with, and the theme fill is the one splash of color on the
+  /// screen.
   ButtonStyle _selectedButtonStyle(BuildContext context) {
     return OutlinedButton.styleFrom(
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
     );
   }
 
-  /// One of the three buttons above the box. The selected one fills in,
-  /// the same look the Favorite/Hard pair below the box uses.
+  /// The look of the **Favorite / Hard** pair under the box.
+  ///
+  /// Selected: a **black outline**, a **pale grey background**, the icon in
+  /// its own color (gold star, red fire) and a dark grey label.
+  /// Unselected: light grey throughout — outline, icon and label.
+  ///
+  /// Exactly what `FilterIconButton` does on the list screens. These two
+  /// are the same flags shown in the same colors, so they look the same
+  /// wherever they appear, and nothing about them is theme-colored
+  /// (2026-09-21): they used to fill with `primaryContainer`, which changed
+  /// with every color theme and competed with the gold and red.
+  ButtonStyle _toggleButtonStyle(bool selected) {
+    return OutlinedButton.styleFrom(
+      // Sets the label, and the icon too — the icons pass a color only
+      // when they're on, so unselected they inherit this grey.
+      foregroundColor: selected ? AppColors.ironGrey : AppColors.inactive,
+      backgroundColor: selected ? AppColors.selectedFill : null,
+      side: BorderSide(
+        color: selected ? AppColors.selectedOutline : AppColors.inactive,
+        width: selected ? 1.5 : 1,
+      ),
+    );
+  }
+
+  /// One of the three buttons above the box. The selected one fills with
+  /// the color theme — see [_selectedButtonStyle].
   Widget _viewButton(_CharacterView view, String label) {
     return OutlinedButton(
       style: _view == view ? _selectedButtonStyle(context) : null,
@@ -557,12 +588,13 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           // (2026-09-20), so a character can be flagged while you're
           // looking at it instead of only from the list.
           //
-          // Styled like the Typed/Handwritten pair at the top of this same
-          // box — an outlined button that fills in when it's on — rather
-          // than as bare icons, since in the body of a screen an unlabelled
-          // icon doesn't say what it does. A Wrap, not a Row, so the two
-          // drop onto separate lines instead of overflowing on a narrow
-          // phone.
+          // Buttons with icon + label rather than bare icons, since in the
+          // body of a screen an unlabelled icon doesn't say what it does.
+          // They wear the grey/black/pale-fill look of the filter buttons
+          // on the list screens, NOT the theme fill of the three view
+          // buttons above — these are the same two flags, so they look the
+          // same everywhere they appear. A Wrap, not a Row, so the two drop
+          // onto separate lines instead of overflowing on a narrow phone.
           //
           // Instant and unconfirmed, like the same two flags on the list
           // rows: the app's one deliberate exception to "confirm before
@@ -573,7 +605,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
             runSpacing: 8,
             children: [
               OutlinedButton.icon(
-                style: entry.isStarred ? _selectedButtonStyle(context) : null,
+                style: _toggleButtonStyle(entry.isStarred),
                 onPressed: () => widget.store.toggleStarred(entry.id),
                 icon: Icon(
                   entry.isStarred ? Icons.star : Icons.star_border,
@@ -582,7 +614,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
                 label: const Text('Favorite'),
               ),
               OutlinedButton.icon(
-                style: entry.isHard ? _selectedButtonStyle(context) : null,
+                style: _toggleButtonStyle(entry.isHard),
                 onPressed: () => widget.store.toggleHard(entry.id),
                 icon: Icon(
                   entry.isHard
