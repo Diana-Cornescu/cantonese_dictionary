@@ -26,10 +26,10 @@ _Draft. Move things in and out freely — that's the point of the cap._
 
 | | What | Why now |
 |---|------|---------|
-| **Flashcard stats as boxes** | Move below the definition. A centered "last reviewed" line, then a row of boxes (Seen, Accuracy), then a row of boxes (Correct, Incorrect). | Asked for twice in `Personal_notes.md` and still not done. The only item on this list you've requested more than once. |
-| **Filter by tag** | On the home list and in the photo gallery. Needs a picker rather than one more toggle, since there can be any number of tags. The Tags screen already lists a tag's characters, so this is about filtering *in place* rather than navigating away. | Finishes the filter row started in 1.4.0 — ⭐ and 🔥 are done on both screens, tag is the obvious gap. |
-| **Delete several photos at once** | Select several in the gallery and delete them together. Today: filter to unlinked and delete one at a time from each photo's screen. | The unlinked filter exists to find stale photos; there's no way to act on what it finds. |
-| **Narrow the app-wide rebuild in `main.dart`** | See **Chores** for the full context. | Not user-facing, but it's the one known source of fragility, and it caused a real bug during the tags round. Promote it if 1.6.0 has room. |
+| **Add date-added field** | Date character added when new characters added, defaults to today. Not editable after character creation. | Should be added sooner than later. |
+| **Filter icon** | On the home list and in the photo gallery. Needs a picker with a typical filter icon. This way can filter for the Star, Fire, and as well as sort by Oldest, most Recent, and Clear filters.| . |
+| **Change Navigation Method** | Match Instagrams navigation bar at the bottom to get to all the relevent tabs, and the center button to be slightly enlaged, rounded icon. The Icon would be + for all of the tags, photos, character screen -> which would trigger the add X feature, or ... for Flashcard screen, that would bring up the setting options in the flashcard. will also move the Gog wheel to the top right where the Home button currently is and move archive within the setting screen.. | Annoying to navigate.|
+| **Dark mode** | A dark theme for the whole app, alongside the 8 color themes in Settings. | too bright at night |
 
 ---
 
@@ -39,8 +39,9 @@ Real features, not yet scheduled.
 
 | What | Notes |
 |------|-------|
-| **Dark mode** | A dark theme for the whole app, alongside the 8 color themes in Settings. |
+| **Flashcard stats as boxes** | Move below the definition. A centered "last reviewed" line, then a row of boxes (Seen, Accuracy), then a row of boxes (Correct, Incorrect). |
 | **Save camera photos to the phone's gallery** | A switch in Settings. **Default off** (today: photos stay only in the app). Needs a small extra package; the setting goes in the `app_settings` table. |
+| **Delete several photos at once** | Select several in the gallery and delete them together. Today: filter to unlinked and delete one at a time from each photo's screen. The unlinked filter exists to find stale photos; there's no way to act on what it finds. |
 | **Practice reminder notifications** | A scheduled nudge to do a flashcard round. Needs a notifications package and Android permission handling. |
 | **Jyutping / romanization field** | One more field per character. Never designed. |
 | **Batch import** | Add many characters at once, e.g. from a spreadsheet. Characters are one-at-a-time today. |
@@ -53,6 +54,7 @@ Each of these is a project, not an afternoon.
 
 | What | Notes |
 |------|-------|
+| **stroke writing character** | eventual stroke writing checker (but that will bring in the issue of it not being even - big new feature and location will need to be thought of). |
 | **Handwriting recognition** | Fully designed and parked, 2026-07-19. The design is written out under the table below. |
 | **Audio pronunciation** | Record and play back a character. Never designed. |
 | **Stroke-order playback** | The data is already being captured — the handwriting model records a timestamp per point precisely so this could be added later without changing what's stored. |
