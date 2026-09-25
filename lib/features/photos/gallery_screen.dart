@@ -4,23 +4,23 @@ import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/clear_text_button.dart';
-import '../../widgets/filter_icon_button.dart';
+import '../../widgets/list_filter_button.dart';
 import '../../widgets/typed_character.dart';
+import '../settings/settings_button.dart';
 import 'photo_image.dart';
-import 'photo_picking.dart';
 import 'photo_viewer_screen.dart';
 
-/// Every photo, newest first, opened from the home screen. Tap a photo to
-/// see it full size; the + button adds a new one and asks which characters
-/// it shows.
+/// Every photo, newest first unless the filter sheet says otherwise (the
+/// choice is remembered): the Photos tab. Tap a photo to see it full size;
+/// the bottom bar's round + adds a new one and asks which characters it
+/// shows (see `addPhotoWithCharacters`).
 ///
 /// Filters: a search box matching the linked characters' typed character,
-/// definition or tags, or the photo's own note, plus three toggle buttons
-/// to its right — **favorites**, **hard** and **unlinked** — in the same
-/// style as the home list's (2026-09-21; the unlinked one was a labelled
-/// chip and the other two are new).
+/// definition or tags, or the photo's own note, plus one filter icon to its
+/// right (1.6.0) whose sheet holds **favorites**, **hard** and
+/// **unlinked**, the sort order and Clear filters. Same icon and sheet as
+/// the home list's.
 ///
 /// A photo has no star or hard flag of its own, so those two mean "linked
 /// to at least one character that is". That makes them **mutually
@@ -40,9 +40,48 @@ class GalleryScreen extends StatefulWidget {
 
 class _GalleryScreenState extends State<GalleryScreen> {
   final _search = TextEditingController();
-  bool _unlinkedOnly = false;
-  bool _starredOnly = false;
-  bool _hardOnly = false;
+
+  /// Setting key for the remembered sort order (1.6.0).
+  static const _sortSettingKey = 'photos_sort';
+
+  static const _favorites = 'favorites';
+  static const _hard = 'hard';
+  static const _unlinked = 'unlinked';
+
+  /// The "show only" toggles in the filter sheet (1.6.0; they were three
+  /// separate buttons next to the search box from 1.4.0).
+  static const _filterOptions = [
+    ListFilterOption(
+      id: _favorites,
+      label: 'Favorites',
+      icon: Icons.star,
+      color: AppColors.star,
+    ),
+    ListFilterOption(
+      id: _hard,
+      label: 'Hard',
+      icon: Icons.local_fire_department,
+      color: AppColors.danger,
+    ),
+    // A broken link, with no color of its own: "unlinked" isn't one of
+    // the app's three meaningful colors (red hard, gold favorite, green
+    // correct).
+    ListFilterOption(
+      id: _unlinked,
+      label: 'Unlinked',
+      icon: Icons.link_off,
+    ),
+  ];
+
+  /// The toggles reset each time the screen opens; the sort order is
+  /// remembered in settings (and so travels with backups).
+  late ListFilters _filters = ListFilters(
+    sort: sortOrderFromSetting(widget.store.setting(_sortSettingKey)),
+  );
+
+  bool get _unlinkedOnly => _filters.isOn(_unlinked);
+  bool get _starredOnly => _filters.isOn(_favorites);
+  bool get _hardOnly => _filters.isOn(_hard);
 
   DictionaryStore get store => widget.store;
 
@@ -60,40 +99,39 @@ class _GalleryScreenState extends State<GalleryScreen> {
     return false;
   }
 
-  /// Unlinked is the odd one out: it clears the other two and the search
-  /// box on the way on, so it always shows every loose photo.
-  void _toggleUnlinked() {
-    final turningOn = !_unlinkedOnly;
-    // Outside setState: clear() notifies the search field's own listeners.
-    if (turningOn) _search.clear();
-    setState(() {
-      _unlinkedOnly = turningOn;
-      if (turningOn) {
-        _starredOnly = false;
-        _hardOnly = false;
-      }
-    });
-  }
-
-  /// Starred and hard turn unlinked off for the same reason — together they
-  /// would guarantee an empty grid.
-  void _toggleStarred() {
-    setState(() {
-      _starredOnly = !_starredOnly;
-      if (_starredOnly) _unlinkedOnly = false;
-    });
-  }
-
-  void _toggleHard() {
-    setState(() {
-      _hardOnly = !_hardOnly;
-      if (_hardOnly) _unlinkedOnly = false;
-    });
+  /// Applies what the filter sheet asked for, after enforcing the
+  /// gallery's one rule. Returns what was actually applied, so the open
+  /// sheet shows it.
+  ///
+  /// Unlinked is the odd one out: turning it on clears favorites, hard and
+  /// the search box, so it always shows every loose photo. Turning
+  /// favorites or hard on clears unlinked for the same reason — together
+  /// they would guarantee an empty grid.
+  ListFilters _applyFilters(ListFilters requested) {
+    final on = {...requested.on};
+    final unlinkedTurningOn =
+        on.contains(_unlinked) && !_filters.isOn(_unlinked);
+    if (unlinkedTurningOn) {
+      on
+        ..remove(_favorites)
+        ..remove(_hard);
+      // Outside setState: clear() notifies the search field's own listeners.
+      _search.clear();
+    } else if ((on.contains(_favorites) && !_filters.isOn(_favorites)) ||
+        (on.contains(_hard) && !_filters.isOn(_hard))) {
+      on.remove(_unlinked);
+    }
+    final applied = requested.copyWith(on: on);
+    if (applied.sort != _filters.sort) {
+      store.setSetting(_sortSettingKey, sortOrderSettingValue(applied.sort));
+    }
+    setState(() => _filters = applied);
+    return applied;
   }
 
   List<PhotoEntry> _visiblePhotos() {
     final query = _search.text.trim().toLowerCase();
-    return store.photos.where((photo) {
+    final visible = store.photos.where((photo) {
       if (_unlinkedOnly && photo.characterIds.isNotEmpty) return false;
       if (_starredOnly && !_anyLinked(photo, (c) => c.isStarred)) return false;
       if (_hardOnly && !_anyLinked(photo, (c) => c.isHard)) return false;
@@ -109,14 +147,15 @@ class _GalleryScreenState extends State<GalleryScreen> {
       }
       return false;
     }).toList();
-  }
-
-  Future<void> _addPhoto() async {
-    final file = await pickPhoto(context);
-    if (file == null || !mounted) return;
-    final ids = await pickCharacters(context, store);
-    if (ids == null) return; // cancelled: nothing is saved
-    await store.addPhoto(file, characterIds: ids);
+    // By date added, with the id breaking ties.
+    visible.sort((a, b) {
+      final byDate = a.createdAt.compareTo(b.createdAt);
+      final oldestFirst = byDate != 0 ? byDate : a.id.compareTo(b.id);
+      return _filters.sort == SortOrder.oldestFirst
+          ? oldestFirst
+          : -oldestFirst;
+    });
+    return visible;
   }
 
   @override
@@ -125,26 +164,12 @@ class _GalleryScreenState extends State<GalleryScreen> {
       listenable: store,
       builder: (context, _) {
         final photos = _visiblePhotos();
-        final filtering = _unlinkedOnly ||
-            _starredOnly ||
-            _hardOnly ||
-            _search.text.trim().isNotEmpty;
+        final filtering =
+            _filters.isFiltering || _search.text.trim().isNotEmpty;
         return Scaffold(
           appBar: AppBar(
             title: const Text('Photos'),
-            actions: [
-              IconButton(
-                tooltip: 'Home',
-                icon: const Icon(Icons.home_outlined),
-                onPressed: () =>
-                    Navigator.of(context).popUntil((route) => route.isFirst),
-              ),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            tooltip: 'Add photo',
-            onPressed: _addPhoto,
-            child: const Icon(Icons.add_a_photo_outlined),
+            actions: [SettingsButton(store: store)],
           ),
           body: Column(
             children: [
@@ -166,31 +191,10 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         onChanged: (_) => setState(() {}),
                       ),
                     ),
-                    FilterIconButton(
-                      tooltip: 'Favorites only',
-                      on: _starredOnly,
-                      onIcon: Icons.star,
-                      offIcon: Icons.star_border,
-                      activeColor: AppColors.star,
-                      onPressed: _toggleStarred,
-                    ),
-                    FilterIconButton(
-                      tooltip: 'Hard only',
-                      on: _hardOnly,
-                      onIcon: Icons.local_fire_department,
-                      offIcon: Icons.local_fire_department_outlined,
-                      activeColor: AppColors.danger,
-                      onPressed: _toggleHard,
-                    ),
-                    // A broken link, with no color of its own: "unlinked"
-                    // isn't one of the app's three meaningful colors (red
-                    // hard, gold favorite, green correct), so it leans on
-                    // the filled background to show it's on.
-                    FilterIconButton(
-                      tooltip: 'Unlinked only',
-                      on: _unlinkedOnly,
-                      onIcon: Icons.link_off,
-                      onPressed: _toggleUnlinked,
+                    ListFilterButton(
+                      options: _filterOptions,
+                      value: _filters,
+                      onChanged: _applyFilters,
                     ),
                   ],
                 ),
@@ -211,14 +215,14 @@ class _GalleryScreenState extends State<GalleryScreen> {
                     child: Text(
                       filtering
                           ? 'No photos match.'
-                          : 'No photos yet. Tap + to add a photo of '
+                          : 'No photos yet. Tap + below to add a photo of '
                               "characters you've seen out and about.",
                       textAlign: TextAlign.center,
                     ),
                   ),
                 )
               : GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 88),
+                  padding: const EdgeInsets.all(8),
                   gridDelegate:
                       const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 160,
@@ -257,7 +261,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                                 alignment: Alignment.bottomCenter,
                                 child: Container(
                                   width: double.infinity,
-                                  color: const Color(0x99000000),
+                                  color: AppColors.photoCaptionBackground,
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 2),
                                   child: Text(
@@ -265,7 +269,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                        color: Colors.white),
+                                        color: AppColors.photoCaptionText),
                                   ),
                                 ),
                               ),

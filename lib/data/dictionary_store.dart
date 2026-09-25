@@ -276,6 +276,10 @@ class DictionaryStore extends ChangeNotifier {
   /// always ignored in favor of whatever is currently stored, since that
   /// field may only change via [addReference]/[removeReference]. No-op if
   /// no character with that id exists.
+  ///
+  /// `createdAt` on [updated] is ignored too: it's the "date added" shown
+  /// on the character screen, set once by [addCharacter] and never
+  /// editable afterwards (1.6.0).
   Future<void> updateCharacter(CharacterEntry updated) async {
     final index = _indexOf(updated.id);
     if (index == -1) return;
@@ -284,6 +288,7 @@ class DictionaryStore extends ChangeNotifier {
     final entry = updated.copyWith(
       tags: tagNames.join(', '),
       referencedCharacterIds: existing.referencedCharacterIds,
+      createdAt: existing.createdAt,
       updatedAt: DateTime.now(),
     );
     await _db.transaction(() async {

@@ -1,13 +1,18 @@
 import 'dart:math';
 
+// material.dart only re-exports part of foundation, and setEquals isn't in
+// that part.
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_color_roles.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/typed_character.dart';
 import '../character_detail/character_detail_screen.dart';
+import '../settings/settings_button.dart';
 
 /// Which way a single card is asked.
 enum CardDirection {
@@ -30,26 +35,31 @@ enum StudyDirection {
   final String label;
 }
 
-/// Which characters are practised, chosen in the first dropdown.
+/// Which characters are practised, chosen in the options panel.
 enum CardPool {
-  all('All characters', Icons.style_outlined, null),
+  // No icon: only the two filters get one (2026-09-25).
+  all('All characters', null, null),
   hard('Hard only', Icons.local_fire_department, AppColors.danger),
   favorites('Favorites only', Icons.star, AppColors.star);
 
   const CardPool(this.label, this.icon, this.color);
   final String label;
-  final IconData icon;
+  final IconData? icon;
   final Color? color;
 }
 
-/// What the character side of a card shows, chosen in the third dropdown.
+/// What the character side of a card shows, chosen in the options panel.
 ///
 /// Recognising your own handwriting is a way of cheating: it doesn't
 /// generalise to the same character printed on a menu. **Text only** takes
 /// that crutch away. Added 2026-09-20.
+///
+/// **Text only is the default and listed first** (2026-09-25; it was Text +
+/// drawing). The order here is the order in the options panel. It's safe
+/// to reorder: the setting is saved by name, not position.
 enum CharacterFace {
-  typedAndDrawing('Text + drawing', Icons.draw_outlined),
-  typedOnly('Text only', Icons.text_fields);
+  typedOnly('Text only', Icons.text_fields),
+  typedAndDrawing('Text + drawing', Icons.draw_outlined);
 
   const CharacterFace(this.label, this.icon);
   final String label;
@@ -61,7 +71,8 @@ enum CharacterFace {
   static const settingKey = 'flashcard_character_face';
 
   /// The choice stored under [settingKey]. Anything unrecognised (never
-  /// set, or written by a newer version) falls back to showing both.
+  /// set, or written by a newer version) falls back to [typedOnly]. A
+  /// choice someone already saved is kept.
   ///
   /// The stored string is the enum's `name`, so **renaming a constant here
   /// silently resets everyone's setting** — `test/flashcard_face_test.dart`
@@ -70,25 +81,31 @@ enum CharacterFace {
     for (final face in values) {
       if (face.name == id) return face;
     }
-    return typedAndDrawing;
+    return typedOnly;
   }
 }
 
 /// Flashcard practice (see docs/decisions_log.md, 2026-09-20).
 ///
-/// Options bar at the top (redesigned 2026-09-20): three matching outlined
-/// dropdown pills:
+/// The Flashcards tab. Its options live in a panel that the bottom bar's
+/// round **…** button opens and closes (1.6.0; they were three dropdown
+/// pills across the top before, and nothing about them shows on the screen
+/// now):
 ///  - which cards: **All characters**, **Hard only** or **Favorites only**,
 ///  - which way: **Character → Definition**, **Definition → Character** or
 ///    **Bidirectional** (each card randomly picks a direction),
 ///  - what the character side shows: **Text + drawing** or **Text only**.
 ///
-/// Every time the screen opens it starts with All characters and Character
-/// → Definition. Changing either of those reshuffles and starts from the
-/// top. The third one is only about what's drawn on the card, so it doesn't
+/// Each app start begins with All characters and Character → Definition.
+/// Changing either of those reshuffles and starts from the top. The third one is only about what's drawn on the card, so it doesn't
 /// reshuffle — and unlike the other two it is **remembered between
 /// sessions**, because it's a standing preference about how you want to be
 /// tested rather than a per-session choice.
+///
+/// Since the tab stays alive while you use the others (1.6.0), a round in
+/// progress survives switching tabs. [refreshCards] runs each time the tab
+/// is shown again, so characters added, deleted or re-flagged elsewhere
+/// are picked up.
 ///
 /// Both directions add to the same seen/correct/incorrect stats.
 class FlashcardModeScreen extends StatefulWidget {
@@ -97,10 +114,11 @@ class FlashcardModeScreen extends StatefulWidget {
   final DictionaryStore store;
 
   @override
-  State<FlashcardModeScreen> createState() => _FlashcardModeScreenState();
+  State<FlashcardModeScreen> createState() => FlashcardModeScreenState();
 }
 
-class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
+/// Public so the bottom bar can call [openOptions] and [refreshCards].
+class FlashcardModeScreenState extends State<FlashcardModeScreen> {
   final _random = Random();
 
   CardPool _cardPool = CardPool.all;
@@ -127,20 +145,157 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
   /// made before definitions became required) can't be asked Definition →
   /// Character, so they're left out when that's the only direction on.
   void _rebuildPool() {
+    _pool = _eligibleCards()..shuffle(_random);
+    _index = 0;
+    _revealed = false;
+    _pickDirection();
+  }
+
+  /// Every character the current options allow, unshuffled.
+  List<CharacterEntry> _eligibleCards() {
     final List<CharacterEntry> source = switch (_cardPool) {
       CardPool.all => widget.store.activeCharacters,
       CardPool.hard => widget.store.hardCharacters,
       CardPool.favorites =>
         widget.store.activeCharacters.where((c) => c.isStarred).toList(),
     };
-    final pool = source
+    return source
         .where((c) => _charToDef || c.definition.trim().isNotEmpty)
-        .toList()
-      ..shuffle(_random);
-    _pool = pool;
-    _index = 0;
-    _revealed = false;
-    _pickDirection();
+        .toList();
+  }
+
+  /// Called by the bottom bar whenever this tab is shown again. If the
+  /// same characters are still in play, the round carries on where it was,
+  /// with any edits to them shown. If characters were added, removed or
+  /// re-flagged so the set changed, it reshuffles and starts from the top.
+  void refreshCards() {
+    if (!mounted) return;
+    final eligible = _eligibleCards();
+    final eligibleIds = {for (final c in eligible) c.id};
+    final poolIds = {for (final c in _pool) c.id};
+    setState(() {
+      if (!setEquals(eligibleIds, poolIds)) {
+        _rebuildPool();
+        return;
+      }
+      final byId = {for (final c in eligible) c.id: c};
+      _pool = [for (final c in _pool) byId[c.id]!];
+    });
+  }
+
+  /// Whether the options panel is showing. Set just before it opens and
+  /// cleared once it has closed, however it was closed (… again, tapping
+  /// outside it, swiping it down, Back).
+  ///
+  /// A plain flag on purpose. The first version (2026-09-25) remembered the
+  /// panel's context from inside its builder instead, but the panel is
+  /// rebuilt on every frame of its closing animation, which put the context
+  /// back after it had been cleared: the app then believed the panel was
+  /// still open, and … stopped working after the first use.
+  bool _optionsOpen = false;
+
+  bool get optionsOpen => _optionsOpen;
+
+  /// Closes the options panel, if it's open. Used by the … button (a second
+  /// tap closes it) and when you switch to another tab. The panel is modal,
+  /// so while it's open it is the top screen in this tab and pop closes it.
+  void closeOptions() {
+    if (!_optionsOpen || !mounted) return;
+    Navigator.of(context).pop();
+  }
+
+  /// The options panel, opened by the bottom bar's round … button; tapping
+  /// … again closes it (so does tapping outside it, or swiping it down).
+  /// Each choice applies straight away; the panel stays open so you can
+  /// change several.
+  Future<void> openOptions() async {
+    if (_optionsOpen) return;
+    _optionsOpen = true;
+    try {
+      await _showOptionsSheet();
+    } finally {
+      _optionsOpen = false;
+    }
+  }
+
+  Future<void> _showOptionsSheet() {
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          Widget heading(String text) => Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child:
+                    Text(text, style: Theme.of(context).textTheme.titleMedium),
+              );
+          // A ListTile drawn as a radio button (RadioListTile's groupValue
+          // is deprecated in this Flutter version).
+          Widget choice<T>({
+            required T value,
+            required T current,
+            required String label,
+            required void Function(T) onPick,
+            Widget? trailing,
+          }) =>
+              ListTile(
+                leading: Icon(value == current
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked),
+                title: Text(label),
+                trailing: trailing,
+                selected: value == current,
+                onTap: () {
+                  onPick(value);
+                  setSheetState(() {});
+                },
+              );
+          return SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  heading('Which cards'),
+                  for (final pool in CardPool.values)
+                    choice<CardPool>(
+                      value: pool,
+                      current: _cardPool,
+                      label: pool.label,
+                      trailing: pool.icon == null
+                          ? null
+                          : Icon(pool.icon, color: pool.color),
+                      onPick: _setCardPool,
+                    ),
+                  const Divider(height: 24),
+                  heading('Direction'),
+                  for (final study in StudyDirection.values)
+                    choice<StudyDirection>(
+                      value: study,
+                      current: _study,
+                      label: study.label,
+                      onPick: _setStudy,
+                    ),
+                  const Divider(height: 24),
+                  heading('Character side'),
+                  for (final face in CharacterFace.values)
+                    choice<CharacterFace>(
+                      value: face,
+                      current: _face,
+                      label: face.label,
+                      trailing: Icon(face.icon),
+                      onPick: _setFace,
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   /// Chooses the direction for the current card.
@@ -227,27 +382,16 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
     });
   }
 
-  void _goHome() {
-    Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flashcard mode'),
-        actions: [
-          IconButton(
-            tooltip: 'Home',
-            icon: const Icon(Icons.home_outlined),
-            onPressed: _goHome,
-          ),
-        ],
+        actions: [SettingsButton(store: widget.store)],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            _buildToggles(),
             Expanded(
               child: Center(
                 child: SingleChildScrollView(child: _buildBody()),
@@ -255,95 +399,6 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// The options bar: three matching outlined dropdown pills (which cards,
-  /// which direction, what the character side shows), the same height and
-  /// style. A [Wrap], so the third drops to its own line on a narrow phone
-  /// instead of squeezing the other two.
-  Widget _buildToggles() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 12,
-        runSpacing: 8,
-        children: [
-          _dropdownPill<CardPool>(
-            leading: Icon(_cardPool.icon, size: 20, color: _cardPool.color),
-            value: _cardPool,
-            options: CardPool.values,
-            label: (option) => option.label,
-            onChanged: _setCardPool,
-          ),
-          _dropdownPill<StudyDirection>(
-            leading: const Icon(Icons.swap_horiz, size: 20),
-            value: _study,
-            options: StudyDirection.values,
-            label: (option) => option.label,
-            onChanged: _setStudy,
-          ),
-          _dropdownPill<CharacterFace>(
-            leading: Icon(_face.icon, size: 20),
-            value: _face,
-            options: CharacterFace.values,
-            label: (option) => option.label,
-            onChanged: _setFace,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// One outlined, rounded dropdown with an icon in front.
-  Widget _dropdownPill<T>({
-    required Widget leading,
-    required T value,
-    required List<T> options,
-    required String Function(T) label,
-    required void Function(T) onChanged,
-  }) {
-    final colors = Theme.of(context).colorScheme;
-    final labelStyle = Theme.of(context).textTheme.labelLarge;
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.only(left: 12, right: 4),
-      decoration: BoxDecoration(
-        border: Border.all(color: colors.outline),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          leading,
-          const SizedBox(width: 8),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<T>(
-              value: value,
-              isDense: true,
-              icon: const Icon(Icons.expand_more),
-              borderRadius: BorderRadius.circular(12),
-              // No blue highlight left on the button after choosing.
-              focusColor: Colors.transparent,
-              style: labelStyle?.copyWith(color: colors.onSurface),
-              items: [
-                for (final option in options)
-                  DropdownMenuItem<T>(
-                    value: option,
-                    child: Text(label(option)),
-                  ),
-              ],
-              onChanged: (selected) {
-                // Drop keyboard focus so the button isn't left highlighted.
-                FocusScope.of(context).unfocus();
-                if (selected != null) onChanged(selected);
-              },
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -393,7 +448,7 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
               height: 280,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
+                border: Border.all(color: context.appColors.frame),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -406,7 +461,7 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
                     style: Theme.of(context)
                         .textTheme
                         .labelSmall
-                        ?.copyWith(color: Colors.grey),
+                        ?.copyWith(color: context.appColors.faintText),
                   ),
                   Expanded(
                     child: Center(
@@ -426,7 +481,7 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.danger,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.onAccent,
                   ),
                   onPressed: () => _answer(false),
                   child: const Text('Incorrect'),
@@ -435,7 +490,7 @@ class _FlashcardModeScreenState extends State<FlashcardModeScreen> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.onAccent,
                   ),
                   onPressed: () => _answer(true),
                   child: const Text('Correct'),

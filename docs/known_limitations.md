@@ -28,9 +28,10 @@ Update this whenever a limitation is fixed or a new one turns up, per the
   copy one to the other, but **restore replaces everything**; there's no
   merge.
 
-- **No filtering by tag.** ⭐ and 🔥 filters exist on the home list and the
-  gallery (1.4.0); tag filtering doesn't, because it needs a picker rather
-  than one more toggle. The Tags screen lists a tag's characters, which is
+- **No filtering by tag.** The filter icon on the home list and the
+  gallery (1.6.0) offers ⭐, 🔥 and (in the gallery) unlinked, plus
+  newest/oldest sorting; tag filtering isn't in it yet, because it needs a
+  picker rather than one more toggle. The Tags screen lists a tag's characters, which is
   the workaround.
 
 - **Every change repaints the whole app.** `main.dart` wraps `MaterialApp`
@@ -61,6 +62,16 @@ Update this whenever a limitation is fixed or a new one turns up, per the
   is enough on its own, so `typedCharacter` may be empty and shows as a grey
   "missing" icon. Anything rendering it must go through
   `widgets/typed_character.dart`.
+
+- **The date added can't be changed or backdated.** It's the day you tapped
+  Save (the `created_at` column), shown under the definition on the character screen.
+  There's no date picker on purpose (decided 2026-09-25), and
+  `DictionaryStore.updateCharacter` ignores any attempt to change it.
+
+- **Dark mode covers five of the eight color themes.** Cerulean, Teal,
+  Iris, Violet and Plum have a dark version; Slate, Cobalt and Navy show
+  Cerulean while the app is dark. And 🔥 red is dim on the dark background.
+  Both are on the roadmap.
 
 - **The first version was written without a compiler.** The environment the
   app was built in couldn't install the Flutter/Dart tooling, so v1 and the

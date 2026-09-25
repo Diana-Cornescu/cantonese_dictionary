@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_button_styles.dart';
+import '../../theme/app_color_roles.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
@@ -183,11 +185,8 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
   Widget _viewButton(_AddView view, String label) {
     final filled = _filled(view);
     return OutlinedButton(
-      style: _view == view
-          ? OutlinedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            )
-          : null,
+      // The tag look while selected, like the character screen's switcher.
+      style: _view == view ? AppButtonStyles.selected(context) : null,
       onPressed: () => setState(() => _view = view),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -224,17 +223,19 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 72),
             maxLines: 1,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               border: InputBorder.none,
               hintText: '字',
-              hintStyle: TextStyle(fontSize: 72, color: AppColors.inactive),
+              hintStyle:
+                  TextStyle(fontSize: 72, color: context.appColors.inactive),
             ),
             onChanged: (_) => setState(() {}),
           ),
         );
       case _AddView.handwritten:
         return Container(
-          decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+          decoration: BoxDecoration(
+              border: Border.all(color: context.appColors.frame)),
           child: HandwritingCanvas(
             readOnly: false,
             onStrokesChanged: (strokes) =>
@@ -268,15 +269,9 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // No Home button since 1.6.0: tapping the Characters tab in the
+        // bottom bar goes back to the list.
         title: const Text('Add character'),
-        actions: [
-          IconButton(
-            tooltip: 'Home',
-            icon: const Icon(Icons.home_outlined),
-            onPressed: () =>
-                Navigator.of(context).popUntil((route) => route.isFirst),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

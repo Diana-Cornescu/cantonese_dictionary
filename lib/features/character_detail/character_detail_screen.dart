@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
+import '../../theme/app_button_styles.dart';
+import '../../theme/app_color_roles.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
@@ -62,10 +64,6 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     final month = local.month.toString().padLeft(2, '0');
     final day = local.day.toString().padLeft(2, '0');
     return '${local.year}-$month-$day';
-  }
-
-  void _goHome() {
-    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   /// Delegates to the shared dialog, which owns (and disposes) its own
@@ -188,7 +186,8 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           width: 280,
           height: 280,
           child: Container(
-            decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+            decoration: BoxDecoration(
+                border: Border.all(color: context.appColors.frame)),
             child: HandwritingCanvas(
               readOnly: false,
               onStrokesChanged: (strokes) => captured = strokes,
@@ -279,14 +278,9 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
         final current = entry;
         return Scaffold(
           appBar: AppBar(
+            // No Home button since 1.6.0: tapping the current tab in the
+            // bottom bar goes back to its top screen.
             title: Text(typedCharacterLabel(current.typedCharacter)),
-            actions: [
-              IconButton(
-                tooltip: 'Home',
-                icon: const Icon(Icons.home_outlined),
-                onPressed: _goHome,
-              ),
-            ],
           ),
           // SafeArea (rather than a fixed bottom padding number) insets the
           // scrollable content by whatever the current device's system UI
@@ -341,11 +335,8 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   /// flags on the character, so they have no gold or red of their own to
   /// compete with, and the theme fill is the one splash of color on the
   /// screen.
-  ButtonStyle _selectedButtonStyle(BuildContext context) {
-    return OutlinedButton.styleFrom(
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-    );
-  }
+  ButtonStyle _selectedButtonStyle(BuildContext context) =>
+      AppButtonStyles.selected(context);
 
   /// The look of the **Favorite / Hard** pair under the box.
   ///
@@ -359,13 +350,17 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   /// (2026-09-21): they used to fill with `primaryContainer`, which changed
   /// with every color theme and competed with the gold and red.
   ButtonStyle _toggleButtonStyle(bool selected) {
+    final colors = context.appColors;
     return OutlinedButton.styleFrom(
       // Sets the label, and the icon too — the icons pass a color only
       // when they're on, so unselected they inherit this grey.
-      foregroundColor: selected ? AppColors.ironGrey : AppColors.inactive,
-      backgroundColor: selected ? AppColors.selectedFill : null,
+      foregroundColor: selected ? colors.activeIcon : colors.inactive,
+      iconColor: selected ? colors.activeIcon : colors.inactive,
+      // Set even when off, so the app-wide hover tint (the tag look for
+      // outlined buttons) doesn't reach these two: flags keep their greys.
+      backgroundColor: selected ? colors.selectedFill : AppColors.none,
       side: BorderSide(
-        color: selected ? AppColors.selectedOutline : AppColors.inactive,
+        color: selected ? colors.selectedOutline : colors.inactive,
         width: selected ? 1.5 : 1,
       ),
     );
@@ -549,7 +544,8 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
                   : entry.handwrittenSample != null
                       ? Container(
                           decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey)),
+                              border: Border.all(
+                                  color: context.appColors.frame)),
                           child: HandwritingCanvas(
                             readOnly: true,
                             initialStrokes: entry.handwrittenSample,
@@ -688,6 +684,17 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           ),
           Text(
               entry.definition.isEmpty ? '(no definition yet)' : entry.definition),
+          // Date added (1.6.0). Set automatically when the character is
+          // saved and not editable, so there's no edit button, just a
+          // quiet line under the definition rather than a section of its own.
+          const SizedBox(height: 12),
+          Text(
+            'Added ${_formatDate(entry.createdAt)}',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: context.appColors.inactive),
+          ),
           const Divider(height: 24),
           Row(
             children: [
@@ -848,10 +855,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                    side: const BorderSide(color: AppColors.danger),
-                  ),
+                  style: AppButtonStyles.danger(context),
                   onPressed: () => _handleDelete(entry),
                   icon: const Icon(Icons.delete_outline),
                   label: const Text('Delete'),

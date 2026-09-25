@@ -20,16 +20,13 @@ logs hold the reasoning.
 
 ---
 
-## Next up — 1.6.0
+## Next up — 1.7.0
 
 _Draft. Move things in and out freely — that's the point of the cap._
 
-| | What | Why now |
-|---|------|---------|
-| **Add date-added field** | Date character added when new characters added, defaults to today. Not editable after character creation. | Should be added sooner than later. |
-| **Filter icon** | On the home list and in the photo gallery. Needs a picker with a typical filter icon. This way can filter for the Star, Fire, and as well as sort by Oldest, most Recent, and Clear filters.| . |
-| **Change Navigation Method** | Match Instagrams navigation bar at the bottom to get to all the relevent tabs, and the center button to be slightly enlaged, rounded icon. The Icon would be + for all of the tags, photos, character screen -> which would trigger the add X feature, or ... for Flashcard screen, that would bring up the setting options in the flashcard. will also move the Gog wheel to the top right where the Home button currently is and move archive within the setting screen.. | Annoying to navigate.|
-| **Dark mode** | A dark theme for the whole app, alongside the 8 color themes in Settings. | too bright at night |
+_Nothing scheduled yet. 1.6.0 shipped 2026-09-25 (see `CHANGELOG.md`);
+promote up to four items from "After that" — the two flagged ones at the
+top are the obvious candidates._
 
 ---
 
@@ -39,6 +36,9 @@ Real features, not yet scheduled.
 
 | What | Notes |
 |------|-------|
+| **🔥 Hard icon readable in dark mode** | **Flagged 2026-09-25: still not happy with it.** 🔥 red is only 2.4:1 on the dark background (gold 4.7, green 3.5), so the fire icons, and the red Delete outline, are hard to see in dark mode. `AppColors` meaning colors are the same in both modes by design; giving them lighter dark-mode shades means moving them into `AppColorRoles` and checking the 45° hue rule (`test/app_palettes_test.dart`) still holds. Green could get the same treatment. |
+| **Button coloring consistency** | **Flagged 2026-09-25: "good enough for now", not happy yet.** The tag look for active buttons (`lib/theme/app_button_styles.dart`) covers outlined buttons, but the app still has several button styles side by side: filled (Save, Add character), outlined, text buttons (Choose, Replace), ⭐ / 🔥 flag buttons with their own greys, the filter icon, and the red / green Correct / Incorrect. Needs a pass that looks at every button together in both modes and decides which looks stay, then moves them all into `app_button_styles.dart`. See "Buttons: the tag look when active" in `decisions/ui-conventions.md`. |
+| **Dark versions of Slate, Cobalt and Navy** | Light-only since dark mode shipped (1.6.0): their lighter accent is under 4:1 on the dark background (3.97, 3.6, 3.1). Needs a new, lighter dark accent picked for each; `AppPalette.darkAccent` is currently just `tertiary`. The palette test will accept one once it measures ≥4:1. |
 | **Flashcard stats as boxes** | Move below the definition. A centered "last reviewed" line, then a row of boxes (Seen, Accuracy), then a row of boxes (Correct, Incorrect). |
 | **Save camera photos to the phone's gallery** | A switch in Settings. **Default off** (today: photos stay only in the app). Needs a small extra package; the setting goes in the `app_settings` table. |
 | **Delete several photos at once** | Select several in the gallery and delete them together. Today: filter to unlinked and delete one at a time from each photo's screen. The unlinked filter exists to find stale photos; there's no way to act on what it finds. |

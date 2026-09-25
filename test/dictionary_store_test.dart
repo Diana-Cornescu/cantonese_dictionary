@@ -226,4 +226,29 @@ void main() {
     expect(second.setting('color_theme'), 'teal');
     await second.close();
   });
+
+  test('the date added is set on save and editing never changes it',
+      () async {
+    final first = await _openFileStore(dbFile);
+    final before = DateTime.now();
+    // Whatever date the draft carries is replaced with "now".
+    final added = await first.addCharacter(
+        _draft('K').copyWith(createdAt: DateTime(2000, 1, 1)));
+    expect(added.createdAt.isBefore(before), isFalse);
+
+    // An edit that tries to change it is ignored.
+    await first.updateCharacter(
+        added.copyWith(definition: 'edited', createdAt: DateTime(2000, 1, 1)));
+    final edited = first.characters.firstWhere((c) => c.id == added.id);
+    expect(edited.definition, 'edited');
+    expect(edited.createdAt, added.createdAt);
+
+    await first.close();
+    final second = await _openFileStore(dbFile);
+    final reloaded = second.characters.firstWhere((c) => c.id == added.id);
+    // Stored with millisecond precision, so compare to within a second.
+    expect(
+        reloaded.createdAt.difference(added.createdAt).inSeconds.abs(), 0);
+    await second.close();
+  });
 }

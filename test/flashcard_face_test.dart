@@ -21,10 +21,15 @@ void main() {
     }
   });
 
-  test('never set, or unrecognised, falls back to showing the drawing', () {
-    expect(CharacterFace.byId(null), CharacterFace.typedAndDrawing);
-    expect(CharacterFace.byId(''), CharacterFace.typedAndDrawing);
+  test('never set, or unrecognised, falls back to Text only', () {
+    // Text only has been the default since 2026-09-25 (was Text + drawing).
+    expect(CharacterFace.byId(null), CharacterFace.typedOnly);
+    expect(CharacterFace.byId(''), CharacterFace.typedOnly);
     // e.g. written by a newer version of the app, then opened by this one.
-    expect(CharacterFace.byId('somethingElse'), CharacterFace.typedAndDrawing);
+    expect(CharacterFace.byId('somethingElse'), CharacterFace.typedOnly);
+  });
+
+  test('Text only is listed first in the options panel', () {
+    expect(CharacterFace.values.first, CharacterFace.typedOnly);
   });
 }

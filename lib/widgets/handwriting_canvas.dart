@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/character_entry.dart';
+import '../theme/app_color_roles.dart';
 
 /// A canvas for capturing or displaying a single handwritten character
 /// sample, selected by the [readOnly] constructor flag:
@@ -20,7 +21,7 @@ class HandwritingCanvas extends StatefulWidget {
     required this.readOnly,
     this.initialStrokes,
     this.onStrokesChanged,
-    this.strokeColor = Colors.black,
+    this.strokeColor,
     this.strokeWidth = 4.0,
     this.fitToBox = false,
   });
@@ -40,7 +41,8 @@ class HandwritingCanvas extends StatefulWidget {
   /// Ignored in read-only mode.
   final ValueChanged<List<List<StrokePoint>>>? onStrokesChanged;
 
-  final Color strokeColor;
+  /// Defaults to the theme's ink color (`context.appColors.ink`).
+  final Color? strokeColor;
   final double strokeWidth;
 
   @override
@@ -114,7 +116,7 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
   Widget build(BuildContext context) {
     final painter = _StrokesPainter(
       strokes: _strokes,
-      color: widget.strokeColor,
+      color: widget.strokeColor ?? context.appColors.ink,
       strokeWidth: widget.strokeWidth,
       fitToBox: widget.readOnly && widget.fitToBox,
     );
@@ -123,8 +125,15 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
     // let the stroke paint outside the box into whatever sits next to it.
     // The underlying point data is unaffected — only the on-screen paint is
     // constrained.
+    //
+    // Drawn on `paper`: see-through in light mode, a light sheet in dark
+    // mode, so black ink reads the same in both (2026-09-25).
+    final colors = context.appColors;
     final canvas = ClipRect(
-      child: CustomPaint(painter: painter, size: Size.infinite),
+      child: ColoredBox(
+        color: colors.paper,
+        child: CustomPaint(painter: painter, size: Size.infinite),
+      ),
     );
     if (widget.readOnly) {
       return canvas;
@@ -151,12 +160,18 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
               IconButton(
                 tooltip: 'Undo last stroke',
                 visualDensity: VisualDensity.compact,
+                // On the paper, not the page: the theme's icon grey would
+                // disappear on the light sheet in dark mode.
+                color: colors.onPaper,
+                disabledColor: colors.onPaper.withValues(alpha: 0.38),
                 icon: const Icon(Icons.undo),
                 onPressed: hasStrokes ? _undoLastStroke : null,
               ),
               IconButton(
                 tooltip: 'Clear drawing',
                 visualDensity: VisualDensity.compact,
+                color: colors.onPaper,
+                disabledColor: colors.onPaper.withValues(alpha: 0.38),
                 icon: const Icon(Icons.delete_sweep_outlined),
                 onPressed: hasStrokes ? _clearAll : null,
               ),

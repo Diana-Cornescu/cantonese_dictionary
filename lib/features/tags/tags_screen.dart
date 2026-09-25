@@ -4,11 +4,37 @@ import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../widgets/clear_text_button.dart';
 import '../../widgets/tag_name_dialog.dart';
+import '../settings/settings_button.dart';
 import 'tag_detail_screen.dart';
 
-/// Every tag, with how many characters carry it. Reached from the side
-/// menu. Search or scroll to find one, tap it to see (and change) its
-/// characters, or use + to create an empty tag and fill it afterwards.
+/// Asks for a new tag's name and creates it, empty. Used by the bottom
+/// bar's round + on the Tags tab (1.6.0; it was this screen's own floating
+/// + button before). The new tag just appears in the list — tap it to open
+/// it. It used to open straight away, but pushing a route in the same
+/// frame the dialog pops is asking for trouble in the navigator's overlay
+/// (2026-09-20).
+Future<void> createTagFromDialog(
+    BuildContext context, DictionaryStore store) async {
+  final name = await promptForTagName(
+    context,
+    title: 'New tag',
+    confirmLabel: 'Create',
+    helperText: 'e.g. food, verb',
+    validate: (value) {
+      if (!isValidTagName(value)) {
+        return "A tag can't be empty or contain a comma.";
+      }
+      if (store.allTags.contains(value)) return 'That tag already exists.';
+      return null;
+    },
+  );
+  if (name == null) return;
+  await store.createTag(name);
+}
+
+/// Every tag, with how many characters carry it: the Tags tab. Search or
+/// scroll to find one, tap it to see (and change) its characters, or use
+/// the bottom bar's round + to create an empty tag and fill it afterwards.
 ///
 /// Tags nobody carries are shown greyed with "0 characters" rather than
 /// hidden: `replaceTags` keeps them on purpose, and seeing them is how you
@@ -40,29 +66,6 @@ class _TagsScreenState extends State<TagsScreen> {
     return tags.where((t) => t.toLowerCase().contains(query)).toList();
   }
 
-  Future<void> _createTag() async {
-    final name = await promptForTagName(
-      context,
-      title: 'New tag',
-      initialValue: _search.text.trim(),
-      confirmLabel: 'Create',
-      helperText: 'e.g. food, verb',
-      validate: (value) {
-        if (!isValidTagName(value)) {
-          return "A tag can't be empty or contain a comma.";
-        }
-        if (store.allTags.contains(value)) return 'That tag already exists.';
-        return null;
-      },
-    );
-    if (name == null) return;
-    // The new tag just appears in the list (createTag notifies, so the
-    // ListenableBuilder redraws it) — tap it to open it. It used to open
-    // straight away, but pushing a route in the same frame the dialog pops
-    // is asking for trouble in the navigator's overlay (2026-09-20).
-    await store.createTag(name);
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -74,19 +77,7 @@ class _TagsScreenState extends State<TagsScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Tags'),
-            actions: [
-              IconButton(
-                tooltip: 'Home',
-                icon: const Icon(Icons.home_outlined),
-                onPressed: () =>
-                    Navigator.of(context).popUntil((route) => route.isFirst),
-              ),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            tooltip: 'New tag',
-            onPressed: _createTag,
-            child: const Icon(Icons.add),
+            actions: [SettingsButton(store: store)],
           ),
           body: Column(
             children: [
@@ -112,14 +103,14 @@ class _TagsScreenState extends State<TagsScreen> {
                           child: Text(
                             filtering
                                 ? 'No tags match.'
-                                : 'No tags yet. Tap + to make one, or add '
+                                : 'No tags yet. Tap + below to make one, or add '
                                     'tags on a character.',
                             textAlign: TextAlign.center,
                           ),
                         ),
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.only(bottom: 88),
+                        padding: const EdgeInsets.only(bottom: 8),
                         itemCount: tags.length,
                         separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (context, index) {

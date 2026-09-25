@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_color_roles.dart';
 
 /// One filter toggle for a list screen's search row.
 ///
@@ -56,6 +56,7 @@ class FilterIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: IconButton(
@@ -63,16 +64,16 @@ class FilterIconButton extends StatelessWidget {
         onPressed: onPressed,
         icon: Icon(
           on ? onIcon : offIcon,
-          color: on ? (activeColor ?? AppColors.ironGrey) : AppColors.inactive,
+          color: on ? (activeColor ?? colors.activeIcon) : colors.inactive,
         ),
         style: IconButton.styleFrom(
-          backgroundColor: on ? AppColors.selectedFill : null,
+          backgroundColor: on ? colors.selectedFill : null,
           minimumSize: const Size(40, 40),
           padding: const EdgeInsets.all(8),
           shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.all(Radius.circular(8)),
             side: BorderSide(
-              color: on ? AppColors.selectedOutline : AppColors.inactive,
+              color: on ? colors.selectedOutline : colors.inactive,
               width: on ? 2 : 1,
             ),
           ),

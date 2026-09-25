@@ -4,6 +4,22 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../data/dictionary_store.dart';
+import '../../widgets/character_picker_dialog.dart';
+
+/// The whole "add a photo" flow: take or pick one with [pickPhoto], ask
+/// which characters it shows, then save it. Cancelling either step saves
+/// nothing. Used by the bottom bar's + on the Photos tab (1.6.0; it was the
+/// gallery's own floating + button before).
+Future<void> addPhotoWithCharacters(
+    BuildContext context, DictionaryStore store) async {
+  final file = await pickPhoto(context);
+  if (file == null || !context.mounted) return;
+  final ids = await pickCharacters(context, store);
+  if (ids == null) return; // cancelled: nothing is saved
+  await store.addPhoto(file, characterIds: ids);
+}
+
 /// Lets you take a new photo or choose an existing one, and returns the
 /// image file (or null if cancelled). The file is a temporary one; the
 /// store copies it into the app's own photos folder.

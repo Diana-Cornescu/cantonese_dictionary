@@ -7,11 +7,18 @@ import 'package:flutter/material.dart';
 import '../../data/app_database.dart';
 import '../../data/backup_service.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_colors.dart';
 import '../../theme/app_palettes.dart';
+import '../../theme/app_theme_mode.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../dictionary_list/dictionary_list_screen.dart';
 
-/// Settings, opened from the side menu on the home screen: the color theme
-/// and backup & restore. More settings can be added here later.
+/// Settings, opened from the ⚙ at the top right of any tab (1.6.0; it was
+/// in the ☰ side menu before): Light / Dark / Match phone, the color theme,
+/// the archive, and backup & restore. More settings can be added here later.
+///
+/// The archive moved here from the side menu in 1.6.0. It's somewhere you
+/// go rarely, so it doesn't earn a place in the bottom bar.
 ///
 /// Backups are saved and opened through the system file window every
 /// time (no fixed default folder), so on Android you can pick Downloads,
@@ -20,6 +27,10 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, required this.store});
 
   final DictionaryStore store;
+
+  /// The route name Settings is opened under, so the bottom bar can find
+  /// and close it (see `AppShell`).
+  static const routeName = 'settings';
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -153,17 +164,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (mounted) _showMessage('Last restore undone.');
       });
 
-  /// A row of round color swatches; tap one to switch the app's colors.
-  /// See `lib/theme/app_palettes.dart` for why these colors were chosen.
-  Widget _buildColorThemeSection() {
+  /// Light / Dark / Match phone (2026-09-25). Applies straight away: the
+  /// store notifies and `main.dart` rebuilds the app with the new mode.
+  Widget _buildAppearanceSection() {
     final current =
-        AppPalette.byId(widget.store.setting(AppPalette.settingKey));
+        AppThemeMode.byId(widget.store.setting(AppThemeMode.settingKey));
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Color theme', style: Theme.of(context).textTheme.titleSmall),
+          Text('Appearance', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 12),
+          SegmentedButton<AppThemeMode>(
+            showSelectedIcon: false,
+            segments: [
+              for (final mode in AppThemeMode.values)
+                ButtonSegment(
+                  value: mode,
+                  icon: Icon(mode.icon),
+                  label: Text(mode.label),
+                ),
+            ],
+            selected: {current},
+            onSelectionChanged: (picked) async {
+              await widget.store
+                  .setSetting(AppThemeMode.settingKey, picked.single.name);
+              if (mounted) setState(() {});
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A row of round color swatches; tap one to switch the app's colors.
+  /// See `lib/theme/app_palettes.dart` for why these colors were chosen.
+  ///
+  /// A small 🌙 on a swatch means that theme has a dark version (see
+  /// `AppPalette.darkReady`). While the app is dark, the themes without one
+  /// are faded; they can still be picked, for light mode, and a line under
+  /// the swatches says what dark mode is showing instead.
+  Widget _buildColorThemeSection() {
+    final current =
+        AppPalette.byId(widget.store.setting(AppPalette.settingKey));
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final small = theme.textTheme.labelSmall;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Color theme', style: theme.textTheme.titleSmall),
           const SizedBox(height: 12),
           Wrap(
             spacing: 16,
@@ -175,43 +228,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: () async {
                     await widget.store
                         .setSetting(AppPalette.settingKey, palette.id);
-                    if (mounted) setState(() {});
+                    if (!mounted) return;
+                    setState(() {});
+                    if (isDark && !palette.darkReady) {
+                      _showMessage('${palette.name} is saved for light mode. '
+                          "It doesn't have a dark version yet, so dark mode "
+                          'shows ${palette.forDarkMode.name}.');
+                    }
                   },
-                  child: SizedBox(
-                    width: 64,
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: palette.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: palette.id == current.id
-                                  ? palette.secondary
-                                  : Colors.transparent,
-                              width: 3,
-                            ),
+                  child: Opacity(
+                    opacity: isDark && !palette.darkReady ? 0.35 : 1,
+                    child: SizedBox(
+                      width: 64,
+                      child: Column(
+                        children: [
+                          _swatch(palette, selected: palette.id == current.id),
+                          const SizedBox(height: 4),
+                          Text(
+                            palette.name,
+                            style: small,
+                            textAlign: TextAlign.center,
                           ),
-                          child: palette.id == current.id
-                              ? const Icon(Icons.check, color: Colors.white)
-                              : null,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          palette.name,
-                          style: Theme.of(context).textTheme.labelSmall,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.dark_mode, size: 14, color: theme.iconTheme.color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text('Also has a dark version', style: small),
+              ),
+            ],
+          ),
+          if (isDark && !current.darkReady) ...[
+            const SizedBox(height: 6),
+            Text(
+              "${current.name} doesn't have a dark version yet, so dark "
+              'mode is showing ${current.forDarkMode.name}.',
+              style: small,
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  /// One round swatch in [palette]'s main color, with a ✓ and a ring when
+  /// it's the chosen theme and a small 🌙 badge when it has a dark version.
+  Widget _swatch(AppPalette palette, {required bool selected}) {
+    final theme = Theme.of(context);
+    final circle = Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: palette.primary,
+        shape: BoxShape.circle,
+        border: Border.all(
+          // The ring is the palette's deep shade on light, which vanishes
+          // on the dark background, so dark mode rings in the text color.
+          color: !selected
+              ? AppColors.none
+              : theme.brightness == Brightness.dark
+                  ? theme.colorScheme.onSurface
+                  : palette.secondary,
+          width: 3,
+        ),
+      ),
+      child: selected
+          ? const Icon(Icons.check, color: AppColors.onAccent)
+          : null,
+    );
+    if (!palette.darkReady) return circle;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        circle,
+        Positioned(
+          right: -4,
+          bottom: -4,
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.dark_mode,
+                size: 14, color: theme.iconTheme.color),
+          ),
+        ),
+      ],
     );
   }
 
@@ -224,7 +335,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           children: [
             if (_busy) const LinearProgressIndicator(),
+            _buildAppearanceSection(),
             _buildColorThemeSection(),
+            const Divider(height: 32),
+            ListenableBuilder(
+              listenable: widget.store,
+              builder: (context, _) {
+                final count = widget.store.archivedCharacters.length;
+                return ListTile(
+                  leading: const Icon(Icons.archive_outlined),
+                  title: const Text('Archive'),
+                  subtitle: Text(count == 1
+                      ? '1 archived character'
+                      : '$count archived characters'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DictionaryListScreen(
+                        store: widget.store,
+                        isArchiveView: true,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
             const Divider(height: 32),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),

@@ -4,6 +4,27 @@ What changed in each release installed on the phone. Newest first.
 How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
+## 1.6.0 — 2026-09-25
+
+- **Each character shows the date it was added.** A small grey "Added YYYY-MM-DD" line under the definition on the character screen. It's set automatically when you tap Save on the Add character screen and can't be changed afterwards. Characters you already have show their real date too, because it was always being saved and just never displayed.
+- **One filter icon instead of a row of buttons.** On the home list (and the Archive) and in the photo gallery, the ⭐ 🔥 (and 🔗 in Photos) buttons next to the search box are replaced by a single filter icon. Tap it for a sheet with:
+  - **Show only** Favorites, Hard, and in Photos Unlinked. They combine the same way as before, and in Photos turning on Unlinked still clears the others and the search box.
+  - **Sort** Newest first or Oldest first, by the date the character or photo was added. **Newest first is the new default on both screens** (the home list used to show oldest first). Your choice is remembered after closing the app, and included in backups.
+  - **Clear filters**, which turns off every Show only toggle. It leaves the sort and the search box alone.
+  - The icon fills in, like the old buttons did, whenever something is being filtered.
+- **A bar along the bottom to get around, like Instagram.** **Characters · Photos · Tags · Flashcards**, with a slightly bigger round button in the middle. It replaces the ☰ side menu.
+  - **The round button does the obvious thing for the tab you're on:** **+** adds a character, a photo or a tag; on Flashcards it's **…** and opens or closes the flashcard options. The Add character bar at the bottom of the home list and the round + buttons on Photos and Tags are gone.
+  - **The bar stays put** when you open a character, photo or tag. Tap the tab you're on to jump back to its top screen, which is why the Home buttons are gone. Switching tabs and back returns you to where you were, including a flashcard round in progress. New or changed characters are picked up when you come back to Flashcards.
+  - **Settings is the ⚙ at the top right** of each tab, where Home used to be. **Archive moved into Settings**, with a count of archived characters. **Using the bar closes Settings**: switching tabs, tapping the current tab or the round button all take you out of it, so coming back to a tab shows the tab, not Settings.
+  - **Flashcard options moved into the … panel**: which cards, which direction, and text or text + drawing. **Text only is now the default** and listed first (it was Text + drawing); if you'd already picked one, your choice is kept. "All characters" no longer has an icon, so only the ⭐ and 🔥 filters do. Tap … again to close it. Nothing about them shows at the top of the Flashcard screen any more, so the card has the space.
+  - **Android back button** goes back inside the tab first, then to Characters, then leaves the app.
+- **Dark mode.** Settings → **Appearance**: **Light**, **Dark** or **Match phone** (follows your phone's or Windows' own setting, switching at night if yours does). Light is the default, so nothing changes until you pick. Remembered, and included in backups.
+  - Charcoal background, off-white text, and lighter grey icons so they stand out.
+  - **Your handwriting stays on a light "sheet of paper"** with black ink, so drawings look the same in both modes.
+  - **Five color themes have a dark version so far: Cerulean, Teal, Iris, Violet and Plum.** They're marked with a small 🌙 in Settings. In dark mode each one uses its lighter shade, since the usual one is too dark to see on a dark background. **Slate, Cobalt and Navy are light-only for now**: while the app is dark they're faded in Settings, and choosing one uses Cerulean in dark mode (Settings says so).
+- **Buttons light up like tags.** Hover over, press, or select a button and it takes on the tag look: a tint of your color theme, a thin outline, and white text in dark mode or near-black text in light mode (the two modes mirror each other). This covers **Typed / Handwritten / Photo** (while selected), **Archive**, **Unlink all** and every other outlined button. **Delete** does the same in red. ⭐ Favorite and 🔥 Hard keep their own grey look.
+- **Behind the scenes: colors are organised in one place.** Nothing looks different. Every color is now defined once in the theme files, and screens refer to colors by what they're for, which is the groundwork for dark mode. A new test stops a color being written directly into a screen again.
+
 ## 1.5.0 — 2026-09-21
 
 - **Adding a character works like the character screen now.** One box with **Typed / Handwritten / Photo** buttons above it — pick whichever you have, switch between them freely.

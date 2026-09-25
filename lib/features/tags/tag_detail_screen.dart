@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_button_styles.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/tag_name_dialog.dart';
@@ -106,12 +107,6 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
                 icon: const Icon(Icons.drive_file_rename_outline),
                 onPressed: _rename,
               ),
-              IconButton(
-                tooltip: 'Home',
-                icon: const Icon(Icons.home_outlined),
-                onPressed: () =>
-                    Navigator.of(context).popUntil((route) => route.isFirst),
-              ),
             ],
           ),
           body: SafeArea(
@@ -198,13 +193,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
                         onPressed: () => _delete(characters.length),
                         icon: const Icon(Icons.delete_outline),
                         label: const Text('Delete tag'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              Theme.of(context).colorScheme.error,
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
+                        style: AppButtonStyles.danger(context),
                       ),
                     ],
                   ),

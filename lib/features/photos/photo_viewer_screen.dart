@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
+import '../../theme/app_button_styles.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/typed_character.dart';
@@ -109,15 +110,9 @@ class PhotoViewerScreen extends StatelessWidget {
         ];
         return Scaffold(
           appBar: AppBar(
+            // No Home button since 1.6.0: tapping the current tab in the
+            // bottom bar goes back to its top screen.
             title: const Text('Photo'),
-            actions: [
-              IconButton(
-                tooltip: 'Home',
-                icon: const Icon(Icons.home_outlined),
-                onPressed: () =>
-                    Navigator.of(context).popUntil((route) => route.isFirst),
-              ),
-            ],
           ),
           body: SafeArea(
             child: Column(
@@ -210,13 +205,7 @@ class PhotoViewerScreen extends StatelessWidget {
                               onPressed: () => _delete(context, photo),
                               icon: const Icon(Icons.delete_outline),
                               label: const Text('Delete photo'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor:
-                                    Theme.of(context).colorScheme.error,
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
+                              style: AppButtonStyles.danger(context),
                             ),
                           ),
                         ],

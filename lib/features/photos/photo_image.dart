@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../theme/app_color_roles.dart';
+
 import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
 
@@ -47,7 +49,7 @@ class _PhotoImageState extends State<PhotoImage> {
       builder: (context, snapshot) {
         final file = snapshot.data;
         if (file == null) {
-          return const ColoredBox(color: Color(0x11000000));
+          return ColoredBox(color: context.appColors.photoPlaceholder);
         }
         return Image.file(
           file,

@@ -25,4 +25,5 @@ Released and in daily use on an Android phone, and runnable on Windows for devel
 
 - **No servers, no external services.** Everything the app does — storage, character lookups, backups — runs entirely on-device. No network permissions are requested.
 - **Docs travel with every change.** Any change to functionality, scope or architecture gets a matching update to this README and to whichever file(s) under `docs/` it affects, in the same pass — not as a follow-up step. If you're a future session picking this project up: read `CHANGELOG.md`'s newest entry, then `docs/roadmap.md`. That's the fastest way to get current.
+- **No hard-coded colors.** Every color value lives once in `lib/theme/`; screens ask for colors by role (the theme, `AppColors`, or `context.appColors`). A test enforces it. See "Where colors live" in `docs/decisions/ui-conventions.md`.
 - **Confirm before destructive/content edits.** Editing a definition, notes, or tags, archiving, or deleting always goes through a confirmation dialog. Star/hard shortlist toggles are the deliberate exception and stay instant.

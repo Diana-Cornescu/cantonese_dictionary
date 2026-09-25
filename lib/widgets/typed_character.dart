@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_color_roles.dart';
 
 /// Shows a character's typed text — or, when there isn't one, a grey
 /// "missing" icon in its place.
@@ -31,7 +31,7 @@ class TypedCharacterText extends StatelessWidget {
     return Icon(
       Icons.help_outline,
       size: iconSize ?? style?.fontSize ?? 24,
-      color: AppColors.inactive,
+      color: context.appColors.inactive,
     );
   }
 }

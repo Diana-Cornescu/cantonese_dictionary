@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 /// The color themes you can pick in Settings (2026-09-20).
 ///
 /// Every theme's hue is chosen to stay clearly apart from the colors that
@@ -11,6 +13,10 @@ import 'package:flutter/material.dart';
 /// themes: only blues, teal, purples and a neutral slate.
 ///
 /// [id] is what's saved in the database; never rename an existing id.
+///
+/// This file is the one list of the themes' own colors, next to
+/// [AppRawColors] for everything else (see the note at the top of
+/// `app_colors.dart`).
 class AppPalette {
   const AppPalette({
     required this.id,
@@ -18,6 +24,7 @@ class AppPalette {
     required this.primary,
     required this.secondary,
     required this.tertiary,
+    this.darkReady = false,
   });
 
   final String id;
@@ -32,8 +39,32 @@ class AppPalette {
   /// A lighter accent.
   final Color tertiary;
 
-  /// A very light tint of [primary] for container backgrounds.
-  Color get container => Color.lerp(primary, Colors.white, 0.85)!;
+  /// A light tint of [primary] (30% of it on white) for the tag chip look
+  /// in light mode — the mirror of dark mode's 30% of [darkAccent] on
+  /// charcoal (2026-09-25; was a fainter 15% before).
+  Color get container => Color.lerp(primary, AppRawColors.white, 0.7)!;
+
+  /// Whether this theme has a dark-mode version yet (2026-09-25).
+  ///
+  /// In dark mode the theme's color is its lighter [tertiary] accent, since
+  /// the usual [primary] is too dark to read on a dark background. A theme
+  /// is dark-ready when that accent is clear on the dark background: at
+  /// least 4:1 contrast. `test/app_palettes_test.dart` checks the number,
+  /// so a theme can't be marked ready if it isn't.
+  ///
+  /// Ready: Cerulean 5.9, Teal 5.6, Iris 4.3, Plum 4.1, Violet 4.0.
+  /// Not yet: Slate 3.97 (just short), Cobalt 3.6, Navy 3.1 — their light
+  /// accent is still too dark and would need a new one picked for dark
+  /// mode. Until then, dark mode shows Cerulean for them, and Settings
+  /// says so.
+  final bool darkReady;
+
+  /// The theme's main color in dark mode.
+  Color get darkAccent => tertiary;
+
+  /// The palette dark mode actually uses when this one is chosen: itself
+  /// if [darkReady], otherwise the default.
+  AppPalette get forDarkMode => darkReady ? this : cerulean;
 
   static const cerulean = AppPalette(
     id: 'cerulean',
@@ -41,6 +72,7 @@ class AppPalette {
     primary: Color(0xFF207BAC),
     secondary: Color(0xFF204CAC),
     tertiary: Color(0xFF20AAAC),
+    darkReady: true,
   );
 
   static const all = <AppPalette>[
@@ -60,6 +92,7 @@ class AppPalette {
       primary: Color(0xFF177C92),
       secondary: Color(0xFF0E5E6E),
       tertiary: Color(0xFF22A4B8),
+      darkReady: true,
     ),
     AppPalette(
       id: 'navy',
@@ -74,6 +107,7 @@ class AppPalette {
       primary: Color(0xFF5054B8),
       secondary: Color(0xFF383B8C),
       tertiary: Color(0xFF7478D6),
+      darkReady: true,
     ),
     AppPalette(
       id: 'violet',
@@ -81,6 +115,7 @@ class AppPalette {
       primary: Color(0xFF6B3FA0),
       secondary: Color(0xFF4E2C78),
       tertiary: Color(0xFF8E6BC4),
+      darkReady: true,
     ),
     AppPalette(
       id: 'plum',
@@ -88,6 +123,7 @@ class AppPalette {
       primary: Color(0xFF86398C),
       secondary: Color(0xFF632A68),
       tertiary: Color(0xFFAA62B0),
+      darkReady: true,
     ),
     AppPalette(
       id: 'slate',
