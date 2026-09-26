@@ -12,6 +12,7 @@ import '../../theme/app_color_roles.dart';
 import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/language_icon.dart';
 import '../../widgets/practice_layout.dart';
+import '../../widgets/sheet_done_button.dart';
 import '../../widgets/reference_glyph_painter.dart';
 import '../character_detail/character_detail_screen.dart';
 import '../flashcards/flashcard_mode_screen.dart' show CardPool;
@@ -291,6 +292,8 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
                           style: theme.textTheme.bodyMedium),
                     ),
                   ],
+                  const SizedBox(height: 8),
+                  const SheetDoneButton(),
                 ],
               ),
             ),

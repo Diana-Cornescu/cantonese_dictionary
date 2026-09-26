@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'filter_icon_button.dart';
+import 'sheet_done_button.dart';
 
 /// Which end of the list comes first. Both the home list and the photo
 /// gallery sort by the date something was added (1.6.0).
@@ -201,6 +202,8 @@ class ListFilterButton extends StatelessWidget {
                         label: const Text('Clear filters'),
                       ),
                     ),
+                    // Closes the sheet; the choices above already applied.
+                    const SheetDoneButton(),
                   ],
                 ),
               ),

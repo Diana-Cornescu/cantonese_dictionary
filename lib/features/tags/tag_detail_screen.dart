@@ -5,6 +5,7 @@ import '../../data/dictionary_store.dart';
 import '../../theme/app_button_styles.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../../widgets/plus_minus_icon.dart';
 import '../../widgets/tag_name_dialog.dart';
 import '../../widgets/typed_character.dart';
 import '../character_detail/character_detail_screen.dart';
@@ -185,7 +186,8 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
                     children: [
                       FilledButton.icon(
                         onPressed: () => _editCharacters(characters),
-                        icon: const Icon(Icons.checklist),
+                        // The same +/− as the photo screen (2026-09-26).
+                        icon: const PlusMinusIcon(),
                         label: const Text('Add or remove characters'),
                       ),
                       const SizedBox(height: 12),

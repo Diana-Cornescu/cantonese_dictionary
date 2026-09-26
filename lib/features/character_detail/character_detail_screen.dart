@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/language_toggles.dart';
+import '../../widgets/plus_minus_icon.dart';
 import '../../widgets/tag_chip.dart';
 import '../../widgets/tag_picker_dialog.dart';
 import '../../widgets/text_prompt_dialog.dart';
@@ -760,7 +761,10 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
                     Text('Tags', style: Theme.of(context).textTheme.titleMedium),
               ),
               IconButton(
-                icon: const Icon(Icons.edit_outlined),
+                // +/− like the photo and tag screens (2026-09-26): the
+                // picker adds and removes tags.
+                tooltip: 'Add or remove tags',
+                icon: const PlusMinusIcon(),
                 onPressed: () => _editTags(entry),
               ),
             ],

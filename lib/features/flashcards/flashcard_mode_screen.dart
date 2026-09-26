@@ -12,6 +12,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/handwriting_canvas.dart';
 import '../../widgets/language_icon.dart';
 import '../../widgets/practice_layout.dart';
+import '../../widgets/sheet_done_button.dart';
 import '../../widgets/typed_character.dart';
 import '../character_detail/character_detail_screen.dart';
 import '../settings/settings_button.dart';
@@ -60,12 +61,16 @@ enum CardPool {
 /// drawing). The order here is the order in the options panel. It's safe
 /// to reorder: the setting is saved by name, not position.
 enum CharacterFace {
-  typedOnly('Text only', Icons.text_fields),
-  typedAndDrawing('Text + drawing', Icons.draw_outlined);
+  typedOnly('Text only', [Icons.text_fields]),
+  // Both icons (2026-09-26): this one shows the text AND the drawing.
+  typedAndDrawing(
+      'Text + drawing', [Icons.text_fields, Icons.draw_outlined]);
 
-  const CharacterFace(this.label, this.icon);
+  const CharacterFace(this.label, this.icons);
   final String label;
-  final IconData icon;
+  /// Shown side by side in the options panel, one per thing the card
+  /// shows.
+  final List<IconData> icons;
 
   /// The key this choice is saved under in the settings table, so it
   /// survives a restart and rides along in backups — the same mechanism
@@ -327,9 +332,15 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
                       value: face,
                       current: _face,
                       label: face.label,
-                      trailing: Icon(face.icon),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (final icon in face.icons) Icon(icon),
+                        ],
+                      ),
                       onPick: _setFace,
                     ),
+                  const SheetDoneButton(),
                 ],
               ),
             ),

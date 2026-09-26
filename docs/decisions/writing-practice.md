@@ -80,6 +80,10 @@
   **under** the box, above the language line, in a fixed two-line space
   (longer ones end in "…"); the box takes all the remaining height, up to
   480 px, sitting low so it's next to the definition.
+- **X-ray at 45% (2026-09-26).** The whole X-ray (outlines, lines,
+  arrows, badges) is drawn as one faded layer, `_xrayOpacity` in the Write
+  screen, so it doesn't compete with your ink. One layer rather than
+  lighter colors, so overlapping parts don't darken each other.
   **Previous** steps back one character, or to the last character of the
   previous card, within the current round only (a reshuffle starts a new
   one), with the box empty as when going forward.

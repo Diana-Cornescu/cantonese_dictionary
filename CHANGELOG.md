@@ -14,6 +14,11 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
   - Flashcards: **Incorrect / Correct** sit along the bottom once the card is flipped; before that, the "Tap the card…" hint is there instead. **Go to character screen** still only appears once the card is flipped, but its spot is kept so nothing jumps.
   - Write: **Previous · X-ray · Next →** along the bottom. **Previous is new**: it goes back one character, or to the previous card, within the current round. The X-ray button just says "X-ray"; its eye icon shows whether a tap will show or hide it. **Go to character screen is new on Write** too.
   - Write: **the definition moved under the writing box**, above the language, and everything under the box sits lower so **the box is bigger**. It always leaves room for two lines of definition (longer ones end in "…"), so the box stays the same size from card to card.
+  - Write: **the X-ray is lighter** (about half as strong), so it's less distracting when you write over it. Your own ink and the guide lines are unchanged.
+- **Small UX touches.**
+  - Flashcards **…** panel: **Text + drawing** now shows both the text icon and the drawing icon.
+  - **Add or remove** buttons use a new **+/−** icon (plus, slash and minus in a row): linking characters on a photo's screen (was +), **Add or remove characters** on a tag's screen (was a checklist), and the tags ✎ on the character screen. One button does both, and now it looks like it.
+  - A **Done** button (outlined with a ✓, like Archive) closes the filter sheet (home list, Archive, Photos, under Clear filters) and the Flashcards and Write **…** panels. Choices still apply as soon as you tap them.
 
 ## 1.7.0 — 2026-09-26
 
