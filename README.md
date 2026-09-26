@@ -17,6 +17,7 @@ Released and in daily use on an Android phone, and runnable on Windows for devel
   - `ui-conventions.md` — the rules that apply across every screen (confirmations, what the three colors mean, the two "selected" looks, where destructive actions go).
   - `network.md` — why the Android manifest requests no permissions at all, and what that guarantees.
   - `tags.md`, `photos.md`, `storage.md`, `backup-and-release.md`, `writing-practice.md` — one per feature area.
+- `docs/archive/` — features that were built and then removed, with their code, in case they're wanted back.
 - `CHANGELOG.md` (repo root) — what changed in each release, in plain language. This is the project's history; the docs above only describe the present and the future.
 
 **Writing a decision log:** one file per area under `docs/decisions/`, named for the area rather than dated. Record **what was decided and why it mattered**, not how it was implemented — the code covers how. The exception is a *how* the code can't explain on its own: an ordering that isn't obvious, a trap that cost real time, a constant whose value matters. Those belong in the log.

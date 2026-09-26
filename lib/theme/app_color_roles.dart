@@ -96,7 +96,7 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
   /// The number inside a [strokeOrder] badge.
   final Color onStrokeOrder;
 
-  /// In Practice mode, every stroke except the one to write next: its
+  /// On the Write tab, every stroke except the one to write next: its
   /// line, arrow and badge step back to grey (2026-09-26).
   final Color strokeOrderMuted;
 

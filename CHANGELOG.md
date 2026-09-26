@@ -6,11 +6,9 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
 ## 1.7.0 — not released yet
 
-- **A Write tab for practising writing characters.** It shows a definition, always visible right above a square box with faint guide lines. The **X-ray** shows how the character is written: each stroke in pale grey, with a blue line and arrow for the direction and a number for the order.
-  - **Memory mode:** write the character, then tap **Check** to see the X-ray under your writing. **Try again** clears the box; **Next** moves on.
-  - **Practice mode:** the X-ray is there from the start, so you can write over it. The stroke to write next is in blue and the others are grey; it moves on each time you lift your pen, and undo steps it back. Then **Next**.
-  - Each stroke's number sits on its own line, so it's clear which number belongs to which stroke.
-  - Pick the mode in the **…** panel. Your choice is remembered, and included in backups.
+- **A Write tab for practising writing characters.** It shows a definition, always visible right above a square box with faint guide lines. The **X-ray** in the box shows how the character is written: each stroke in pale grey, with a blue line and arrow for the direction and a number on it for the order. Write over it, then tap **Next**.
+  - The stroke to write next is in blue and the others are grey; it moves on each time you lift your pen, and undo steps it back.
+  - **Hide X-ray** (👁) next to **Next** turns the X-ray off so you can try from memory, without clearing what you've written; **Show X-ray** brings it back to check. It stays hidden from card to card until you show it again or close the app.
   - Words with more than one character (时间) are written one character at a time.
   - Nothing is scored or saved yet, and flashcard stats aren't affected.
   - **…** (the round button) also picks All, Hard or Favorites, like Flashcards.

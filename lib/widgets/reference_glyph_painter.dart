@@ -13,10 +13,9 @@ import '../data/stroke_reference.dart';
 ///  - a numbered **badge** on that line, a short way in from where the pen
 ///    goes down: 1, 2, 3… in stroke order.
 ///
-/// Memory mode shows the X-ray after Check; Practice mode shows it from
-/// the start, to write over (2026-09-26). In Practice mode [activeStroke]
-/// highlights the stroke to write next: its line, arrow and badge in
-/// [strokeOrderColor], every other stroke's in [mutedColor].
+/// The Write tab shows it from the start, to write over (2026-09-26), with
+/// [activeStroke] highlighting the stroke to write next: its line, arrow
+/// and badge in [strokeOrderColor], every other stroke's in [mutedColor].
 ///
 /// Used as `HandwritingCanvas.backgroundPainter`, so it sits on the paper
 /// and under the strokes. Expects a square box; the reference is scaled to
