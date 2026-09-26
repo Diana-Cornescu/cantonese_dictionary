@@ -9,6 +9,7 @@ import '../../theme/app_color_roles.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/character_picker_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
+import '../../widgets/language_toggles.dart';
 import '../../widgets/tag_chip.dart';
 import '../../widgets/tag_picker_dialog.dart';
 import '../../widgets/typed_character.dart';
@@ -77,6 +78,11 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
   final List<int> _referenceIds = [];
 
   List<List<StrokePoint>>? _capturedStrokes;
+
+  /// The optional Language field (2026-09-26). Both off = not set, which
+  /// is fine: it isn't required to save.
+  bool _isCantonese = false;
+  bool _isMandarin = false;
 
   DictionaryStore get store => widget.store;
 
@@ -162,6 +168,8 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
       updatedAt: now,
       flashcardStats: FlashcardStats.zero,
       referencedCharacterIds: const [],
+      isCantonese: _isCantonese,
+      isMandarin: _isMandarin,
     );
     // Tapping Save is already the explicit, deliberate commit for a
     // brand-new row (unlike editing something that already exists), so no
@@ -331,6 +339,17 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
               // Re-check whether Save can be enabled as you type.
               onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 16),
+            // Optional: Cantonese, Mandarin, both (a shared word) or
+            // neither (not set). Set it later from the character screen.
+            Text('Language', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            LanguageToggles(
+              isCantonese: _isCantonese,
+              isMandarin: _isMandarin,
+              onCantonese: () => setState(() => _isCantonese = !_isCantonese),
+              onMandarin: () => setState(() => _isMandarin = !_isMandarin),
             ),
             const SizedBox(height: 16),
             _sectionHeader(

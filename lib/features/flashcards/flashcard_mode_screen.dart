@@ -92,14 +92,20 @@ enum CharacterFace {
 /// pills across the top before, and nothing about them shows on the screen
 /// now):
 ///  - which cards: **All characters**, **Hard only** or **Favorites only**,
+///  - which language (2026-09-26): three checkboxes, **Cantonese**,
+///    **Mandarin** and **Language not set**, all checked to start with.
+///    Unchecking one leaves those cards out; a word marked both stays in
+///    while either language is checked. Combines with the choice above,
+///    so Hard only with just Mandarin checked is the hard Mandarin words,
 ///  - which way: **Character → Definition**, **Definition → Character** or
 ///    **Bidirectional** (each card randomly picks a direction),
 ///  - what the character side shows: **Text + drawing** or **Text only**.
 ///
-/// Each app start begins with All characters and Character → Definition.
-/// Changing either of those reshuffles and starts from the top. The third one is only about what's drawn on the card, so it doesn't
-/// reshuffle — and unlike the other two it is **remembered between
-/// sessions**, because it's a standing preference about how you want to be
+/// Each app start begins with All characters, every language box checked
+/// and Character → Definition. Changing any of those reshuffles and starts from the top.
+/// The last one (character side) is only about what's drawn on the card,
+/// so it doesn't reshuffle — and unlike the others it is **remembered
+/// between sessions**, because it's a standing preference about how you want to be
 /// tested rather than a per-session choice.
 ///
 /// Since the tab stays alive while you use the others (1.6.0), a round in
@@ -122,6 +128,11 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
   final _random = Random();
 
   CardPool _cardPool = CardPool.all;
+  /// The checked Language boxes. All three by default.
+  Set<LanguageFilter> _languages = LanguageFilter.all;
+
+  bool get _allLanguages =>
+      _languages.length == LanguageFilter.values.length;
   StudyDirection _study = StudyDirection.characterToDefinition;
   late CharacterFace _face =
       CharacterFace.byId(widget.store.setting(CharacterFace.settingKey));
@@ -160,6 +171,7 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
         widget.store.activeCharacters.where((c) => c.isStarred).toList(),
     };
     return source
+        .where((c) => LanguageFilter.anyMatch(_languages, c))
         .where((c) => _charToDef || c.definition.trim().isNotEmpty)
         .toList();
   }
@@ -271,6 +283,17 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
                       onPick: _setCardPool,
                     ),
                   const Divider(height: 24),
+                  heading('Language'),
+                  for (final language in LanguageFilter.values)
+                    CheckboxListTile(
+                      value: _languages.contains(language),
+                      title: Text(language.label),
+                      onChanged: (checked) {
+                        _toggleLanguage(language, checked ?? false);
+                        setSheetState(() {});
+                      },
+                    ),
+                  const Divider(height: 24),
                   heading('Direction'),
                   for (final study in StudyDirection.values)
                     choice<StudyDirection>(
@@ -320,7 +343,30 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
     });
   }
 
-  /// Unlike the other two, this one is saved: it's a standing preference,
+  /// Checks or unchecks one Language box. Reshuffles, like the card pool.
+  void _toggleLanguage(LanguageFilter language, bool checked) {
+    if (_languages.contains(language) == checked) return;
+    setState(() {
+      _languages = {..._languages};
+      if (checked) {
+        _languages.add(language);
+      } else {
+        _languages.remove(language);
+      }
+      _rebuildPool();
+    });
+  }
+
+  /// Back to every character: All characters and every language box.
+  void _showAll() {
+    setState(() {
+      _cardPool = CardPool.all;
+      _languages = LanguageFilter.all;
+      _rebuildPool();
+    });
+  }
+
+  /// Unlike the other choices, this one is saved: it's a standing preference,
   /// and it changes nothing about the pool, so no reshuffle.
   Future<void> _setFace(CharacterFace value) async {
     if (value == _face) return;
@@ -405,24 +451,29 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
 
   Widget _buildBody() {
     if (_pool.isEmpty) {
-      final message = switch (_cardPool) {
-        CardPool.hard =>
-          'No hard-flagged characters yet — flag some with the 🔥 button '
-              'first.',
-        CardPool.favorites =>
-          'No favorites yet — star some characters with the ☆ button first.',
-        CardPool.all => 'No characters to study yet — add some first.',
-      };
+      final filtered = _cardPool != CardPool.all || !_allLanguages;
+      final message = !_allLanguages
+          ? 'No characters match these options — change the language or '
+              'which cards with the … button below.'
+          : switch (_cardPool) {
+              CardPool.hard =>
+                'No hard-flagged characters yet — flag some with the 🔥 '
+                    'button first.',
+              CardPool.favorites =>
+                'No favorites yet — star some characters with the ☆ button '
+                    'first.',
+              CardPool.all => 'No characters to study yet — add some first.',
+            };
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(message, textAlign: TextAlign.center),
-            if (_cardPool != CardPool.all) ...[
+            if (filtered) ...[
               const SizedBox(height: 16),
               OutlinedButton(
-                onPressed: () => _setCardPool(CardPool.all),
+                onPressed: _showAll,
                 child: const Text('Show all characters instead'),
               ),
             ],

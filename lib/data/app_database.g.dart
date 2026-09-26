@@ -118,6 +118,26 @@ class $DbCharactersTable extends DbCharacters
   late final GeneratedColumn<DateTime> lastReviewedAt =
       GeneratedColumn<DateTime>('last_reviewed_at', aliasedName, true,
           type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _isCantoneseMeta =
+      const VerificationMeta('isCantonese');
+  @override
+  late final GeneratedColumn<bool> isCantonese = GeneratedColumn<bool>(
+      'is_cantonese', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_cantonese" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _isMandarinMeta =
+      const VerificationMeta('isMandarin');
+  @override
+  late final GeneratedColumn<bool> isMandarin = GeneratedColumn<bool>(
+      'is_mandarin', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_mandarin" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -133,7 +153,9 @@ class $DbCharactersTable extends DbCharacters
         timesSeen,
         timesCorrect,
         timesIncorrect,
-        lastReviewedAt
+        lastReviewedAt,
+        isCantonese,
+        isMandarin
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -218,6 +240,18 @@ class $DbCharactersTable extends DbCharacters
           lastReviewedAt.isAcceptableOrUnknown(
               data['last_reviewed_at']!, _lastReviewedAtMeta));
     }
+    if (data.containsKey('is_cantonese')) {
+      context.handle(
+          _isCantoneseMeta,
+          isCantonese.isAcceptableOrUnknown(
+              data['is_cantonese']!, _isCantoneseMeta));
+    }
+    if (data.containsKey('is_mandarin')) {
+      context.handle(
+          _isMandarinMeta,
+          isMandarin.isAcceptableOrUnknown(
+              data['is_mandarin']!, _isMandarinMeta));
+    }
     return context;
   }
 
@@ -255,6 +289,10 @@ class $DbCharactersTable extends DbCharacters
           .read(DriftSqlType.int, data['${effectivePrefix}times_incorrect'])!,
       lastReviewedAt: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}last_reviewed_at']),
+      isCantonese: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_cantonese'])!,
+      isMandarin: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_mandarin'])!,
     );
   }
 
@@ -281,6 +319,8 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
   final int timesCorrect;
   final int timesIncorrect;
   final DateTime? lastReviewedAt;
+  final bool isCantonese;
+  final bool isMandarin;
   const CharacterRow(
       {required this.id,
       required this.typedCharacter,
@@ -295,7 +335,9 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
       required this.timesSeen,
       required this.timesCorrect,
       required this.timesIncorrect,
-      this.lastReviewedAt});
+      this.lastReviewedAt,
+      required this.isCantonese,
+      required this.isMandarin});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -317,6 +359,8 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
     if (!nullToAbsent || lastReviewedAt != null) {
       map['last_reviewed_at'] = Variable<DateTime>(lastReviewedAt);
     }
+    map['is_cantonese'] = Variable<bool>(isCantonese);
+    map['is_mandarin'] = Variable<bool>(isMandarin);
     return map;
   }
 
@@ -340,6 +384,8 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
       lastReviewedAt: lastReviewedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastReviewedAt),
+      isCantonese: Value(isCantonese),
+      isMandarin: Value(isMandarin),
     );
   }
 
@@ -361,6 +407,8 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
       timesCorrect: serializer.fromJson<int>(json['timesCorrect']),
       timesIncorrect: serializer.fromJson<int>(json['timesIncorrect']),
       lastReviewedAt: serializer.fromJson<DateTime?>(json['lastReviewedAt']),
+      isCantonese: serializer.fromJson<bool>(json['isCantonese']),
+      isMandarin: serializer.fromJson<bool>(json['isMandarin']),
     );
   }
   @override
@@ -381,6 +429,8 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
       'timesCorrect': serializer.toJson<int>(timesCorrect),
       'timesIncorrect': serializer.toJson<int>(timesIncorrect),
       'lastReviewedAt': serializer.toJson<DateTime?>(lastReviewedAt),
+      'isCantonese': serializer.toJson<bool>(isCantonese),
+      'isMandarin': serializer.toJson<bool>(isMandarin),
     };
   }
 
@@ -398,7 +448,9 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
           int? timesSeen,
           int? timesCorrect,
           int? timesIncorrect,
-          Value<DateTime?> lastReviewedAt = const Value.absent()}) =>
+          Value<DateTime?> lastReviewedAt = const Value.absent(),
+          bool? isCantonese,
+          bool? isMandarin}) =>
       CharacterRow(
         id: id ?? this.id,
         typedCharacter: typedCharacter ?? this.typedCharacter,
@@ -415,6 +467,8 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
         timesIncorrect: timesIncorrect ?? this.timesIncorrect,
         lastReviewedAt:
             lastReviewedAt.present ? lastReviewedAt.value : this.lastReviewedAt,
+        isCantonese: isCantonese ?? this.isCantonese,
+        isMandarin: isMandarin ?? this.isMandarin,
       );
   CharacterRow copyWithCompanion(DbCharactersCompanion data) {
     return CharacterRow(
@@ -443,6 +497,10 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
       lastReviewedAt: data.lastReviewedAt.present
           ? data.lastReviewedAt.value
           : this.lastReviewedAt,
+      isCantonese:
+          data.isCantonese.present ? data.isCantonese.value : this.isCantonese,
+      isMandarin:
+          data.isMandarin.present ? data.isMandarin.value : this.isMandarin,
     );
   }
 
@@ -462,7 +520,9 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
           ..write('timesSeen: $timesSeen, ')
           ..write('timesCorrect: $timesCorrect, ')
           ..write('timesIncorrect: $timesIncorrect, ')
-          ..write('lastReviewedAt: $lastReviewedAt')
+          ..write('lastReviewedAt: $lastReviewedAt, ')
+          ..write('isCantonese: $isCantonese, ')
+          ..write('isMandarin: $isMandarin')
           ..write(')'))
         .toString();
   }
@@ -482,7 +542,9 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
       timesSeen,
       timesCorrect,
       timesIncorrect,
-      lastReviewedAt);
+      lastReviewedAt,
+      isCantonese,
+      isMandarin);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -500,7 +562,9 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
           other.timesSeen == this.timesSeen &&
           other.timesCorrect == this.timesCorrect &&
           other.timesIncorrect == this.timesIncorrect &&
-          other.lastReviewedAt == this.lastReviewedAt);
+          other.lastReviewedAt == this.lastReviewedAt &&
+          other.isCantonese == this.isCantonese &&
+          other.isMandarin == this.isMandarin);
 }
 
 class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
@@ -518,6 +582,8 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
   final Value<int> timesCorrect;
   final Value<int> timesIncorrect;
   final Value<DateTime?> lastReviewedAt;
+  final Value<bool> isCantonese;
+  final Value<bool> isMandarin;
   const DbCharactersCompanion({
     this.id = const Value.absent(),
     this.typedCharacter = const Value.absent(),
@@ -533,6 +599,8 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
     this.timesCorrect = const Value.absent(),
     this.timesIncorrect = const Value.absent(),
     this.lastReviewedAt = const Value.absent(),
+    this.isCantonese = const Value.absent(),
+    this.isMandarin = const Value.absent(),
   });
   DbCharactersCompanion.insert({
     this.id = const Value.absent(),
@@ -549,6 +617,8 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
     this.timesCorrect = const Value.absent(),
     this.timesIncorrect = const Value.absent(),
     this.lastReviewedAt = const Value.absent(),
+    this.isCantonese = const Value.absent(),
+    this.isMandarin = const Value.absent(),
   })  : createdAt = Value(createdAt),
         updatedAt = Value(updatedAt);
   static Insertable<CharacterRow> custom({
@@ -566,6 +636,8 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
     Expression<int>? timesCorrect,
     Expression<int>? timesIncorrect,
     Expression<DateTime>? lastReviewedAt,
+    Expression<bool>? isCantonese,
+    Expression<bool>? isMandarin,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -582,6 +654,8 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
       if (timesCorrect != null) 'times_correct': timesCorrect,
       if (timesIncorrect != null) 'times_incorrect': timesIncorrect,
       if (lastReviewedAt != null) 'last_reviewed_at': lastReviewedAt,
+      if (isCantonese != null) 'is_cantonese': isCantonese,
+      if (isMandarin != null) 'is_mandarin': isMandarin,
     });
   }
 
@@ -599,7 +673,9 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
       Value<int>? timesSeen,
       Value<int>? timesCorrect,
       Value<int>? timesIncorrect,
-      Value<DateTime?>? lastReviewedAt}) {
+      Value<DateTime?>? lastReviewedAt,
+      Value<bool>? isCantonese,
+      Value<bool>? isMandarin}) {
     return DbCharactersCompanion(
       id: id ?? this.id,
       typedCharacter: typedCharacter ?? this.typedCharacter,
@@ -615,6 +691,8 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
       timesCorrect: timesCorrect ?? this.timesCorrect,
       timesIncorrect: timesIncorrect ?? this.timesIncorrect,
       lastReviewedAt: lastReviewedAt ?? this.lastReviewedAt,
+      isCantonese: isCantonese ?? this.isCantonese,
+      isMandarin: isMandarin ?? this.isMandarin,
     );
   }
 
@@ -663,6 +741,12 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
     if (lastReviewedAt.present) {
       map['last_reviewed_at'] = Variable<DateTime>(lastReviewedAt.value);
     }
+    if (isCantonese.present) {
+      map['is_cantonese'] = Variable<bool>(isCantonese.value);
+    }
+    if (isMandarin.present) {
+      map['is_mandarin'] = Variable<bool>(isMandarin.value);
+    }
     return map;
   }
 
@@ -682,7 +766,9 @@ class DbCharactersCompanion extends UpdateCompanion<CharacterRow> {
           ..write('timesSeen: $timesSeen, ')
           ..write('timesCorrect: $timesCorrect, ')
           ..write('timesIncorrect: $timesIncorrect, ')
-          ..write('lastReviewedAt: $lastReviewedAt')
+          ..write('lastReviewedAt: $lastReviewedAt, ')
+          ..write('isCantonese: $isCantonese, ')
+          ..write('isMandarin: $isMandarin')
           ..write(')'))
         .toString();
   }
@@ -2011,6 +2097,8 @@ typedef $$DbCharactersTableCreateCompanionBuilder = DbCharactersCompanion
   Value<int> timesCorrect,
   Value<int> timesIncorrect,
   Value<DateTime?> lastReviewedAt,
+  Value<bool> isCantonese,
+  Value<bool> isMandarin,
 });
 typedef $$DbCharactersTableUpdateCompanionBuilder = DbCharactersCompanion
     Function({
@@ -2028,6 +2116,8 @@ typedef $$DbCharactersTableUpdateCompanionBuilder = DbCharactersCompanion
   Value<int> timesCorrect,
   Value<int> timesIncorrect,
   Value<DateTime?> lastReviewedAt,
+  Value<bool> isCantonese,
+  Value<bool> isMandarin,
 });
 
 class $$DbCharactersTableFilterComposer
@@ -2083,6 +2173,12 @@ class $$DbCharactersTableFilterComposer
   ColumnFilters<DateTime> get lastReviewedAt => $composableBuilder(
       column: $table.lastReviewedAt,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isCantonese => $composableBuilder(
+      column: $table.isCantonese, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isMandarin => $composableBuilder(
+      column: $table.isMandarin, builder: (column) => ColumnFilters(column));
 }
 
 class $$DbCharactersTableOrderingComposer
@@ -2139,6 +2235,12 @@ class $$DbCharactersTableOrderingComposer
   ColumnOrderings<DateTime> get lastReviewedAt => $composableBuilder(
       column: $table.lastReviewedAt,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isCantonese => $composableBuilder(
+      column: $table.isCantonese, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isMandarin => $composableBuilder(
+      column: $table.isMandarin, builder: (column) => ColumnOrderings(column));
 }
 
 class $$DbCharactersTableAnnotationComposer
@@ -2191,6 +2293,12 @@ class $$DbCharactersTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastReviewedAt => $composableBuilder(
       column: $table.lastReviewedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCantonese => $composableBuilder(
+      column: $table.isCantonese, builder: (column) => column);
+
+  GeneratedColumn<bool> get isMandarin => $composableBuilder(
+      column: $table.isMandarin, builder: (column) => column);
 }
 
 class $$DbCharactersTableTableManager extends RootTableManager<
@@ -2233,6 +2341,8 @@ class $$DbCharactersTableTableManager extends RootTableManager<
             Value<int> timesCorrect = const Value.absent(),
             Value<int> timesIncorrect = const Value.absent(),
             Value<DateTime?> lastReviewedAt = const Value.absent(),
+            Value<bool> isCantonese = const Value.absent(),
+            Value<bool> isMandarin = const Value.absent(),
           }) =>
               DbCharactersCompanion(
             id: id,
@@ -2249,6 +2359,8 @@ class $$DbCharactersTableTableManager extends RootTableManager<
             timesCorrect: timesCorrect,
             timesIncorrect: timesIncorrect,
             lastReviewedAt: lastReviewedAt,
+            isCantonese: isCantonese,
+            isMandarin: isMandarin,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -2265,6 +2377,8 @@ class $$DbCharactersTableTableManager extends RootTableManager<
             Value<int> timesCorrect = const Value.absent(),
             Value<int> timesIncorrect = const Value.absent(),
             Value<DateTime?> lastReviewedAt = const Value.absent(),
+            Value<bool> isCantonese = const Value.absent(),
+            Value<bool> isMandarin = const Value.absent(),
           }) =>
               DbCharactersCompanion.insert(
             id: id,
@@ -2281,6 +2395,8 @@ class $$DbCharactersTableTableManager extends RootTableManager<
             timesCorrect: timesCorrect,
             timesIncorrect: timesIncorrect,
             lastReviewedAt: lastReviewedAt,
+            isCantonese: isCantonese,
+            isMandarin: isMandarin,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -203,6 +203,8 @@ class DictionaryStore extends ChangeNotifier {
         lastReviewedAt: row.lastReviewedAt,
       ),
       referencedCharacterIds: List<int>.of(references),
+      isCantonese: row.isCantonese,
+      isMandarin: row.isMandarin,
     );
   }
 
@@ -359,6 +361,28 @@ class DictionaryStore extends ChangeNotifier {
     final c = _characters[index];
     await _saveRow(
         c.copyWith(isArchived: !c.isArchived, updatedAt: DateTime.now()));
+  }
+
+  /// Turns the Cantonese label on character [id] on or off. Independent of
+  /// Mandarin: both on means the word is shared. Instant and unconfirmed,
+  /// like star and hard, since one more tap undoes it. No-op if the
+  /// character doesn't exist.
+  Future<void> toggleCantonese(int id) async {
+    final index = _indexOf(id);
+    if (index == -1) return;
+    final c = _characters[index];
+    await _saveRow(
+        c.copyWith(isCantonese: !c.isCantonese, updatedAt: DateTime.now()));
+  }
+
+  /// Turns the Mandarin label on character [id] on or off. See
+  /// [toggleCantonese].
+  Future<void> toggleMandarin(int id) async {
+    final index = _indexOf(id);
+    if (index == -1) return;
+    final c = _characters[index];
+    await _saveRow(
+        c.copyWith(isMandarin: !c.isMandarin, updatedAt: DateTime.now()));
   }
 
   /// Records one flashcard review outcome for [id]: always increments

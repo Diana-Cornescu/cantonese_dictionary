@@ -48,8 +48,11 @@ import '../settings/settings_button.dart';
 ///
 /// Options live in a panel that the bottom bar's round **…** button opens
 /// and closes, like Flashcards: **All characters**, **Hard only** or
-/// **Favorites only**. The choice isn't saved; each app start begins with
-/// All characters.
+/// **Favorites only**, and (2026-09-26) three Language checkboxes,
+/// **Cantonese**, **Mandarin** and **Language not set**, all checked to
+/// start with; unchecking one leaves those cards out (a word marked both
+/// stays in while either language is checked). The choices aren't saved;
+/// each app start begins with All characters and every language checked.
 class WritePracticeScreen extends StatefulWidget {
   const WritePracticeScreen({super.key, required this.store});
 
@@ -68,6 +71,11 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
   bool _loadFailed = false;
 
   CardPool _cardPool = CardPool.all;
+  /// The checked Language boxes. All three by default.
+  Set<LanguageFilter> _languages = LanguageFilter.all;
+
+  bool get _allLanguages =>
+      _languages.length == LanguageFilter.values.length;
 
   List<CharacterEntry> _pool = [];
 
@@ -128,6 +136,7 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
     final usable = <CharacterEntry>[];
     final skipped = <CharacterEntry>[];
     for (final card in source) {
+      if (!LanguageFilter.anyMatch(_languages, card)) continue;
       if (card.definition.trim().isEmpty) continue;
       final glyphs = StrokeReference.glyphsOf(card.typedCharacter);
       final checkable = reference != null &&
@@ -243,6 +252,17 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
                         setSheetState(() {});
                       },
                     ),
+                  const Divider(height: 24),
+                  heading('Language'),
+                  for (final language in LanguageFilter.values)
+                    CheckboxListTile(
+                      value: _languages.contains(language),
+                      title: Text(language.label),
+                      onChanged: (checked) {
+                        _toggleLanguage(language, checked ?? false);
+                        setSheetState(() {});
+                      },
+                    ),
                   if (_skipped.isNotEmpty) ...[
                     const Divider(height: 24),
                     Padding(
@@ -293,6 +313,29 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
     });
   }
 
+  /// Checks or unchecks one Language box. Reshuffles, like the card pool.
+  void _toggleLanguage(LanguageFilter language, bool checked) {
+    if (_languages.contains(language) == checked) return;
+    setState(() {
+      _languages = {..._languages};
+      if (checked) {
+        _languages.add(language);
+      } else {
+        _languages.remove(language);
+      }
+      _rebuildPool();
+    });
+  }
+
+  /// Back to every character: All characters and every language box.
+  void _showAll() {
+    setState(() {
+      _cardPool = CardPool.all;
+      _languages = LanguageFilter.all;
+      _rebuildPool();
+    });
+  }
+
   void _next() {
     setState(() {
       if (_glyph + 1 < _currentGlyphs.length) {
@@ -337,11 +380,14 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_pool.isEmpty) {
-      final base = switch (_cardPool) {
-        CardPool.hard => 'No hard-flagged characters to write.',
-        CardPool.favorites => 'No favorites to write.',
-        CardPool.all => 'No characters to write yet — add some first.',
-      };
+      final filtered = _cardPool != CardPool.all || !_allLanguages;
+      final base = !_allLanguages
+          ? 'No characters to write with these options.'
+          : switch (_cardPool) {
+              CardPool.hard => 'No hard-flagged characters to write.',
+              CardPool.favorites => 'No favorites to write.',
+              CardPool.all => 'No characters to write yet — add some first.',
+            };
       final count = _skipped.length;
       final skippedNote = count == 0
           ? ''
@@ -352,10 +398,10 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
                   "data doesn't have them. Tap … below to see which.";
       return _centeredMessage(
         base + skippedNote,
-        action: _cardPool == CardPool.all
+        action: !filtered
             ? null
             : OutlinedButton(
-                onPressed: () => _setCardPool(CardPool.all),
+                onPressed: _showAll,
                 child: const Text('Show all characters instead'),
               ),
       );

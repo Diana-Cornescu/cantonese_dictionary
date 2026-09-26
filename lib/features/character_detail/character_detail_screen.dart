@@ -8,6 +8,7 @@ import '../../theme/app_color_roles.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/handwriting_canvas.dart';
+import '../../widgets/language_toggles.dart';
 import '../../widgets/tag_chip.dart';
 import '../../widgets/tag_picker_dialog.dart';
 import '../../widgets/text_prompt_dialog.dart';
@@ -695,6 +696,28 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
                 .bodySmall
                 ?.copyWith(color: context.appColors.inactive),
           ),
+          const Divider(height: 24),
+          // Language (2026-09-26): optional, and either, both or neither.
+          // Instant and unconfirmed like Favorite / Hard, since one more
+          // tap undoes it.
+          Text('Language', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          LanguageToggles(
+            isCantonese: entry.isCantonese,
+            isMandarin: entry.isMandarin,
+            onCantonese: () => widget.store.toggleCantonese(entry.id),
+            onMandarin: () => widget.store.toggleMandarin(entry.id),
+          ),
+          if (!entry.hasLanguage) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Not set',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: context.appColors.inactive),
+            ),
+          ],
           const Divider(height: 24),
           Row(
             children: [

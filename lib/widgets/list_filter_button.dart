@@ -21,14 +21,26 @@ class ListFilterOption {
   const ListFilterOption({
     required this.id,
     required this.label,
-    required this.icon,
+    this.icon,
     this.color,
+    this.section = defaultSection,
   });
+
+  /// The heading options are listed under unless they say otherwise.
+  static const defaultSection = 'Show only';
 
   /// Stable key used in [ListFilters.on].
   final String id;
   final String label;
-  final IconData icon;
+
+  /// Null for an option whose label says it all, like the Language ones.
+  final IconData? icon;
+
+  /// The heading this option is listed under in the sheet (2026-09-26,
+  /// for the Language group). Sections appear in the order their first
+  /// option does. Every toggle still narrows the list the same way,
+  /// whatever its section: they all combine with AND.
+  final String section;
 
   /// The icon's meaning color (gold favorite, red hard), or null for a
   /// filter with no color of its own, like the gallery's unlinked.
@@ -113,6 +125,12 @@ class ListFilterButton extends StatelessWidget {
             }
 
             final textTheme = Theme.of(context).textTheme;
+            final sections = <String>[];
+            for (final option in options) {
+              if (!sections.contains(option.section)) {
+                sections.add(option.section);
+              }
+            }
             return SafeArea(
               top: false,
               child: SingleChildScrollView(
@@ -121,25 +139,31 @@ class ListFilterButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                      child: Text('Show only', style: textTheme.titleMedium),
-                    ),
-                    for (final option in options)
-                      CheckboxListTile(
-                        value: current.isOn(option.id),
-                        secondary: Icon(option.icon, color: option.color),
-                        title: Text(option.label),
-                        onChanged: (checked) {
-                          final on = {...current.on};
-                          if (checked ?? false) {
-                            on.add(option.id);
-                          } else {
-                            on.remove(option.id);
-                          }
-                          apply(current.copyWith(on: on));
-                        },
+                    for (final (i, section) in sections.indexed) ...[
+                      if (i > 0) const Divider(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                        child: Text(section, style: textTheme.titleMedium),
                       ),
+                      for (final option
+                          in options.where((o) => o.section == section))
+                        CheckboxListTile(
+                          value: current.isOn(option.id),
+                          secondary: option.icon == null
+                              ? null
+                              : Icon(option.icon, color: option.color),
+                          title: Text(option.label),
+                          onChanged: (checked) {
+                            final on = {...current.on};
+                            if (checked ?? false) {
+                              on.add(option.id);
+                            } else {
+                              on.remove(option.id);
+                            }
+                            apply(current.copyWith(on: on));
+                          },
+                        ),
+                    ],
                     const Divider(height: 24),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),

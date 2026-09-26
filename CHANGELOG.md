@@ -4,6 +4,13 @@ What changed in each release installed on the phone. Newest first.
 How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
+## Unreleased
+
+- **Language: Cantonese, Mandarin or both.** An optional field for each character. Set it with the **Cantonese** and **Mandarin** buttons on the Add character screen, or on the character screen under the definition (turn both on for a word the two share; leave both off and it shows "Not set"). Instant, like Favorite and Hard. Characters you already have start as Not set.
+  - **Filter by it everywhere.** The filter sheet on the home list, the Archive and Photos has a new **Language** group: **Cantonese**, **Mandarin** and **Not set**. Cantonese includes words marked both, and so does Mandarin; tick both to see only the shared words. Not set finds the ones you haven't labelled yet. In Photos it means "shows a character that is…", like ⭐ and 🔥.
+  - The **…** panel on **Flashcards** and **Write** has **Language** checkboxes too: **Cantonese**, **Mandarin** and **Language not set**, all ticked to start with. Untick one to leave those cards out; a word marked both stays in while either language is ticked. It works together with All / Hard / Favorites.
+  - Database version 4. Older backups still restore; they're upgraded the same way.
+
 ## 1.7.0 — 2026-09-26
 
 - **A Write tab for practising writing characters.** It shows a definition, always visible right above a square box with faint guide lines. The **X-ray** in the box shows how the character is written: each stroke in pale grey, with a blue line and arrow for the direction and a number on it for the order. Write over it, then tap **Next**.

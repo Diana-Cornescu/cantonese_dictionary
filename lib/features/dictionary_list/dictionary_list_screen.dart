@@ -4,6 +4,7 @@ import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/clear_text_button.dart';
+import '../../widgets/language_filter_options.dart';
 import '../../widgets/list_filter_button.dart';
 import '../../widgets/typed_character.dart';
 import '../character_detail/character_detail_screen.dart';
@@ -59,6 +60,8 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
       icon: Icons.local_fire_department,
       color: AppColors.danger,
     ),
+    // Cantonese / Mandarin / Not set, under their own heading (2026-09-26).
+    ...LanguageFilterOptions.options,
   ];
 
   /// The toggles reset each time the screen opens; the sort order is
@@ -77,6 +80,7 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
   }
 
   ListFilters _applyFilters(ListFilters requested) {
+    requested = LanguageFilterOptions.enforceLanguageRule(requested, _filters);
     if (requested.sort != _filters.sort) {
       widget.store
           .setSetting(_sortSettingKey, sortOrderSettingValue(requested.sort));
@@ -95,6 +99,7 @@ class _DictionaryListScreenState extends State<DictionaryListScreen> {
     final visible = source.where((c) {
       if (starredOnly && !c.isStarred) return false;
       if (hardOnly && !c.isHard) return false;
+      if (!LanguageFilterOptions.matches(_filters, c)) return false;
       if (query.isEmpty) return true;
       return c.typedCharacter.toLowerCase().contains(query) ||
           c.definition.toLowerCase().contains(query) ||

@@ -136,6 +136,8 @@ class CharacterEntry {
     required this.updatedAt,
     required this.flashcardStats,
     required this.referencedCharacterIds,
+    this.isCantonese = false,
+    this.isMandarin = false,
   });
 
   final int id;
@@ -169,6 +171,15 @@ class CharacterEntry {
   /// list outside those two code paths.
   final List<int> referencedCharacterIds;
 
+  /// The optional Language field (2026-09-26): a Cantonese word, a
+  /// Mandarin word, or both (shared vocabulary). Both false = not set.
+  /// See [LanguageFilter] for how the filters read these.
+  final bool isCantonese;
+  final bool isMandarin;
+
+  /// True once at least one language has been chosen.
+  bool get hasLanguage => isCantonese || isMandarin;
+
   /// Returns a copy with the given fields replaced. Passing
   /// `handwrittenSample: null` explicitly clears the drawing; omitting it
   /// leaves the existing sample untouched (it uses a sentinel default, not
@@ -187,6 +198,8 @@ class CharacterEntry {
     DateTime? updatedAt,
     FlashcardStats? flashcardStats,
     List<int>? referencedCharacterIds,
+    bool? isCantonese,
+    bool? isMandarin,
   }) {
     return CharacterEntry(
       id: id ?? this.id,
@@ -205,6 +218,8 @@ class CharacterEntry {
       flashcardStats: flashcardStats ?? this.flashcardStats,
       referencedCharacterIds:
           referencedCharacterIds ?? this.referencedCharacterIds,
+      isCantonese: isCantonese ?? this.isCantonese,
+      isMandarin: isMandarin ?? this.isMandarin,
     );
   }
 
@@ -228,6 +243,8 @@ class CharacterEntry {
               const [])
           .map((e) => (e as num).toInt())
           .toList(),
+      isCantonese: json['isCantonese'] as bool? ?? false,
+      isMandarin: json['isMandarin'] as bool? ?? false,
     );
   }
 
@@ -245,7 +262,41 @@ class CharacterEntry {
         'updatedAt': updatedAt.toIso8601String(),
         'flashcardStats': flashcardStats.toJson(),
         'referencedCharacterIds': referencedCharacterIds,
+        'isCantonese': isCantonese,
+        'isMandarin': isMandarin,
       };
+}
+
+/// One of the Language boxes in the Flashcards and Write options panels
+/// (2026-09-26). The panels show all three as checkboxes, **all checked
+/// by default**, and a card is included if it matches **any** checked box
+/// ([anyMatch]):
+///  - [cantonese]: marked Cantonese (including words marked both),
+///  - [mandarin]: marked Mandarin (including words marked both),
+///  - [notSet]: no language chosen yet.
+///
+/// So all three checked = every character, and unchecking one leaves that
+/// group out. A word marked both stays in while either language is checked.
+enum LanguageFilter {
+  cantonese('Cantonese'),
+  mandarin('Mandarin'),
+  notSet('Language not set');
+
+  const LanguageFilter(this.label);
+  final String label;
+
+  bool matches(CharacterEntry c) => switch (this) {
+        LanguageFilter.cantonese => c.isCantonese,
+        LanguageFilter.mandarin => c.isMandarin,
+        LanguageFilter.notSet => !c.hasLanguage,
+      };
+
+  /// Every box checked: the default, which leaves nothing out.
+  static Set<LanguageFilter> get all => {...values};
+
+  /// Whether [c] matches at least one of the [checked] boxes.
+  static bool anyMatch(Set<LanguageFilter> checked, CharacterEntry c) =>
+      checked.any((box) => box.matches(c));
 }
 
 /// Sentinel used only by [CharacterEntry.copyWith] to distinguish "argument

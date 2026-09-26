@@ -54,6 +54,16 @@ class DbCharacters extends Table {
   IntColumn get timesCorrect => integer().withDefault(const Constant(0))();
   IntColumn get timesIncorrect => integer().withDefault(const Constant(0))();
   DateTimeColumn get lastReviewedAt => dateTime().nullable()();
+
+  /// Which language the word belongs to (schema version 4). Both can be on
+  /// (a word shared by Cantonese and Mandarin), and both off means "not
+  /// set" — the field is optional. Two flags rather than one text column,
+  /// so "show Cantonese words" is simply `is_cantonese = 1` and naturally
+  /// includes the shared ones. Declared last because the v3 -> v4
+  /// migration appends them to the end of existing tables, and a fresh
+  /// install should come out the same shape.
+  BoolColumn get isCantonese => boolean().withDefault(const Constant(false))();
+  BoolColumn get isMandarin => boolean().withDefault(const Constant(false))();
 }
 
 /// Every distinct tag name, stored once (decision 2).
@@ -292,7 +302,10 @@ class AppDatabase extends _$AppDatabase {
   ///    photo_characters (one photo can show several characters, and has
   ///    an optional note).
   ///  - 3 (2026-09-20): app_settings (key/value), e.g. the color theme.
-  static const int currentSchemaVersion = 3;
+  ///  - 4 (2026-09-26): characters.is_cantonese and characters.is_mandarin
+  ///    (the optional Language field). Existing characters start with
+  ///    both off, i.e. "not set".
+  static const int currentSchemaVersion = 4;
 
   /// The actual database file used by the real app (not tests).
   static Future<File> databaseFile() async {
@@ -343,6 +356,12 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             // v2 -> v3: new settings table; nothing to copy.
             await m.createTable(dbAppSettings);
+          }
+          if (from < 4) {
+            // v3 -> v4: the Language flags. Both default to false, so
+            // every existing character comes out "not set".
+            await m.addColumn(dbCharacters, dbCharacters.isCantonese);
+            await m.addColumn(dbCharacters, dbCharacters.isMandarin);
           }
         },
         beforeOpen: (details) async {
@@ -625,6 +644,8 @@ class AppDatabase extends _$AppDatabase {
       timesCorrect: Value(stats.timesCorrect),
       timesIncorrect: Value(stats.timesIncorrect),
       lastReviewedAt: Value(stats.lastReviewedAt),
+      isCantonese: Value(entry.isCantonese),
+      isMandarin: Value(entry.isMandarin),
     );
   }
 }

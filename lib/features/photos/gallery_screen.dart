@@ -5,6 +5,7 @@ import '../../data/dictionary_store.dart';
 import '../../data/photo_entry.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/clear_text_button.dart';
+import '../../widgets/language_filter_options.dart';
 import '../../widgets/list_filter_button.dart';
 import '../../widgets/typed_character.dart';
 import '../settings/settings_button.dart';
@@ -22,8 +23,10 @@ import 'photo_viewer_screen.dart';
 /// **unlinked**, the sort order and Clear filters. Same icon and sheet as
 /// the home list's.
 ///
-/// A photo has no star or hard flag of its own, so those two mean "linked
-/// to at least one character that is". That makes them **mutually
+/// A photo has no star, hard flag or language of its own, so those mean
+/// "linked to at least one character that is" — and the Language group
+/// (2026-09-26) works the same way: **Cantonese** shows photos with at
+/// least one Cantonese character in them. That makes them all **mutually
 /// exclusive with unlinked**, which the buttons enforce rather than leave
 /// to you (2026-09-21): an unlinked photo has no characters to be starred,
 /// so the combination could only ever show nothing. Turning on unlinked
@@ -71,6 +74,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
       label: 'Unlinked',
       icon: Icons.link_off,
     ),
+    // Cantonese / Mandarin / Not set (2026-09-26).
+    ...LanguageFilterOptions.options,
   ];
 
   /// The toggles reset each time the screen opens; the sort order is
@@ -108,17 +113,24 @@ class _GalleryScreenState extends State<GalleryScreen> {
   /// favorites or hard on clears unlinked for the same reason — together
   /// they would guarantee an empty grid.
   ListFilters _applyFilters(ListFilters requested) {
+    requested = LanguageFilterOptions.enforceLanguageRule(requested, _filters);
     final on = {...requested.on};
-    final unlinkedTurningOn =
-        on.contains(_unlinked) && !_filters.isOn(_unlinked);
+    bool turnedOn(String id) => on.contains(id) && !_filters.isOn(id);
+    final unlinkedTurningOn = turnedOn(_unlinked);
     if (unlinkedTurningOn) {
       on
         ..remove(_favorites)
-        ..remove(_hard);
+        ..remove(_hard)
+        ..remove(LanguageFilterOptions.cantonese)
+        ..remove(LanguageFilterOptions.mandarin)
+        ..remove(LanguageFilterOptions.notSet);
       // Outside setState: clear() notifies the search field's own listeners.
       _search.clear();
-    } else if ((on.contains(_favorites) && !_filters.isOn(_favorites)) ||
-        (on.contains(_hard) && !_filters.isOn(_hard))) {
+    } else if (turnedOn(_favorites) ||
+        turnedOn(_hard) ||
+        turnedOn(LanguageFilterOptions.cantonese) ||
+        turnedOn(LanguageFilterOptions.mandarin) ||
+        turnedOn(LanguageFilterOptions.notSet)) {
       on.remove(_unlinked);
     }
     final applied = requested.copyWith(on: on);
@@ -135,6 +147,14 @@ class _GalleryScreenState extends State<GalleryScreen> {
       if (_unlinkedOnly && photo.characterIds.isNotEmpty) return false;
       if (_starredOnly && !_anyLinked(photo, (c) => c.isStarred)) return false;
       if (_hardOnly && !_anyLinked(photo, (c) => c.isHard)) return false;
+      // One character has to satisfy every language toggle on its own,
+      // so Cantonese + Mandarin means "shows a word marked both", as on
+      // the home list, not "shows one of each".
+      if (LanguageFilterOptions.anyOn(_filters) &&
+          !_anyLinked(
+              photo, (c) => LanguageFilterOptions.matches(_filters, c))) {
+        return false;
+      }
       if (query.isEmpty) return true;
       if (photo.note.toLowerCase().contains(query)) return true;
       for (final c in store.characters) {
