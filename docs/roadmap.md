@@ -26,7 +26,7 @@ _Draft. Move things in and out freely — that's the point of the cap._
 
 | What | Notes |
 |------|-------|
-| **Writing practice (Write tab)** | **Built 2026-09-25, not yet released.** Write a character from a definition, then see it laid over the correct form from bundled open stroke data. Takes the Tags tab's slot; Tags moves into Settings. No scoring yet. Decisions: `decisions/writing-practice.md`. Before release: compile, run the tests, try it on the phone, and read the skipped list in the Write options for how much of your real dictionary is covered. |
+| **Writing practice (Write tab)** | **Built 2026-09-25, not yet released.** Write a character from a definition, in Memory mode (Check, then the X-ray: outline, stroke order and direction) or Practice mode (write over the X-ray), from bundled open stroke data. Takes the Tags tab's slot; Tags moves into Settings. No scoring yet. Decisions: `decisions/writing-practice.md`. Before release: compile, run the tests, try it on the phone, and read the skipped list in the Write options for how much of your real dictionary is covered. |
 
 ---
 

@@ -43,6 +43,10 @@ class AppRawColors {
   // Write-tab guide lines (2026-09-25). Always on the light "paper", so
   // one value works in both modes: visible on white and on offWhite.
   static const guideGrey = Color(0xFFD0D4D1);
+  // Write-tab X-ray: stroke centre lines, arrows and number badges
+  // (2026-09-26). Also always on the light paper. 5.3:1 on white, 4.2:1
+  // on offWhite; white numbers on it 5.3:1.
+  static const strokeOrderBlue = Color(0xFF2F6DB5);
 
   // Dark-mode neutrals (2026-09-25). Contrast against [charcoal] noted
   // where it matters; measured, not eyeballed.

@@ -1,6 +1,7 @@
 # Writing practice (the Write tab)
 
-**Decided 2026-09-25. Built for 1.7.0.** Code:
+**Decided 2026-09-25; modes and X-ray added 2026-09-26. Built for
+1.7.0.** Code:
 `features/write/write_practice_screen.dart`, `data/stroke_reference.dart`,
 `widgets/reference_glyph_painter.dart`.
 
@@ -8,9 +9,16 @@
 
 ## TL;DR
 
-- **What:** a card shows a definition. You write the character in a square
-  box with a faint 米字格 guide, then tap **Check**. The correct form
-  appears in pale grey under your ink. **Try again** or **Next**.
+- **What:** a card shows a definition, always visible right above a
+  square box with a faint 米字格 guide. Two modes, picked in the **…**
+  panel and remembered:
+  - **Memory mode:** write, tap **Check**, and the **X-ray** appears under
+    your ink. **Try again** or **Next**.
+  - **Practice mode:** the X-ray is there from the start; write over it.
+    Just **Next**.
+- **The X-ray:** each stroke's outline in pale grey, its centre line with
+  an arrowhead for the direction, and a numbered badge where the pen goes
+  down (stroke order).
 - **No scoring, nothing saved.** The first version is for seeing how it
   feels. Flashcard stats aren't touched.
 - **The reference is open stroke data bundled in the app**, not your own
@@ -25,12 +33,14 @@
 | # | Topic | Decision | Why |
 |---|-------|----------|-----|
 | 1 | What to check against | **Make Me a Hanzi's `graphics.txt`**, bundled. | Your own drawing is one sample, only as good as the day you drew it. Checking against it measures consistency with yourself, not correctness (the same reason Flashcards has **Text only**). The dataset covers any character you've typed, drawn or not. |
-| 2 | Checking | **Overlay only: your ink on top of the correct form.** No score. | Try it and iterate first. A score (and a per-character statistic to track it) is a later option, see the roadmap. |
+| 2 | Checking | **Overlay only: your ink on top of the X-ray.** No score. | Try it and iterate first. A score (and a per-character statistic to track it) is a later option, see the roadmap. |
+| 2a | Memory vs Practice (2026-09-26) | **Two modes, one always selected, remembered** in the settings table (`write_mode`, so it rides along in backups). Memory is the default. | Memory tests recall; Practice teaches order and direction by tracing. It's a standing preference, like Flashcards' Text only, so it's saved; the card pool isn't. |
+| 2b | Stroke order and direction (2026-09-26) | **From the dataset's centre lines ("medians")**, which run from where the pen goes down to where it lifts, in stroke order. Drawn as a line with an arrowhead at the end and a number badge just before the start. | Checked on real glyphs (一 left to right; 人's 丿 then ㇏) and pinned in `test/stroke_reference_test.dart`. Badges are nudged back along the stroke when two would overlap (口's first two strokes start at the same corner). |
 | 3 | Where it lives | **Its own tab, in Tags' slot.** Tags becomes a row in Settings for now. | A fifth tab would break the bar's two-and-two symmetry around the round button. Tags is used far less than the other tabs. Its permanent home is on the roadmap. |
 | 4 | Round button on Write | **…**, opening a panel: All / Hard / Favorites. | Same as Flashcards. The choice isn't saved: each app start begins with All characters. |
 | 5 | Several characters in one entry (时间) | **Written one at a time in the same box**, "Character 1 of 2", each with its own Check. | Checking each as you go is simpler than holding several drawings and revealing them together. |
 | 6 | Characters the data doesn't have | **Skipped**, and listed in the options panel. Also skipped: entries with no typed text, and entries with no definition (the definition is the prompt). | Many Cantonese-only characters aren't in the data (see below). Listing them doubles as the coverage check on your real dictionary. |
-| 7 | Storage format | **One packed binary file, `assets/stroke_reference.bin` (~12 MB, ~8.5 MB inside the APK), held in memory once the Write tab opens.** Not SQLite, not in the dictionary database. | The data is read-only and looked up one character at a time, so a sorted index plus packed glyphs is all it needs. It's the same approach as `StrokeCodec`. Keeping it out of `AppDatabase` means no schema change, and **backups don't carry 12 MB of fixed data**. |
+| 7 | Storage format | **One packed binary file, `assets/stroke_reference.bin` (~15 MB with the centre lines, ~10.7 MB inside the APK), held in memory once the Write tab opens.** Format version 2 since the centre lines went in; the reader only accepts the version it was built for, since the file ships with the app. Not SQLite, not in the dictionary database. | The data is read-only and looked up one character at a time, so a sorted index plus packed glyphs is all it needs. It's the same approach as `StrokeCodec`. Keeping it out of `AppDatabase` means no schema change, and **backups don't carry 15 MB of fixed data**. |
 | 8 | Build tool | **`tool/build_stroke_reference.py`** (Python 3, dev-only). | It was written in a workspace without the Dart SDK, and it's the script that actually produced the committed file. `test/stroke_reference_test.dart` checks the Dart reader agrees with it on real glyphs. |
 | 9 | Licence | **Only `graphics.txt`** (Arphic Public License). The licence text is bundled and shown under **Settings → Licences**. `dictionary.txt` (LGPL) isn't used. | The licence requires the text to travel with the data. |
 
@@ -52,6 +62,9 @@
 - **The dataset's y axis points up.** The grid is 1024 × 1024 with its top
   edge at y = 900 and its bottom at y = −124. `StrokeReference.toBox` does
   the conversion; don't flip it anywhere else.
+- **The X-ray colors sit on the paper, not the page**, so they're fixed
+  roles (`strokeOrder`, `referenceInk`) that are the same in light and
+  dark mode, like the ink.
 - **The box must be square, and the same size while you write and when you
   check.** Your strokes are stored in box pixels and never rescaled.
 - **No scroll view around the box.** A scroll view would fight the pen for

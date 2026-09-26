@@ -15,20 +15,24 @@ without the Dart SDK, and this script is the one that was actually run to
 make the committed file. lib/data/stroke_reference.dart reads the output;
 test/stroke_reference_test.dart checks the two agree on real glyphs.
 
-File layout (little-endian), format version 1:
+File layout (little-endian), format version 2 (2026-09-26; version 1 had
+no medians):
 
     [4 bytes  magic "SREF"]
-    [uint8    version = 1]
+    [uint8    version = 2]
     [uint32   glyphCount]
     index, glyphCount entries sorted by code point:
       [uint32 codePoint] [uint32 offset]    # offset from start of file
     per glyph, at its offset:
       [uint8 strokeCount]
-      per stroke:
-        [uint16 commandCount]
+      per stroke, in stroke order:
+        [uint16 commandCount]                 # the stroke's outline
         per command:
           [uint8 op]  one of the ASCII letters M L Q C Z
           [int16 x, int16 y] * (M/L: 1, Q: 2, C: 3, Z: 0)
+        [uint16 medianPointCount]             # its centre line, from where
+        [int16 x, int16 y] * medianPointCount #   the pen starts to where
+                                              #   it lifts (order + direction)
 
 Coordinates are Make Me a Hanzi's own: a 1024 x 1024 grid whose top edge is
 y = 900 and bottom edge y = -124 (y grows upwards). A few of the ~200,000
@@ -67,10 +71,20 @@ def pack_stroke(path):
     return struct.pack('<H', count) + bytes(body)
 
 
-def pack_glyph(strokes):
+def pack_median(points):
+    body = struct.pack('<H', len(points))
+    for x, y in points:
+        body += struct.pack('<hh', round(x), round(y))
+    return body
+
+
+def pack_glyph(strokes, medians):
     if len(strokes) > 255:
         raise ValueError('more than 255 strokes')
-    return bytes([len(strokes)]) + b''.join(pack_stroke(s) for s in strokes)
+    if len(medians) != len(strokes):
+        raise ValueError('medians and strokes differ in number')
+    return bytes([len(strokes)]) + b''.join(
+        pack_stroke(s) + pack_median(m) for s, m in zip(strokes, medians))
 
 
 def main():
@@ -83,11 +97,12 @@ def main():
             character = entry['character']
             if len(character) != 1:
                 raise ValueError(f'not a single code point: {character!r}')
-            glyphs[ord(character)] = pack_glyph(entry['strokes'])
+            glyphs[ord(character)] = pack_glyph(
+                entry['strokes'], entry['medians'])
 
     code_points = sorted(glyphs)
     header_size = 4 + 1 + 4 + 8 * len(code_points)
-    out = bytearray(b'SREF') + struct.pack('<BI', 1, len(code_points))
+    out = bytearray(b'SREF') + struct.pack('<BI', 2, len(code_points))
     offset = header_size
     for cp in code_points:
         out += struct.pack('<II', cp, offset)

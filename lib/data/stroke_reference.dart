@@ -20,6 +20,21 @@ class GlyphCommand {
 /// The outline of one stroke: a closed shape, not a centre line.
 typedef GlyphStroke = List<GlyphCommand>;
 
+/// A character's reference form: for each stroke, in stroke order, its
+/// outline and its centre line ("median").
+class ReferenceGlyph {
+  const ReferenceGlyph({required this.strokes, required this.medians});
+
+  /// Each stroke's outline, in stroke order.
+  final List<GlyphStroke> strokes;
+
+  /// Each stroke's centre line, same order as [strokes], as (x, y) points
+  /// running from where the pen goes down to where it lifts. So the first
+  /// point is where the stroke starts, and the list's order is its
+  /// direction. Drives the X-ray (numbers and arrows) on the Write tab.
+  final List<List<(double, double)>> medians;
+}
+
 /// The correct written form of each character, for the Write tab.
 ///
 /// Read from `assets/stroke_reference.bin`, which is built from Make Me a
@@ -32,7 +47,7 @@ typedef GlyphStroke = List<GlyphCommand>;
 /// is y = 900 and bottom edge y = −124, with y growing *upwards*. Use
 /// [toBox] to place a point in an on-screen box.
 ///
-/// The whole file (~12 MB) is held in memory once loaded; each glyph is
+/// The whole file (~15 MB) is held in memory once loaded; each glyph is
 /// only decoded when asked for. Nothing is ever written back.
 class StrokeReference {
   StrokeReference._(this._data, this._index);
@@ -40,7 +55,9 @@ class StrokeReference {
   /// Where the file is bundled. Listed under `assets:` in `pubspec.yaml`.
   static const assetPath = 'assets/stroke_reference.bin';
 
-  static const int formatVersion = 1;
+  /// 2 since 2026-09-26, when the centre lines were added. Version 1 files
+  /// aren't read: the file ships with the app, so it's always current.
+  static const int formatVersion = 2;
 
   /// Size of the dataset's square grid.
   static const double gridSize = 1024;
@@ -107,8 +124,8 @@ class StrokeReference {
     return runes.length == 1 && _index.containsKey(runes.first);
   }
 
-  /// [glyph]'s strokes in stroke order, or `null` if it isn't covered.
-  List<GlyphStroke>? strokesFor(String glyph) {
+  /// [glyph]'s reference form, or `null` if it isn't covered.
+  ReferenceGlyph? glyphFor(String glyph) {
     final runes = glyph.runes;
     if (runes.length != 1) return null;
     final start = _index[runes.first];
@@ -118,6 +135,7 @@ class StrokeReference {
       final strokeCount = _data.getUint8(at);
       at += 1;
       final strokes = <GlyphStroke>[];
+      final medians = <List<(double, double)>>[];
       for (var s = 0; s < strokeCount; s++) {
         final commandCount = _data.getUint16(at, Endian.little);
         at += 2;
@@ -134,8 +152,19 @@ class StrokeReference {
           commands.add(GlyphCommand(op, coords));
         }
         strokes.add(commands);
+        final pointCount = _data.getUint16(at, Endian.little);
+        at += 2;
+        final median = <(double, double)>[];
+        for (var p = 0; p < pointCount; p++) {
+          median.add((
+            _data.getInt16(at, Endian.little).toDouble(),
+            _data.getInt16(at + 2, Endian.little).toDouble(),
+          ));
+          at += 4;
+        }
+        medians.add(median);
       }
-      return strokes;
+      return ReferenceGlyph(strokes: strokes, medians: medians);
     } on RangeError {
       throw const FormatException('Truncated stroke reference file');
     }

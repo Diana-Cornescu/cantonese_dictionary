@@ -30,6 +30,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     required this.onDangerFill,
     required this.referenceInk,
     required this.writingGuide,
+    required this.strokeOrder,
+    required this.onStrokeOrder,
   });
 
   /// Something switched off or not filled in yet: an off filter or flag
@@ -86,6 +88,13 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
   /// The faint 米字格 guide lines in a Write-tab box, also on [paper].
   final Color writingGuide;
 
+  /// The Write tab's X-ray: each stroke's centre line, its arrowhead and
+  /// its number badge. On [paper], so the same in both modes.
+  final Color strokeOrder;
+
+  /// The number inside a [strokeOrder] badge.
+  final Color onStrokeOrder;
+
   /// Light mode — everything the app looked like before dark mode.
   static const light = AppColorRoles(
     inactive: AppRawColors.silverGrey,
@@ -102,6 +111,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     onDangerFill: AppRawColors.nearBlack,
     referenceInk: AppRawColors.silverGrey,
     writingGuide: AppRawColors.guideGrey,
+    strokeOrder: AppRawColors.strokeOrderBlue,
+    onStrokeOrder: AppRawColors.white,
   );
 
   /// Dark mode (2026-09-25). Same roles, lighter greys: icons and the "on"
@@ -122,6 +133,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     onDangerFill: AppRawColors.offWhite,
     referenceInk: AppRawColors.silverGrey,
     writingGuide: AppRawColors.guideGrey,
+    strokeOrder: AppRawColors.strokeOrderBlue,
+    onStrokeOrder: AppRawColors.white,
   );
 
   @override
@@ -140,6 +153,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     Color? onDangerFill,
     Color? referenceInk,
     Color? writingGuide,
+    Color? strokeOrder,
+    Color? onStrokeOrder,
   }) {
     return AppColorRoles(
       inactive: inactive ?? this.inactive,
@@ -156,6 +171,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
       onDangerFill: onDangerFill ?? this.onDangerFill,
       referenceInk: referenceInk ?? this.referenceInk,
       writingGuide: writingGuide ?? this.writingGuide,
+      strokeOrder: strokeOrder ?? this.strokeOrder,
+      onStrokeOrder: onStrokeOrder ?? this.onStrokeOrder,
     );
   }
 
@@ -180,6 +197,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
       onDangerFill: Color.lerp(onDangerFill, other.onDangerFill, t)!,
       referenceInk: Color.lerp(referenceInk, other.referenceInk, t)!,
       writingGuide: Color.lerp(writingGuide, other.writingGuide, t)!,
+      strokeOrder: Color.lerp(strokeOrder, other.strokeOrder, t)!,
+      onStrokeOrder: Color.lerp(onStrokeOrder, other.onStrokeOrder, t)!,
     );
   }
 }

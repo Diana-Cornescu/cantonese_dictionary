@@ -41,8 +41,9 @@ Update this whenever a limitation is fixed or a new one turns up, per the
   about 9,500 common characters; many Cantonese-only ones (咗 冇 佢 啲 嚟
   喺…) aren't there, and those entries are skipped (listed in the Write
   options). Its shapes follow mainland conventions, which differ from
-  Hong Kong's for some characters. And it only shows the overlay: no
-  score, and nothing is recorded. See `decisions/writing-practice.md`.
+  Hong Kong's for some characters, stroke order included: the X-ray
+  shows the mainland order. And it only shows the X-ray: no score, and
+  nothing is recorded. See `decisions/writing-practice.md`.
 
 - **Every change repaints the whole app.** `main.dart` wraps `MaterialApp`
   in a `ListenableBuilder` on the store, so any save rebuilds the

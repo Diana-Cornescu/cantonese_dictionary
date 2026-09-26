@@ -14,21 +14,56 @@ import '../../widgets/reference_glyph_painter.dart';
 import '../flashcards/flashcard_mode_screen.dart' show CardPool;
 import '../settings/settings_button.dart';
 
+/// How the Write tab asks, chosen in its options panel (2026-09-26). One
+/// is always selected, and the choice is **remembered** (and rides along
+/// in backups), like Flashcards' Text only / Text + drawing.
+///
+/// The order here is the order in the panel. The stored string is the
+/// constant's `name`, so **renaming one silently resets the setting**;
+/// `test/write_mode_test.dart` pins them.
+enum WriteMode {
+  /// Write from memory, then **Check** shows the X-ray under your ink;
+  /// **Try again** or **Next**.
+  memory('Memory mode', 'Write from memory, then check the stroke order'),
+
+  /// The X-ray is there from the start, to write over; just **Next**.
+  practice('Practice mode', 'Write over the stroke order and direction');
+
+  const WriteMode(this.label, this.description);
+  final String label;
+  final String description;
+
+  static const settingKey = 'write_mode';
+
+  /// The mode stored under [settingKey]; anything unrecognised (never set,
+  /// or written by a newer version) is [memory].
+  static WriteMode byId(String? id) {
+    for (final mode in values) {
+      if (mode.name == id) return mode;
+    }
+    return memory;
+  }
+}
+
 /// Writing practice: the Write tab (added 2026-09-25, in the slot Tags
 /// used to have). See `docs/decisions/writing-practice.md`.
 ///
-/// A card shows a definition. You write the character in a square box
-/// (with a faint 米字格 guide), then tap **Check**: the correct form, from
-/// the bundled [StrokeReference] data, appears in pale grey *under* your
-/// ink, so you can see where your strokes are off. **Next** moves on;
-/// **Try again** clears the box for another go at the same character.
+/// A card shows a definition, always visible above a square box with a
+/// faint 米字格 guide. What happens in the box depends on the [WriteMode]:
+///  - **Memory mode:** write the character, then tap **Check**. The
+///    **X-ray** (from the bundled [StrokeReference] data) appears *under*
+///    your ink: each stroke's outline in pale grey, its centre line with
+///    an arrow for the direction, and a numbered badge where it starts.
+///    **Try again** clears the box; **Next** moves on.
+///  - **Practice mode:** the X-ray is there from the start; write over it,
+///    then **Next**.
 ///
 /// **Nothing is marked or saved.** No score and no stats, on purpose for
 /// the first version: see how it feels first. Flashcard stats aren't
 /// touched either.
 ///
 /// An entry with several characters (时间) is written one at a time in the
-/// same box, "1 of 2" then "2 of 2", each with its own Check.
+/// same box, "1 of 2" then "2 of 2".
 ///
 /// Entries the stroke data can't check are **skipped**: no typed text, or
 /// any character missing from the data (many Cantonese-only characters —
@@ -36,9 +71,9 @@ import '../settings/settings_button.dart';
 /// no definition are left out too, since the definition is the prompt.
 ///
 /// Options live in a panel that the bottom bar's round **…** button opens
-/// and closes, like Flashcards: **All characters**, **Hard only** or
-/// **Favorites only**. The choice isn't saved; each app start begins with
-/// All characters.
+/// and closes, like Flashcards: the mode (remembered), then **All
+/// characters**, **Hard only** or **Favorites only** (not saved; each app
+/// start begins with All characters).
 class WritePracticeScreen extends StatefulWidget {
   const WritePracticeScreen({super.key, required this.store});
 
@@ -58,6 +93,9 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
 
   CardPool _cardPool = CardPool.all;
 
+  late WriteMode _mode =
+      WriteMode.byId(widget.store.setting(WriteMode.settingKey));
+
   List<CharacterEntry> _pool = [];
 
   /// Entries the current options would include but the stroke data can't
@@ -74,7 +112,7 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
   /// What's been written in the box so far.
   List<List<StrokePoint>> _strokes = [];
 
-  /// Bumped by Try again, so the box starts empty again.
+  /// Bumped whenever the box should start empty again.
   int _attempt = 0;
 
   @override
@@ -203,6 +241,10 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
       builder: (_) => StatefulBuilder(
         builder: (context, setSheetState) {
           final theme = Theme.of(context);
+          Widget heading(String text) => Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Text(text, style: theme.textTheme.titleMedium),
+              );
           return SafeArea(
             top: false,
             child: SingleChildScrollView(
@@ -211,11 +253,22 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Text('Which cards',
-                        style: theme.textTheme.titleMedium),
-                  ),
+                  heading('Mode'),
+                  for (final mode in WriteMode.values)
+                    ListTile(
+                      leading: Icon(mode == _mode
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked),
+                      title: Text(mode.label),
+                      subtitle: Text(mode.description),
+                      selected: mode == _mode,
+                      onTap: () {
+                        _setMode(mode);
+                        setSheetState(() {});
+                      },
+                    ),
+                  const Divider(height: 24),
+                  heading('Which cards'),
                   for (final pool in CardPool.values)
                     ListTile(
                       leading: Icon(pool == _cardPool
@@ -279,6 +332,17 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
       _cardPool = value;
       _rebuildPool();
     });
+  }
+
+  /// Saved straight away. Starts the current character's box again, but
+  /// keeps the card.
+  Future<void> _setMode(WriteMode value) async {
+    if (value == _mode) return;
+    setState(() {
+      _mode = value;
+      _resetBox();
+    });
+    await widget.store.setSetting(WriteMode.settingKey, value.name);
   }
 
   void _check() => setState(() => _checked = true);
@@ -367,11 +431,30 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
     final card = _pool[_index];
     final glyphs = _currentGlyphs;
     final glyph = glyphs[_glyph];
+    final practice = _mode == WriteMode.practice;
+    // Memory mode shows the X-ray once checked; Practice mode throughout.
+    final showXray = practice || _checked;
+    // Only a checked Memory-mode box stops taking ink.
+    final frozen = !practice && _checked;
+    final lastGlyph = _glyph + 1 >= glyphs.length;
+    final next = FilledButton(
+      onPressed: _next,
+      child: Text(lastGlyph ? 'Next' : 'Next character'),
+    );
     return Column(
       children: [
         const SizedBox(height: 8),
-        Text('${_index + 1} / ${_pool.length}'),
-        const SizedBox(height: 12),
+        // Always takes a line, so the box doesn't jump between cards.
+        Text(
+          glyphs.length > 1
+              ? '${_index + 1} / ${_pool.length}  ·  '
+                  'character ${_glyph + 1} of ${glyphs.length}'
+              : '${_index + 1} / ${_pool.length}',
+          style: theme.textTheme.labelMedium?.copyWith(color: colors.faintText),
+        ),
+        const SizedBox(height: 8),
+        // The prompt sits right on top of the box and never goes away
+        // (2026-09-26): the box is sized to leave room for it.
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
@@ -382,14 +465,6 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
             style: theme.textTheme.titleLarge,
           ),
         ),
-        const SizedBox(height: 4),
-        // Always takes a line, so the box doesn't jump between cards.
-        Text(
-          glyphs.length > 1
-              ? 'Character ${_glyph + 1} of ${glyphs.length}'
-              : '',
-          style: theme.textTheme.labelSmall?.copyWith(color: colors.faintText),
-        ),
         const SizedBox(height: 8),
         Container(
           width: side,
@@ -399,30 +474,34 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
             // A new key whenever the box should start over, or switch to
             // showing the checked result: the canvas keeps its own copy of
             // the strokes, taken when it's created.
-            key: ValueKey('$_index/$_glyph/$_attempt/$_checked'),
-            readOnly: _checked,
-            initialStrokes: _checked ? _strokes : null,
+            key: ValueKey('$_index/$_glyph/$_attempt/$frozen/${_mode.name}'),
+            readOnly: frozen,
+            initialStrokes: frozen ? _strokes : null,
             onStrokesChanged: (strokes) => _strokes = strokes,
             backgroundPainter: WritingGuidePainter(
               guideColor: colors.writingGuide,
-              reference: _checked ? _reference!.strokesFor(glyph) : null,
-              referenceColor: colors.referenceInk,
+              reference: showXray ? _reference!.glyphFor(glyph) : null,
+              outlineColor: colors.referenceInk,
+              strokeOrderColor: colors.strokeOrder,
+              onStrokeOrderColor: colors.onStrokeOrder,
             ),
           ),
         ),
         const SizedBox(height: 12),
-        // The answer as text, once checked; blank space before, so the
-        // buttons stay put.
+        // Memory mode: the answer as text, once checked. Blank space
+        // otherwise, so the buttons stay put.
         SizedBox(
           height: 48,
           child: Center(
-            child: _checked
+            child: frozen
                 ? Text(glyph, style: const TextStyle(fontSize: 36))
                 : null,
           ),
         ),
         const SizedBox(height: 8),
-        if (_checked)
+        if (practice)
+          next
+        else if (_checked)
           Wrap(
             spacing: 16,
             runSpacing: 8,
@@ -432,12 +511,7 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
                 onPressed: _tryAgain,
                 child: const Text('Try again'),
               ),
-              FilledButton(
-                onPressed: _next,
-                child: Text(_glyph + 1 < glyphs.length
-                    ? 'Next character'
-                    : 'Next'),
-              ),
+              next,
             ],
           )
         else

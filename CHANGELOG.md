@@ -6,14 +6,17 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
 ## 1.7.0 — not released yet
 
-- **A Write tab for practising writing characters.** It shows a definition; you write the character in a square box with faint guide lines, then tap **Check**. The correct form appears in pale grey under your writing, so you can see where your strokes are off. **Try again** clears the box; **Next** moves on.
+- **A Write tab for practising writing characters.** It shows a definition, always visible right above a square box with faint guide lines. The **X-ray** shows how the character is written: each stroke in pale grey, with a blue line and arrow for the direction and a number for the order.
+  - **Memory mode:** write the character, then tap **Check** to see the X-ray under your writing. **Try again** clears the box; **Next** moves on.
+  - **Practice mode:** the X-ray is there from the start, so you can write over it. Then **Next**.
+  - Pick the mode in the **…** panel. Your choice is remembered, and included in backups.
   - Words with more than one character (时间) are written one character at a time.
   - Nothing is scored or saved yet, and flashcard stats aren't affected.
-  - **…** (the round button) picks All, Hard or Favorites, like Flashcards.
+  - **…** (the round button) also picks All, Hard or Favorites, like Flashcards.
   - The correct forms come from a free set of about 9,500 common characters built into the app, so it works offline. **Many Cantonese-only characters (咗 冇 佢 啲 嚟 喺…) aren't in it**; those entries are skipped, and the **…** panel lists which.
 - **Tags moved into Settings**, to make room for Write in the bar. **Settings → Tags** opens the same screen as before, with a **+** at the top to create a tag.
 - **Settings → Licences** lists the licences for the built-in stroke data and the packages the app uses.
-- The app is about 8.5 MB bigger because of the stroke data.
+- The app is about 11 MB bigger because of the stroke data.
 
 ## 1.6.0 — 2026-09-25
 

@@ -42,7 +42,7 @@ The app stores its data in SQLite through Drift (see `docs/decisions_log_sqlite_
 
 ## Stroke data for the Write tab — added 2026-09-25
 
-`assets/stroke_reference.bin` is committed, so ordinary builds need nothing. It's only rebuilt if the source data or its file layout changes; the steps are at the end of `docs/decisions/writing-practice.md` (needs Python 3). The APK is about 8.5 MB bigger because of it.
+`assets/stroke_reference.bin` is committed, so ordinary builds need nothing. It's only rebuilt if the source data or its file layout changes; the steps are at the end of `docs/decisions/writing-practice.md` (needs Python 3). The APK is about 11 MB bigger because of it.
 
 ## Phase 3 — Desktop build target (optional — skip straight to Phase 4 if you just want to try the app on your phone and don't need mouse-based desktop testing right now)
 
