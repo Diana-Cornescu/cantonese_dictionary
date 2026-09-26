@@ -10,7 +10,10 @@ import '../../data/dictionary_store.dart';
 import '../../data/stroke_reference.dart';
 import '../../theme/app_color_roles.dart';
 import '../../widgets/handwriting_canvas.dart';
+import '../../widgets/language_icon.dart';
+import '../../widgets/practice_layout.dart';
 import '../../widgets/reference_glyph_painter.dart';
+import '../character_detail/character_detail_screen.dart';
 import '../flashcards/flashcard_mode_screen.dart' show CardPool;
 import '../settings/settings_button.dart';
 
@@ -29,6 +32,14 @@ import '../settings/settings_button.dart';
 ///    off and on without clearing what you've written, to try a character
 ///    from memory and then check it. It stays as set from card to card,
 ///    until the app closes.
+///
+/// **Layout** (2026-09-26, shared with Flashcards via
+/// `widgets/practice_layout.dart`): under the box, the card's language
+/// (name + emblem) and **Go to character screen**; along the bottom, above
+/// the navigation bar, **Previous · X-ray · Next →**. The definition sits
+/// under the box, above the language line, and the box takes whatever
+/// height is left. Previous goes back
+/// one character (or to the previous card) within the current round.
 ///
 /// There used to be a separate Memory mode (write, then Check); the eye
 /// button replaced it the same night (2026-09-26). Its code is kept in
@@ -258,6 +269,15 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
                     CheckboxListTile(
                       value: _languages.contains(language),
                       title: Text(language.label),
+                      // The same emblems as on the cards; none for
+                      // "not set".
+                      secondary: switch (language) {
+                        LanguageFilter.cantonese =>
+                          const LanguageIcon(LanguageEmblem.cantonese),
+                        LanguageFilter.mandarin =>
+                          const LanguageIcon(LanguageEmblem.mandarin),
+                        LanguageFilter.notSet => null,
+                      },
                       onChanged: (checked) {
                         _toggleLanguage(language, checked ?? false);
                         setSheetState(() {});
@@ -352,6 +372,45 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
     });
   }
 
+  /// Whether there's a previous character to go back to: an earlier
+  /// character of this entry, or an earlier card in this round.
+  bool get _canGoBack => _glyph > 0 || _index > 0;
+
+  /// The **Previous** button (2026-09-26): back one character within a
+  /// multi-character entry, otherwise to the last character of the
+  /// previous card. The box starts empty, as it does going forward. Goes
+  /// back within the current round only: after the pool is reshuffled at
+  /// the end of a round, the first card has nothing before it.
+  void _previous() {
+    if (!_canGoBack) return;
+    setState(() {
+      if (_glyph > 0) {
+        _glyph--;
+      } else {
+        _index--;
+        _glyph = _currentGlyphs.length - 1;
+      }
+      _resetBox();
+    });
+  }
+
+  /// Opens the current card's character screen (2026-09-26, as on
+  /// Flashcards). Coming back, [refreshCards] picks up any edits and keeps
+  /// the round where it was, unless the change drops or adds cards.
+  Future<void> _openCharacter(CharacterEntry card) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            CharacterDetailScreen(store: widget.store, characterId: card.id),
+      ),
+    );
+    refreshCards();
+  }
+
+  bool get _showingCard =>
+      !_loadFailed && _reference != null && _pool.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -359,7 +418,16 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
         title: const Text('Write'),
         actions: [SettingsButton(store: widget.store)],
       ),
-      body: SafeArea(child: _buildBody()),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: _buildBody()),
+            // Pinned just above the bottom navigation bar (2026-09-26),
+            // like Flashcards' Incorrect / Correct.
+            if (_showingCard) _buildActionBar(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -406,27 +474,25 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
               ),
       );
     }
-    return LayoutBuilder(builder: (context, constraints) {
-      // Square, as big as fits under the prompt and above the buttons.
-      // No scrolling: a scroll view would fight the pen for vertical drags.
-      final fits = min(constraints.maxWidth - 32, constraints.maxHeight - 220);
-      final side = max(120.0, min(360.0, fits));
-      return _buildCard(side);
-    });
+    return _buildCard();
   }
 
-  Widget _buildCard(double side) {
+  /// Most a definition takes under the box: two lines, then "…". Always
+  /// reserved in full, so the box stays the same size from card to card.
+  static const _definitionLines = 2;
+
+  /// How solid the X-ray is under your ink (2026-09-26): half strength, so
+  /// it guides without competing with what you write. Raise it towards 1
+  /// for a darker X-ray, lower it for a fainter one.
+  static const _xrayOpacity = 0.45;
+
+  Widget _buildCard() {
     final theme = Theme.of(context);
     final colors = context.appColors;
     final card = _pool[_index];
     final glyphs = _currentGlyphs;
     final glyph = glyphs[_glyph];
     final showXray = !_xrayHidden;
-    final lastGlyph = _glyph + 1 >= glyphs.length;
-    final next = FilledButton(
-      onPressed: _next,
-      child: Text(lastGlyph ? 'Next' : 'Next character'),
-    );
     // Full width, so the column's children are centred across the screen.
     // A Column is only as wide as its widest child; the old answer row
     // (a Center) used to stretch it by accident, and when that row went
@@ -445,63 +511,125 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
             style: theme.textTheme.labelMedium
                 ?.copyWith(color: colors.faintText),
           ),
+          const SizedBox(height: 4),
+          // The box takes all the room the rest of the screen leaves,
+          // square, sitting low so it's close to what's under it
+          // (2026-09-26: the definition moved under it and everything was
+          // brought down to make it bigger). No scrolling: a scroll view
+          // would fight the pen for vertical drags.
+          Expanded(
+            child: LayoutBuilder(builder: (context, constraints) {
+              final fits =
+                  min(constraints.maxWidth - 32, constraints.maxHeight);
+              final side = max(120.0, min(480.0, fits));
+              return Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  width: side,
+                  height: side,
+                  decoration:
+                      BoxDecoration(border: Border.all(color: colors.frame)),
+                  child: HandwritingCanvas(
+                    // A new key whenever the box should start over: the
+                    // canvas keeps its own copy of the strokes, taken when
+                    // it's created.
+                    key: ValueKey('$_index/$_glyph/$_attempt'),
+                    readOnly: false,
+                    // Rebuilt on each stroke so the highlight moves on.
+                    onStrokesChanged: (strokes) =>
+                        setState(() => _strokes = strokes),
+                    backgroundPainter: WritingGuidePainter(
+                      guideColor: colors.writingGuide,
+                      reference:
+                          showXray ? _reference!.glyphFor(glyph) : null,
+                      outlineColor: colors.referenceInk,
+                      strokeOrderColor: colors.strokeOrder,
+                      onStrokeOrderColor: colors.onStrokeOrder,
+                      mutedColor: colors.strokeOrderMuted,
+                      // The next stroke to write: as many as you've drawn
+                      // so far.
+                      activeStroke: _strokes.length,
+                      xrayOpacity: _xrayOpacity,
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
           const SizedBox(height: 8),
-          // The prompt sits right on top of the box and never goes away
-          // (2026-09-26): the box is sized to leave room for it.
+          // The prompt, under the box and above the language line
+          // (2026-09-26). Always the height of [_definitionLines] lines, so
+          // a short definition doesn't make the box grow and shrink.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              card.definition,
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleLarge,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: side,
-            height: side,
-            decoration: BoxDecoration(border: Border.all(color: colors.frame)),
-            child: HandwritingCanvas(
-              // A new key whenever the box should start over: the canvas keeps
-              // its own copy of the strokes, taken when it's created.
-              key: ValueKey('$_index/$_glyph/$_attempt'),
-              readOnly: false,
-              // Rebuilt on each stroke so the highlight moves on.
-              onStrokesChanged: (strokes) => setState(() => _strokes = strokes),
-              backgroundPainter: WritingGuidePainter(
-                guideColor: colors.writingGuide,
-                reference: showXray ? _reference!.glyphFor(glyph) : null,
-                outlineColor: colors.referenceInk,
-                strokeOrderColor: colors.strokeOrder,
-                onStrokeOrderColor: colors.onStrokeOrder,
-                mutedColor: colors.strokeOrderMuted,
-                // The next stroke to write: as many as you've drawn so far.
-                activeStroke: _strokes.length,
+            child: SizedBox(
+              // Follows the phone's text size setting, like the text.
+              height: _definitionLines *
+                  MediaQuery.textScalerOf(context)
+                      .scale(theme.textTheme.titleLarge?.fontSize ?? 22) *
+                  (theme.textTheme.titleLarge?.height ?? 1.27),
+              child: Center(
+                child: Text(
+                  card.definition,
+                  textAlign: TextAlign.center,
+                  maxLines: _definitionLines,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: [
-              // Hiding it keeps what's been written: the box's key doesn't
-              // change, only its background.
-              OutlinedButton.icon(
-                onPressed: () => setState(() => _xrayHidden = !_xrayHidden),
-                icon: Icon(_xrayHidden
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
-                label: Text(_xrayHidden ? 'Show X-ray' : 'Hide X-ray'),
-              ),
-              next,
-            ],
+          // Then the card's language(s) and Go to character screen, the
+          // same as under a flashcard. The language line keeps its height
+          // when empty, so the link never moves.
+          LanguageLine(
+            isCantonese: card.isCantonese,
+            isMandarin: card.isMandarin,
+            color: colors.activeIcon,
           ),
+          GoToCharacterLink(onPressed: () => _openCharacter(card)),
         ],
       ),
+    );
+  }
+
+  /// Previous · Hide / Show X-ray · Next, along the bottom above the
+  /// navigation bar (2026-09-26).
+  Widget _buildActionBar() {
+    final lastGlyph = _glyph + 1 >= _currentGlyphs.length;
+    return PracticeActionBar(
+      buttons: [
+        OutlinedButton.icon(
+          onPressed: _canGoBack ? _previous : null,
+          icon: const Icon(Icons.arrow_back),
+          label: const FittedLabel('Previous'),
+        ),
+        // Hiding it keeps what's been written: the box's key doesn't
+        // change, only its background.
+        OutlinedButton.icon(
+          onPressed: () => setState(() => _xrayHidden = !_xrayHidden),
+          icon: Icon(_xrayHidden
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined),
+          // Just "X-ray": the eye (open = show it, crossed out = hide it)
+          // says which way the tap goes (2026-09-26).
+          label: const FittedLabel('X-ray'),
+        ),
+        // Label then →, mirroring Previous's ← then label (2026-09-26).
+        FilledButton(
+          onPressed: _next,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: FittedLabel(lastGlyph ? 'Next' : 'Next character'),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward, size: 18),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

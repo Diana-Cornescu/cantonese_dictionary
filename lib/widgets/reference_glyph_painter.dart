@@ -29,7 +29,14 @@ class WritingGuidePainter extends CustomPainter {
     required this.mutedColor,
     this.reference,
     this.activeStroke,
+    this.xrayOpacity = 1,
   });
+
+  /// How solid the whole X-ray is, 0–1 (2026-09-26). Outlines, lines,
+  /// arrows and badges are faded together, as one layer, so where they
+  /// overlap they don't darken each other. The 米字格 guide and your own
+  /// ink aren't affected.
+  final double xrayOpacity;
 
   final Color guideColor;
 
@@ -60,6 +67,18 @@ class WritingGuidePainter extends CustomPainter {
 
     final glyph = reference;
     if (glyph == null) return;
+
+    // Everything below is drawn into one layer, faded as a whole. Only the
+    // alpha of the layer paint's color matters, so any color will do.
+    final fade = xrayOpacity < 1;
+    if (fade) {
+      canvas.saveLayer(
+        Offset.zero & size,
+        Paint()
+          ..color = outlineColor
+              .withAlpha((255 * xrayOpacity.clamp(0.0, 1.0)).round()),
+      );
+    }
 
     final fill = Paint()
       ..color = outlineColor
@@ -125,6 +144,7 @@ class WritingGuidePainter extends CustomPainter {
           Paint()..color = isMuted(i) ? mutedColor : strokeOrderColor);
       _paintNumber(canvas, '${i + 1}', centre, radius);
     }
+    if (fade) canvas.restore();
   }
 
   void _paintGuide(Canvas canvas, Size size) {
@@ -214,6 +234,7 @@ class WritingGuidePainter extends CustomPainter {
   bool shouldRepaint(covariant WritingGuidePainter oldDelegate) =>
       oldDelegate.reference != reference ||
       oldDelegate.activeStroke != activeStroke ||
+      oldDelegate.xrayOpacity != xrayOpacity ||
       oldDelegate.guideColor != guideColor ||
       oldDelegate.outlineColor != outlineColor ||
       oldDelegate.strokeOrderColor != strokeOrderColor ||

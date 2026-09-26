@@ -138,3 +138,52 @@ class _EmblemPainter extends CustomPainter {
     return path;
   }
 }
+
+/// The language(s) a practice card belongs to, as **name + emblem**
+/// ("Cantonese ✿  Mandarin ★"), centred and side by side when there are
+/// two. Shown directly under the card on Flashcards and under the writing
+/// box on Write (2026-09-26), in the same place on both.
+///
+/// Always takes [height], even for a card with no language, so whatever
+/// sits under it (Go to character screen) never moves between cards.
+/// Drawn in the app's black / white-by-mode icon color unless [color] is
+/// given.
+class LanguageLine extends StatelessWidget {
+  const LanguageLine({
+    super.key,
+    required this.isCantonese,
+    required this.isMandarin,
+    this.height = 28,
+    this.color,
+  });
+
+  final bool isCantonese;
+  final bool isMandarin;
+  final double height;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final marks = [
+      if (isCantonese) (LanguageEmblem.cantonese, 'Cantonese'),
+      if (isMandarin) (LanguageEmblem.mandarin, 'Mandarin'),
+    ];
+    final style = Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: color,
+        );
+    return SizedBox(
+      height: height,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (final (i, (emblem, label)) in marks.indexed) ...[
+            if (i > 0) const SizedBox(width: 20),
+            Text(label, style: style),
+            const SizedBox(width: 6),
+            LanguageIcon(emblem, size: 16, color: color ?? style?.color),
+          ],
+        ],
+      ),
+    );
+  }
+}

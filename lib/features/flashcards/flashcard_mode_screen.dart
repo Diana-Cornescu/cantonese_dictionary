@@ -10,6 +10,8 @@ import '../../data/dictionary_store.dart';
 import '../../theme/app_color_roles.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/handwriting_canvas.dart';
+import '../../widgets/language_icon.dart';
+import '../../widgets/practice_layout.dart';
 import '../../widgets/typed_character.dart';
 import '../character_detail/character_detail_screen.dart';
 import '../settings/settings_button.dart';
@@ -112,6 +114,13 @@ enum CharacterFace {
 /// progress survives switching tabs. [refreshCards] runs each time the tab
 /// is shown again, so characters added, deleted or re-flagged elsewhere
 /// are picked up.
+///
+/// **Layout** (2026-09-26, shared with Write via
+/// `widgets/practice_layout.dart`): under the card, its language (name +
+/// emblem) and **Go to character screen** (hidden, but still taking its
+/// space, until the card is revealed); along the bottom, above the
+/// navigation bar, **Incorrect / Correct**, or the "tap the card" hint
+/// until it's revealed.
 ///
 /// Both directions add to the same seen/correct/incorrect stats.
 class FlashcardModeScreen extends StatefulWidget {
@@ -288,6 +297,15 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
                     CheckboxListTile(
                       value: _languages.contains(language),
                       title: Text(language.label),
+                      // The same emblems as on the cards; none for
+                      // "not set".
+                      secondary: switch (language) {
+                        LanguageFilter.cantonese =>
+                          const LanguageIcon(LanguageEmblem.cantonese),
+                        LanguageFilter.mandarin =>
+                          const LanguageIcon(LanguageEmblem.mandarin),
+                        LanguageFilter.notSet => null,
+                      },
                       onChanged: (checked) {
                         _toggleLanguage(language, checked ?? false);
                         setSheetState(() {});
@@ -443,8 +461,46 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
                 child: SingleChildScrollView(child: _buildBody()),
               ),
             ),
+            // Pinned just above the bottom navigation bar (2026-09-26),
+            // like Write's buttons.
+            if (_pool.isNotEmpty) _buildActionBar(),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Incorrect / Correct once the card is revealed; until then, the hint
+  /// to tap the card, in the same spot so nothing moves.
+  Widget _buildActionBar() {
+    final askingCharacter =
+        _direction == CardDirection.definitionToCharacter;
+    return PracticeActionBar(
+      buttons: !_revealed
+          ? const []
+          : [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                  foregroundColor: AppColors.onAccent,
+                ),
+                onPressed: () => _answer(false),
+                child: const FittedLabel('Incorrect'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: AppColors.onAccent,
+                ),
+                onPressed: () => _answer(true),
+                child: const FittedLabel('Correct'),
+              ),
+            ],
+      placeholder: Text(
+        askingCharacter
+            ? 'Tap the card to reveal the character'
+            : 'Tap the card to reveal the definition',
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -524,45 +580,22 @@ class FlashcardModeScreenState extends State<FlashcardModeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          if (_revealed)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.danger,
-                    foregroundColor: AppColors.onAccent,
-                  ),
-                  onPressed: () => _answer(false),
-                  child: const Text('Incorrect'),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: AppColors.onAccent,
-                  ),
-                  onPressed: () => _answer(true),
-                  child: const Text('Correct'),
-                ),
-              ],
-            )
-          else
-            Text(askingCharacter
-                ? 'Tap the card to reveal the character'
-                : 'Tap the card to reveal the definition'),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
+          // Under the card (2026-09-26), the same as under Write's box: the
+          // card's language(s), then Go to character screen. Both keep
+          // their space when empty or hidden, so nothing jumps.
+          LanguageLine(
+            isCantonese: current.isCantonese,
+            isMandarin: current.isMandarin,
+            color: context.appColors.activeIcon,
+          ),
           // Opens this card's character screen; Back returns to this same
-          // card (2026-09-20). Replaced the old "Back" button. Only shown
-          // once the card is revealed, together with Correct/Incorrect, so
-          // it can't give the answer away.
-          if (_revealed)
-            TextButton.icon(
-              onPressed: () => _openCharacter(current),
-              icon: const Icon(Icons.open_in_new),
-              label: const Text('Go to character screen'),
-            ),
+          // card (2026-09-20). Only shown once the card is revealed, so it
+          // can't give the answer away.
+          GoToCharacterLink(
+            visible: _revealed,
+            onPressed: () => _openCharacter(current),
+          ),
         ],
       ),
     );

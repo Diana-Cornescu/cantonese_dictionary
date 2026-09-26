@@ -72,6 +72,18 @@
   created. The Write screen gives it a new `Key` whenever it should start
   over or switch to showing the checked result.
 
+- **Layout (2026-09-26), shared with Flashcards** (`widgets/practice_layout.dart`):
+  under the box, the card's language (name + emblem, a fixed-height line
+  even when there isn't one) and **Go to character screen**; along the
+  bottom above the navigation bar, **Previous · X-ray · Next →** (the
+  X-ray label doesn't change; the eye icon does). The definition sits
+  **under** the box, above the language line, in a fixed two-line space
+  (longer ones end in "…"); the box takes all the remaining height, up to
+  480 px, sitting low so it's next to the definition.
+  **Previous** steps back one character, or to the last character of the
+  previous card, within the current round only (a reshuffle starts a new
+  one), with the box empty as when going forward.
+
 ## Rebuilding the data
 
 Only needed if the source data or the file layout changes. Download

@@ -4,6 +4,7 @@ import 'package:cantonese_dictionary_app/data/app_database.dart';
 import 'package:cantonese_dictionary_app/data/character_entry.dart';
 import 'package:cantonese_dictionary_app/data/dictionary_store.dart';
 import 'package:cantonese_dictionary_app/widgets/language_filter_options.dart';
+import 'package:cantonese_dictionary_app/widgets/language_icon.dart';
 import 'package:cantonese_dictionary_app/widgets/language_toggles.dart';
 import 'package:cantonese_dictionary_app/widgets/list_filter_button.dart';
 // See dictionary_store_test.dart for why drift.dart is imported with `show`.
@@ -226,5 +227,39 @@ void main() {
     expect(find.text('Cantonese'), findsOneWidget);
     expect(find.text('Mandarin'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('language line: name + emblem per language, none when not set',
+      (tester) async {
+    Future<(int, int)> count(bool cantonese, bool mandarin) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: LanguageLine(isCantonese: cantonese, isMandarin: mandarin),
+          ),
+        ),
+      ));
+      final icons = tester.widgetList(find.byType(LanguageIcon)).length;
+      final names = tester
+          .widgetList(find.textContaining(RegExp('^(Cantonese|Mandarin)\$')))
+          .length;
+      return (icons, names);
+    }
+
+    expect(await count(false, false), (0, 0));
+    expect(await count(true, false), (1, 1));
+    expect(await count(false, true), (1, 1));
+    expect(await count(true, true), (2, 2));
+  });
+
+  testWidgets('language line keeps its height when empty', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: LanguageLine(isCantonese: false, isMandarin: false),
+        ),
+      ),
+    ));
+    expect(tester.getSize(find.byType(LanguageLine)).height, 28);
   });
 }
