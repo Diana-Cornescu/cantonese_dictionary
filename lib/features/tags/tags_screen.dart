@@ -4,13 +4,12 @@ import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
 import '../../widgets/clear_text_button.dart';
 import '../../widgets/tag_name_dialog.dart';
-import '../settings/settings_button.dart';
 import 'tag_detail_screen.dart';
 
-/// Asks for a new tag's name and creates it, empty. Used by the bottom
-/// bar's round + on the Tags tab (1.6.0; it was this screen's own floating
-/// + button before). The new tag just appears in the list — tap it to open
-/// it. It used to open straight away, but pushing a route in the same
+/// Asks for a new tag's name and creates it, empty. Used by the + at the
+/// top of the Tags screen (2026-09-25; the bottom bar's round + did this
+/// while Tags was a tab, and a floating + before that). The new tag just
+/// appears in the list — tap it to open it. It used to open straight away, but pushing a route in the same
 /// frame the dialog pops is asking for trouble in the navigator's overlay
 /// (2026-09-20).
 Future<void> createTagFromDialog(
@@ -32,9 +31,13 @@ Future<void> createTagFromDialog(
   await store.createTag(name);
 }
 
-/// Every tag, with how many characters carry it: the Tags tab. Search or
-/// scroll to find one, tap it to see (and change) its characters, or use
-/// the bottom bar's round + to create an empty tag and fill it afterwards.
+/// Every tag, with how many characters carry it. Opened from Settings
+/// since 2026-09-25 (it was a tab in the bottom bar before the Write tab
+/// took its place). Search or scroll to find one, tap it to see (and
+/// change) its characters, or use the + at the top to create an empty tag
+/// and fill it afterwards.
+///
+/// No ⚙ here: this screen is opened from inside Settings.
 ///
 /// Tags nobody carries are shown greyed with "0 characters" rather than
 /// hidden: `replaceTags` keeps them on purpose, and seeing them is how you
@@ -77,7 +80,13 @@ class _TagsScreenState extends State<TagsScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Tags'),
-            actions: [SettingsButton(store: store)],
+            actions: [
+              IconButton(
+                tooltip: 'New tag',
+                icon: const Icon(Icons.add),
+                onPressed: () => createTagFromDialog(context, store),
+              ),
+            ],
           ),
           body: Column(
             children: [
@@ -103,7 +112,7 @@ class _TagsScreenState extends State<TagsScreen> {
                           child: Text(
                             filtering
                                 ? 'No tags match.'
-                                : 'No tags yet. Tap + below to make one, or add '
+                                : 'No tags yet. Tap + above to make one, or add '
                                     'tags on a character.',
                             textAlign: TextAlign.center,
                           ),

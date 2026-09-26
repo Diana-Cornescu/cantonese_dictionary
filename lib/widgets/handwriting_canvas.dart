@@ -15,6 +15,9 @@ import '../theme/app_color_roles.dart';
 ///    that owns the data.
 ///  - Read-only mode (`readOnly: true`): paints [initialStrokes] and
 ///    ignores all pointer input.
+///
+/// Either mode can paint a [backgroundPainter] on the paper, under the
+/// ink: the Write tab's guide lines and reference character (2026-09-25).
 class HandwritingCanvas extends StatefulWidget {
   const HandwritingCanvas({
     super.key,
@@ -24,6 +27,7 @@ class HandwritingCanvas extends StatefulWidget {
     this.strokeColor,
     this.strokeWidth = 4.0,
     this.fitToBox = false,
+    this.backgroundPainter,
   });
 
   final bool readOnly;
@@ -44,6 +48,9 @@ class HandwritingCanvas extends StatefulWidget {
   /// Defaults to the theme's ink color (`context.appColors.ink`).
   final Color? strokeColor;
   final double strokeWidth;
+
+  /// Painted on the paper, under the strokes. Not scaled by [fitToBox].
+  final CustomPainter? backgroundPainter;
 
   @override
   State<HandwritingCanvas> createState() => _HandwritingCanvasState();
@@ -132,7 +139,11 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
     final canvas = ClipRect(
       child: ColoredBox(
         color: colors.paper,
-        child: CustomPaint(painter: painter, size: Size.infinite),
+        child: CustomPaint(
+          painter: widget.backgroundPainter,
+          foregroundPainter: painter,
+          size: Size.infinite,
+        ),
       ),
     );
     if (widget.readOnly) {

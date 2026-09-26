@@ -40,6 +40,9 @@ class AppRawColors {
   static const midGrey = Color(0xFF9E9E9E); // box borders, faint labels
   static const silverGrey = Color(0xFFB4B8B5); // ironGrey, lightened
   static const paleGrey = Color(0xFFE6E9E7); // lighter again, for fills
+  // Write-tab guide lines (2026-09-25). Always on the light "paper", so
+  // one value works in both modes: visible on white and on offWhite.
+  static const guideGrey = Color(0xFFD0D4D1);
 
   // Dark-mode neutrals (2026-09-25). Contrast against [charcoal] noted
   // where it matters; measured, not eyeballed.

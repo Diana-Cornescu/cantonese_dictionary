@@ -24,9 +24,9 @@ logs hold the reasoning.
 
 _Draft. Move things in and out freely — that's the point of the cap._
 
-_Nothing scheduled yet. 1.6.0 shipped 2026-09-25 (see `CHANGELOG.md`);
-promote up to four items from "After that" — the two flagged ones at the
-top are the obvious candidates._
+| What | Notes |
+|------|-------|
+| **Writing practice (Write tab)** | **Built 2026-09-25, not yet released.** Write a character from a definition, then see it laid over the correct form from bundled open stroke data. Takes the Tags tab's slot; Tags moves into Settings. No scoring yet. Decisions: `decisions/writing-practice.md`. Before release: compile, run the tests, try it on the phone, and read the skipped list in the Write options for how much of your real dictionary is covered. |
 
 ---
 
@@ -54,7 +54,9 @@ Each of these is a project, not an afternoon.
 
 | What | Notes |
 |------|-------|
-| **stroke writing character** | eventual stroke writing checker (but that will bring in the issue of it not being even - big new feature and location will need to be thought of). |
+| **Rename to "Chinese Dictionary" — on every level** | Planned 2026-09-25, to be done **in one sitting**. Display name, internal IDs, backups, database file, folder and GitHub repo. The full plan, order and traps are written out under the table below. |
+| **Tags: decide their permanent home** | Once the Write tab ships, Tags lives in Settings as a stopgap. Decide where it goes for good: folded into the Characters list (e.g. a tag filter in the filter sheet, which would also fix "no filtering by tag" in `known_limitations.md`), or somewhere else. |
+| **Write tab: scoring and a tracked statistic** | Deferred from the first version on purpose (2026-09-25): use the overlay for a while first. A score per attempt, and a per-character statistic to track it over time. Tracking over time needs a new table; today the app keeps counters only (`decisions/storage.md`, decision 4). |
 | **Handwriting recognition** | Fully designed and parked, 2026-07-19. The design is written out under the table below. |
 | **Audio pronunciation** | Record and play back a character. Never designed. |
 | **Stroke-order playback** | The data is already being captured — the handwriting model records a timestamp per point precisely so this could be added later without changing what's stored. |
@@ -97,6 +99,71 @@ a schema change, not just a new screen.
 is redrawn correctly during recognition, so frequently-practised characters
 keep getting easier to match instead of staying pinned to one original
 sample.
+
+
+### Rename to "Chinese Dictionary" — the plan
+
+Written 2026-09-25 so the rename can be done in one sitting without
+re-deciding anything. **Everything below goes in one release** (suggest
+**2.0.0**: on Android it's effectively a new app). The name appears in
+three layers; do them in this order.
+
+**Before starting**
+
+1. On the **phone**: Settings → Back up, save the `.zip` somewhere off the
+   phone (Drive / Downloads). On the **laptop**: copy `local_data\` somewhere
+   safe. Commit and push everything, so the rename is its own clean commit.
+2. Close Android Studio / VS Code (an open editor has twice saved an old
+   copy over a changed file).
+
+**Layer 1 — what people see** (safe)
+
+| Where | Change to |
+|---|---|
+| `android/app/src/main/AndroidManifest.xml` `android:label` | `Chinese Dictionary` (no underscore — this is the name under the icon) |
+| `windows/runner/main.cpp` window title | `Chinese Dictionary` |
+| `windows/runner/Runner.rc` FileDescription, InternalName, ProductName, OriginalFilename, CompanyName, LegalCopyright | `Chinese Dictionary` / `chinese_dictionary.exe` |
+| `windows/CMakeLists.txt` `project(...)`, `BINARY_NAME` | `chinese_dictionary` |
+| `lib/main.dart` `title:`, `dictionary_list_screen.dart` app bar | `Chinese Dictionary` |
+
+**Layer 2 — internal IDs** (each has a trap; all of them must be handled)
+
+| Where | Current | Trap and how to handle it |
+|---|---|---|
+| `pubspec.yaml` `name:` | `cantonese_dictionary_app` | Change to `chinese_dictionary_app`. **Every** `package:cantonese_dictionary_app/` import in `test/` changes with it. **And** `AppDatabase._findProjectRoot` looks for the exact string `name: cantonese_dictionary_app` to find `local_data\` — change it in the same edit, or the laptop silently opens a new, empty database under Documents. |
+| `lib/data/app_database.dart` `fileName` | `cantonese_dictionary` (→ `.sqlite`) | Change to `chinese_dictionary`. On the laptop, rename `local_data\cantonese_dictionary.sqlite` to match **before** the first run. (Or add a one-time "if the old file exists and the new one doesn't, rename it" step in `databaseDirectory`, which also covers the phone if the app ID were kept.) `desktopFallbackFolderName` `Cantonese Dictionary` → `Chinese Dictionary`. |
+| `lib/data/backup_service.dart` `formatName` and the suggested file name | `cantonese_dictionary_backup` | Change to `chinese_dictionary_backup`, **but keep accepting the old name on restore**, or every backup made before the rename is refused. Add a test that restores a backup with the old format name. |
+| `android/app/build.gradle.kts` `namespace` and `applicationId` | `com.cantonesedictionary.cantonese_dictionary` | New ID, e.g. `com.chinesedictionary.chinese_dictionary`. **Android sees this as a different app**: it installs next to the old one with an empty dictionary. Same signing key is fine. Then: open the new app → Settings → Restore the backup from step 1 → check everything → uninstall the old app. |
+| `android/app/src/main/kotlin/com/cantonesedictionary/cantonese_dictionary/MainActivity.kt` | folder + `package` line | Move to `kotlin/com/chinesedictionary/chinese_dictionary/` and update the `package` line to match the new namespace, or the build fails. |
+| `lib/data/app_database.g.dart` | generated | Rerun `dart run build_runner build` after the pubspec rename. |
+
+**Layer 3 — folder and GitHub**
+
+1. GitHub: repo → Settings → rename to `chinese_dictionary`. The old URL
+   redirects, but update the laptop anyway:
+   `git remote set-url origin https://github.com/<you>/chinese_dictionary.git`
+2. With every editor closed, rename the project folder to
+   `chinese_dictionary`. `local_data\` and `android_release_key_private\`
+   move with it (both git-ignored — check `git status` still doesn't list
+   them). Rename or regenerate `cantonese_dictionary.iml`; reopen the
+   project in Android Studio.
+3. Docs pass: README, `CHANGELOG.md` entry, `setup_manual.md` (paths like
+   `local_data\cantonese_dictionary.sqlite`), decision logs, and
+   `known_limitations.md`. Keep history as history (old changelog entries
+   stay as they were). The example character's "(Cantonese: oi3)" is still
+   accurate — leave it.
+
+**Check it worked**
+
+- `flutter pub get`, `dart run build_runner build`, `flutter analyze`,
+  `flutter test` all pass.
+- Laptop: the app opens with **your** characters (not the example row) —
+  proves `local_data` and the database file were found.
+- Phone: the new app shows "Chinese Dictionary" under its icon; restore the
+  backup; spot-check characters, photos, tags, settings (theme, dark mode).
+- Settings → Back up makes `chinese_dictionary_backup_….zip`, and an **old**
+  `cantonese_dictionary_backup_….zip` still restores.
+- `grep -ri cantonese lib test android windows` finds nothing unexpected.
 
 ---
 

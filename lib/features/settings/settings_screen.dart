@@ -12,13 +12,19 @@ import '../../theme/app_palettes.dart';
 import '../../theme/app_theme_mode.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../dictionary_list/dictionary_list_screen.dart';
+import '../tags/tags_screen.dart';
 
 /// Settings, opened from the ⚙ at the top right of any tab (1.6.0; it was
 /// in the ☰ side menu before): Light / Dark / Match phone, the color theme,
-/// the archive, and backup & restore. More settings can be added here later.
+/// the archive, tags, backup & restore, and licences. More settings can be
+/// added here later.
 ///
 /// The archive moved here from the side menu in 1.6.0. It's somewhere you
 /// go rarely, so it doesn't earn a place in the bottom bar.
+///
+/// **Tags** moved here from the bottom bar on 2026-09-25, when the Write
+/// tab took its slot. It's a stopgap until Tags gets a permanent home (see
+/// the roadmap).
 ///
 /// Backups are saved and opened through the system file window every
 /// time (no fixed default folder), so on Android you can pick Downloads,
@@ -361,6 +367,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               },
             ),
+            ListenableBuilder(
+              listenable: widget.store,
+              builder: (context, _) {
+                final count = widget.store.allTags.length;
+                return ListTile(
+                  leading: const Icon(Icons.sell_outlined),
+                  title: const Text('Tags'),
+                  subtitle: Text(count == 1 ? '1 tag' : '$count tags'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TagsScreen(store: widget.store),
+                    ),
+                  ),
+                );
+              },
+            ),
             const Divider(height: 32),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
@@ -391,6 +415,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 enabled: ready,
                 onTap: _undo,
               ),
+            const Divider(height: 32),
+            // Credits for bundled data, e.g. the Write tab's stroke data
+            // (registered in main.dart), plus every package's licence.
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('Licences'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: 'Cantonese Dictionary',
+              ),
+            ),
           ],
         ),
       ),

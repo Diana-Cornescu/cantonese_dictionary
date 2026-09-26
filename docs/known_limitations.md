@@ -31,8 +31,18 @@ Update this whenever a limitation is fixed or a new one turns up, per the
 - **No filtering by tag.** The filter icon on the home list and the
   gallery (1.6.0) offers ⭐, 🔥 and (in the gallery) unlinked, plus
   newest/oldest sorting; tag filtering isn't in it yet, because it needs a
-  picker rather than one more toggle. The Tags screen lists a tag's characters, which is
-  the workaround.
+  picker rather than one more toggle. The Tags screen (Settings → Tags)
+  lists a tag's characters, which is the workaround.
+
+- **Tags is tucked away in Settings.** The Write tab took its slot in the
+  bar (2026-09-25). Its permanent home is still to be decided (roadmap).
+
+- **The Write tab can't check every character.** Its stroke data covers
+  about 9,500 common characters; many Cantonese-only ones (咗 冇 佢 啲 嚟
+  喺…) aren't there, and those entries are skipped (listed in the Write
+  options). Its shapes follow mainland conventions, which differ from
+  Hong Kong's for some characters. And it only shows the overlay: no
+  score, and nothing is recorded. See `decisions/writing-practice.md`.
 
 - **Every change repaints the whole app.** `main.dart` wraps `MaterialApp`
   in a `ListenableBuilder` on the store, so any save rebuilds the

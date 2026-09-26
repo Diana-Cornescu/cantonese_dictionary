@@ -40,6 +40,10 @@ The app stores its data in SQLite through Drift (see `docs/decisions_log_sqlite_
   - **Android:** the app's private storage, which is deleted if the app is uninstalled. Get data off the phone with Settings → Back up.
 - **Leftover from before:** the old JSON file (`cantonese_dictionary_entries.json`, in your Documents folder on Windows) is no longer read. It only held test data, so it's safe to delete.
 
+## Stroke data for the Write tab — added 2026-09-25
+
+`assets/stroke_reference.bin` is committed, so ordinary builds need nothing. It's only rebuilt if the source data or its file layout changes; the steps are at the end of `docs/decisions/writing-practice.md` (needs Python 3). The APK is about 8.5 MB bigger because of it.
+
 ## Phase 3 — Desktop build target (optional — skip straight to Phase 4 if you just want to try the app on your phone and don't need mouse-based desktop testing right now)
 
 11. Install Visual Studio 2022: https://visualstudio.microsoft.com/downloads/ (the free Community edition is enough). During install, check the "Desktop development with C++" workload — this is the actual compiler Flutter uses to build the Windows desktop app.

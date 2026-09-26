@@ -7,14 +7,17 @@ import '../flashcards/flashcard_mode_screen.dart';
 import '../photos/gallery_screen.dart';
 import '../photos/photo_picking.dart';
 import '../settings/settings_screen.dart';
-import '../tags/tags_screen.dart';
+import '../write/write_practice_screen.dart';
 
 /// The four tabs, in bar order. The round center button sits between
-/// [photos] and [tags].
+/// [photos] and [write].
+///
+/// [write] took the slot Tags had (2026-09-25); Tags is now a row in
+/// Settings until it has a permanent home (see the roadmap).
 enum AppTab {
   characters('Characters', Icons.menu_book, Icons.menu_book_outlined),
   photos('Photos', Icons.photo_library, Icons.photo_library_outlined),
-  tags('Tags', Icons.sell, Icons.sell_outlined),
+  write('Write', Icons.draw, Icons.draw_outlined),
   flashcards('Flashcards', Icons.style, Icons.style_outlined);
 
   const AppTab(this.label, this.selectedIcon, this.icon);
@@ -26,18 +29,20 @@ enum AppTab {
 /// The app's frame since 1.6.0: an Instagram-style bar along the bottom
 /// with four tabs and a slightly larger round button in the middle. It
 /// replaced the ☰ side menu, the home screen's Add character bar and the
-/// + buttons floating on Photos and Tags.
+/// + buttons floating on Photos and Tags. The Write tab replaced Tags on
+/// 2026-09-25.
 ///
 /// **Each tab has its own [Navigator]**, so opening a character, photo or
 /// tag happens *inside* the tab and the bar stays visible. Switching tabs
-/// and back returns to where you were (a flashcard round in progress
-/// included). Tapping the tab you're already on goes back to its top
-/// screen, which is why the inner screens no longer have Home buttons.
+/// and back returns to where you were (a flashcard or writing round in
+/// progress included). Tapping the tab you're already on goes back to its
+/// top screen, which is why the inner screens no longer have Home buttons.
 ///
 /// **The center button** does the current tab's main action:
 ///  - Characters: **+** opens Add character.
 ///  - Photos: **+** takes or picks a photo, then asks which characters.
-///  - Tags: **+** makes a new, empty tag.
+///  - Write: **…** opens the writing options; tapping it again closes
+///    them.
 ///  - Flashcards: **…** opens the flashcard options; tapping it again
 ///    closes them.
 ///
@@ -99,6 +104,9 @@ class _AppShellState extends State<AppShell> {
   /// refresh its cards when it's shown again.
   final _flashcards = GlobalKey<FlashcardModeScreenState>();
 
+  /// The same two jobs for the Write tab.
+  final _write = GlobalKey<WritePracticeScreenState>();
+
   DictionaryStore get store => widget.store;
 
   NavigatorState? get _currentNavigator => _navigators[_tab]!.currentState;
@@ -106,7 +114,7 @@ class _AppShellState extends State<AppShell> {
   Widget _rootScreen(AppTab tab) => switch (tab) {
         AppTab.characters => DictionaryListScreen(store: store),
         AppTab.photos => GalleryScreen(store: store),
-        AppTab.tags => TagsScreen(store: store),
+        AppTab.write => WritePracticeScreen(key: _write, store: store),
         AppTab.flashcards =>
           FlashcardModeScreen(key: _flashcards, store: store),
       };
@@ -119,10 +127,9 @@ class _AppShellState extends State<AppShell> {
     }
     // Leaving this tab: don't leave Settings open in it.
     _closeSettings(_tab);
-    if (_tab == AppTab.flashcards) {
-      // Don't leave the options panel open behind another tab.
-      _flashcards.currentState?.closeOptions();
-    }
+    // Don't leave an options panel open behind another tab.
+    if (_tab == AppTab.flashcards) _flashcards.currentState?.closeOptions();
+    if (_tab == AppTab.write) _write.currentState?.closeOptions();
     setState(() {
       _tab = tab;
       _visited.add(tab);
@@ -132,6 +139,7 @@ class _AppShellState extends State<AppShell> {
       // another tab since the round started.
       _flashcards.currentState?.refreshCards();
     }
+    if (tab == AppTab.write) _write.currentState?.refreshCards();
   }
 
   Future<void> _centerAction() async {
@@ -148,8 +156,14 @@ class _AppShellState extends State<AppShell> {
         ));
       case AppTab.photos:
         await addPhotoWithCharacters(tabContext, store);
-      case AppTab.tags:
-        await createTagFromDialog(tabContext, store);
+      case AppTab.write:
+        final write = _write.currentState;
+        if (write != null && write.optionsOpen) {
+          write.closeOptions();
+          return;
+        }
+        navigator.popUntil((route) => route.isFirst);
+        await write?.openOptions();
       case AppTab.flashcards:
         final flashcards = _flashcards.currentState;
         // A second tap on … closes the panel it opened.
@@ -207,12 +221,13 @@ class _AppShellState extends State<AppShell> {
         bottomNavigationBar: _BottomBar(
           current: _tab,
           onTab: _selectTab,
-          centerIcon:
-              _tab == AppTab.flashcards ? Icons.more_horiz : Icons.add,
+          centerIcon: _tab == AppTab.flashcards || _tab == AppTab.write
+              ? Icons.more_horiz
+              : Icons.add,
           centerTooltip: switch (_tab) {
             AppTab.characters => 'Add character',
             AppTab.photos => 'Add photo',
-            AppTab.tags => 'New tag',
+            AppTab.write => 'Writing options',
             AppTab.flashcards => 'Flashcard options',
           },
           onCenter: _centerAction,
@@ -325,7 +340,7 @@ class _BottomBar extends StatelessWidget {
                   ),
                 ),
               ),
-              _tabItem(context, AppTab.tags),
+              _tabItem(context, AppTab.write),
               _tabItem(context, AppTab.flashcards),
             ],
           ),

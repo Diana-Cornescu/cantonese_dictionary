@@ -1,6 +1,6 @@
 # Cantonese Dictionary App
 
-A fully local, offline-first dictionary app for Cantonese characters — you add characters yourself, along with your own definitions, and the app grows into your own personal, self-built reference over time. Includes star/hard shortlists, cross-references between related characters, flashcard practice with tracked stats, photos of characters seen out and about, and backup & restore to a single file. No servers, no accounts, and no internet connection required at any point — everything runs and stays on your device.
+A fully local, offline-first dictionary app for Cantonese characters — you add characters yourself, along with your own definitions, and the app grows into your own personal, self-built reference over time. Includes star/hard shortlists, cross-references between related characters, flashcard practice with tracked stats, writing practice against bundled stroke data, photos of characters seen out and about, and backup & restore to a single file. No servers, no accounts, and no internet connection required at any point — everything runs and stays on your device.
 
 ## Status
 
@@ -16,7 +16,7 @@ Released and in daily use on an Android phone, and runnable on Windows for devel
 - `docs/decisions/` — **one file per area, recording what was decided and why.** Read the code for *how*; these explain what the code can't tell you.
   - `ui-conventions.md` — the rules that apply across every screen (confirmations, what the three colors mean, the two "selected" looks, where destructive actions go).
   - `network.md` — why the Android manifest requests no permissions at all, and what that guarantees.
-  - `tags.md`, `photos.md`, `storage.md`, `backup-and-release.md` — one per feature area.
+  - `tags.md`, `photos.md`, `storage.md`, `backup-and-release.md`, `writing-practice.md` — one per feature area.
 - `CHANGELOG.md` (repo root) — what changed in each release, in plain language. This is the project's history; the docs above only describe the present and the future.
 
 **Writing a decision log:** one file per area under `docs/decisions/`, named for the area rather than dated. Record **what was decided and why it mattered**, not how it was implemented — the code covers how. The exception is a *how* the code can't explain on its own: an ordering that isn't obvious, a trap that cost real time, a constant whose value matters. Those belong in the log.

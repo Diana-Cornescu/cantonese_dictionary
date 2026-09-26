@@ -45,3 +45,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Bundled data (2026-09-25): the Write tab's stroke reference, built by
+  # tool/build_stroke_reference.py, and its licence text.
+  assets:
+    - assets/stroke_reference.bin
+    - assets/licenses/arphic_public_license.txt

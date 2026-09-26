@@ -4,6 +4,17 @@ What changed in each release installed on the phone. Newest first.
 How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
+## 1.7.0 — not released yet
+
+- **A Write tab for practising writing characters.** It shows a definition; you write the character in a square box with faint guide lines, then tap **Check**. The correct form appears in pale grey under your writing, so you can see where your strokes are off. **Try again** clears the box; **Next** moves on.
+  - Words with more than one character (时间) are written one character at a time.
+  - Nothing is scored or saved yet, and flashcard stats aren't affected.
+  - **…** (the round button) picks All, Hard or Favorites, like Flashcards.
+  - The correct forms come from a free set of about 9,500 common characters built into the app, so it works offline. **Many Cantonese-only characters (咗 冇 佢 啲 嚟 喺…) aren't in it**; those entries are skipped, and the **…** panel lists which.
+- **Tags moved into Settings**, to make room for Write in the bar. **Settings → Tags** opens the same screen as before, with a **+** at the top to create a tag.
+- **Settings → Licences** lists the licences for the built-in stroke data and the packages the app uses.
+- The app is about 8.5 MB bigger because of the stroke data.
+
 ## 1.6.0 — 2026-09-25
 
 - **Each character shows the date it was added.** A small grey "Added YYYY-MM-DD" line under the definition on the character screen. It's set automatically when you tap Save on the Add character screen and can't be changed afterwards. Characters you already have show their real date too, because it was always being saved and just never displayed.

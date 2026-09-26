@@ -28,6 +28,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     required this.photoPlaceholder,
     required this.dangerFill,
     required this.onDangerFill,
+    required this.referenceInk,
+    required this.writingGuide,
   });
 
   /// Something switched off or not filled in yet: an off filter or flag
@@ -76,6 +78,14 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
   /// dark mode — the same as the tag look.
   final Color onDangerFill;
 
+  /// The correct form of a character, filled in under your ink on the
+  /// Write tab once you tap Check. Drawn on [paper], so it's the same in
+  /// both modes.
+  final Color referenceInk;
+
+  /// The faint 米字格 guide lines in a Write-tab box, also on [paper].
+  final Color writingGuide;
+
   /// Light mode — everything the app looked like before dark mode.
   static const light = AppColorRoles(
     inactive: AppRawColors.silverGrey,
@@ -90,6 +100,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     photoPlaceholder: AppRawColors.black7,
     dangerFill: AppRawColors.redTint,
     onDangerFill: AppRawColors.nearBlack,
+    referenceInk: AppRawColors.silverGrey,
+    writingGuide: AppRawColors.guideGrey,
   );
 
   /// Dark mode (2026-09-25). Same roles, lighter greys: icons and the "on"
@@ -108,6 +120,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     photoPlaceholder: AppRawColors.white7,
     dangerFill: AppRawColors.redShade,
     onDangerFill: AppRawColors.offWhite,
+    referenceInk: AppRawColors.silverGrey,
+    writingGuide: AppRawColors.guideGrey,
   );
 
   @override
@@ -124,6 +138,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     Color? photoPlaceholder,
     Color? dangerFill,
     Color? onDangerFill,
+    Color? referenceInk,
+    Color? writingGuide,
   }) {
     return AppColorRoles(
       inactive: inactive ?? this.inactive,
@@ -138,6 +154,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
       photoPlaceholder: photoPlaceholder ?? this.photoPlaceholder,
       dangerFill: dangerFill ?? this.dangerFill,
       onDangerFill: onDangerFill ?? this.onDangerFill,
+      referenceInk: referenceInk ?? this.referenceInk,
+      writingGuide: writingGuide ?? this.writingGuide,
     );
   }
 
@@ -160,6 +178,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
           Color.lerp(photoPlaceholder, other.photoPlaceholder, t)!,
       dangerFill: Color.lerp(dangerFill, other.dangerFill, t)!,
       onDangerFill: Color.lerp(onDangerFill, other.onDangerFill, t)!,
+      referenceInk: Color.lerp(referenceInk, other.referenceInk, t)!,
+      writingGuide: Color.lerp(writingGuide, other.writingGuide, t)!,
     );
   }
 }

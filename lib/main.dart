@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart'
+    show LicenseEntryWithLineBreaks, LicenseRegistry;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'data/app_database.dart';
 import 'data/dictionary_store.dart';
@@ -9,9 +12,21 @@ import 'theme/app_theme_mode.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _registerDataLicences();
   final store = DictionaryStore(AppDatabase(), reopen: AppDatabase.new);
   await store.load();
   runApp(CantoneseDictionaryApp(store: store));
+}
+
+/// Adds the bundled data's licences to the Licences page in Settings,
+/// alongside the packages' own. Read only when that page opens.
+void _registerDataLicences() {
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(
+      ['Make Me a Hanzi (Write tab stroke data)'],
+      await rootBundle.loadString('assets/licenses/arphic_public_license.txt'),
+    );
+  });
 }
 
 /// Root widget: builds the MaterialApp and hands the single

@@ -21,8 +21,9 @@ void main() {
 
     expect(find.text('愛'), findsWidgets);
 
-    // The bottom bar (1.6.0) shows all four tabs.
-    for (final label in ['Characters', 'Photos', 'Tags', 'Flashcards']) {
+    // The bottom bar (1.6.0) shows all four tabs. Write replaced Tags
+    // (2026-09-25).
+    for (final label in ['Characters', 'Photos', 'Write', 'Flashcards']) {
       expect(find.text(label), findsOneWidget);
     }
     expect(find.byTooltip('Add character'), findsOneWidget);

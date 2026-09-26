@@ -122,12 +122,15 @@ app-wide hover tint can't reach them.
 Decided 2026-09-25, replacing the ☰ side menu. Code:
 `features/shell/app_shell.dart`.
 
-- **Four tabs and a round button:** Characters · Photos · (round) · Tags
-  · Flashcards, each an icon with a small label (labels because the Photos
-  and Tags icons are easy to mix up at a glance).
-- **The round button is the tab's main action.** + on Characters, Photos
-  and Tags adds one; … on Flashcards opens its options, and a second tap
-  closes them (the panel doesn't cover the bar). It's filled with
+- **Four tabs and a round button:** Characters · Photos · (round) · Write
+  · Flashcards, each an icon with a small label. **Write replaced Tags on
+  2026-09-25**; Tags is a row in Settings until it gets a permanent home
+  (roadmap). See `writing-practice.md`.
+- **Keep it two tabs either side of the round button.** A fifth tab would
+  break the symmetry, which is why Write took an existing slot instead.
+- **The round button is the tab's main action.** + on Characters and
+  Photos adds one; … on Write and Flashcards opens their options, and a
+  second tap closes them (the panel doesn't cover the bar). It's filled with
   the color theme — like a view switcher, it has no meaning of its own. No
   screen has its own "add" button any more.
 - **The bar is always visible.** Each tab has its own navigator, so inner
@@ -135,7 +138,9 @@ Decided 2026-09-25, replacing the ☰ side menu. Code:
   Tapping the current tab returns to its top screen, so **no screen has a
   Home button**. Tabs keep their place when you switch away.
 - **Settings is the ⚙ at the top right of each tab's top screen.** Things
-  used rarely (the Archive, backups) live inside Settings, not in the bar.
+  used rarely (the Archive, Tags, backups, licences) live inside Settings,
+  not in the bar. A screen opened from Settings has no ⚙ of its own, so
+  Tags has its **+** in its own top bar.
 - **Using the bar always leaves Settings** (switching tabs, tapping the
   current tab, the round button). Settings is a place you step into and
   out of; a tab that reopened on Settings looked like a bug. Other inner
