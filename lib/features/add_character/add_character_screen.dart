@@ -341,17 +341,6 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
-            // Optional: Cantonese, Mandarin, both (a shared word) or
-            // neither (not set). Set it later from the character screen.
-            Text('Language', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            LanguageToggles(
-              isCantonese: _isCantonese,
-              isMandarin: _isMandarin,
-              onCantonese: () => setState(() => _isCantonese = !_isCantonese),
-              onMandarin: () => setState(() => _isMandarin = !_isMandarin),
-            ),
-            const SizedBox(height: 16),
             _sectionHeader(
               'Tags',
               TextButton.icon(
@@ -360,6 +349,21 @@ class _AddCharacterScreenState extends State<AddCharacterScreen> {
                 label: const Text('Choose'),
               ),
             ),
+            // Language as the first line under Tags, as on the character
+            // screen (2026-09-26). Optional: Cantonese, Mandarin, both (a
+            // shared word) or neither (not set). No confirmation here:
+            // Save is the commit for a new character.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: LanguageToggles(
+                isCantonese: _isCantonese,
+                isMandarin: _isMandarin,
+                onCantonese: () =>
+                    setState(() => _isCantonese = !_isCantonese),
+                onMandarin: () => setState(() => _isMandarin = !_isMandarin),
+              ),
+            ),
+            const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
               child: _tags.isEmpty

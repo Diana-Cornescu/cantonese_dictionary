@@ -364,9 +364,9 @@ class DictionaryStore extends ChangeNotifier {
   }
 
   /// Turns the Cantonese label on character [id] on or off. Independent of
-  /// Mandarin: both on means the word is shared. Instant and unconfirmed,
-  /// like star and hard, since one more tap undoes it. No-op if the
-  /// character doesn't exist.
+  /// Mandarin: both on means the word is shared. The character screen
+  /// asks for confirmation before calling this. No-op if the character
+  /// doesn't exist.
   Future<void> toggleCantonese(int id) async {
     final index = _indexOf(id);
     if (index == -1) return;

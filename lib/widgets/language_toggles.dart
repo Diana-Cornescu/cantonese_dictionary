@@ -7,7 +7,9 @@ import '../theme/app_colors.dart';
 /// (2026-09-26). Two independent toggles: one on marks the word as that
 /// language, both on marks a word the two share, both off is "not set".
 ///
-/// Used on the Add character screen and the character screen. They wear
+/// Shown as the first line of the Tags section on the Add character screen
+/// and the character screen, above the real tags: a "special tag" that is
+/// always offered, both buttons visible and grey when off. They wear
 /// the same grey / black outline / pale fill look as the Favorite and Hard
 /// buttons (see `_toggleButtonStyle` in the character screen and
 /// `FilterIconButton`), without a meaning color of their own: a language

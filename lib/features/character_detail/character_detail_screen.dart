@@ -166,6 +166,31 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     }
   }
 
+  /// Turns Cantonese or Mandarin on or off for [entry], after a
+  /// confirmation (2026-09-26). Unlike Favorite / Hard these ask first:
+  /// they sit among the tags, where every edit is confirmed.
+  Future<void> _toggleLanguage(
+    CharacterEntry entry, {
+    required bool mandarin,
+  }) async {
+    final language = mandarin ? 'Mandarin' : 'Cantonese';
+    final isOn = mandarin ? entry.isMandarin : entry.isCantonese;
+    final label = typedCharacterLabel(entry.typedCharacter);
+    final confirmed = await confirmAction(
+      context,
+      title: isOn ? 'Remove $language?' : 'Mark as $language?',
+      message: isOn
+          ? "Remove the $language label from '$label'?"
+          : "Mark '$label' as $language?",
+    );
+    if (!confirmed) return;
+    if (mandarin) {
+      await widget.store.toggleMandarin(entry.id);
+    } else {
+      await widget.store.toggleCantonese(entry.id);
+    }
+  }
+
   /// Opens the tag's own screen, the way a photo's linked characters open
   /// theirs.
   void _openTag(String tag) {
@@ -697,28 +722,6 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
                 ?.copyWith(color: context.appColors.inactive),
           ),
           const Divider(height: 24),
-          // Language (2026-09-26): optional, and either, both or neither.
-          // Instant and unconfirmed like Favorite / Hard, since one more
-          // tap undoes it.
-          Text('Language', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          LanguageToggles(
-            isCantonese: entry.isCantonese,
-            isMandarin: entry.isMandarin,
-            onCantonese: () => widget.store.toggleCantonese(entry.id),
-            onMandarin: () => widget.store.toggleMandarin(entry.id),
-          ),
-          if (!entry.hasLanguage) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Not set',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: context.appColors.inactive),
-            ),
-          ],
-          const Divider(height: 24),
           Row(
             children: [
               Expanded(
@@ -762,6 +765,17 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
               ),
             ],
           ),
+          // Language sits here as the first line, like a special tag that
+          // is always offered (2026-09-26): both buttons always show, grey
+          // when off. It isn't a real tag, so the ✎ above doesn't touch it
+          // and the tags start on their own line underneath.
+          LanguageToggles(
+            isCantonese: entry.isCantonese,
+            isMandarin: entry.isMandarin,
+            onCantonese: () => _toggleLanguage(entry, mandarin: false),
+            onMandarin: () => _toggleLanguage(entry, mandarin: true),
+          ),
+          const SizedBox(height: 8),
           entry.tags.trim().isEmpty
               ? const Text('(no tags)')
               : TagChips(tags: entry.tags, onTagTap: _openTag),
