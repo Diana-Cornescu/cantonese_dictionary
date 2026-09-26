@@ -56,7 +56,9 @@ enum WriteMode {
 ///    an arrow for the direction, and a numbered badge where it starts.
 ///    **Try again** clears the box; **Next** moves on.
 ///  - **Practice mode:** the X-ray is there from the start; write over it,
-///    then **Next**.
+///    then **Next**. The stroke to write next is highlighted and the rest
+///    greyed; it moves on each time you lift the pen (one pen-lift = one
+///    stroke), and undo steps it back.
 ///
 /// **Nothing is marked or saved.** No score and no stats, on purpose for
 /// the first version: see how it feels first. Flashcard stats aren't
@@ -477,13 +479,17 @@ class WritePracticeScreenState extends State<WritePracticeScreen> {
             key: ValueKey('$_index/$_glyph/$_attempt/$frozen/${_mode.name}'),
             readOnly: frozen,
             initialStrokes: frozen ? _strokes : null,
-            onStrokesChanged: (strokes) => _strokes = strokes,
+            // Rebuilt on each stroke so Practice mode's highlight moves on.
+            onStrokesChanged: (strokes) => setState(() => _strokes = strokes),
             backgroundPainter: WritingGuidePainter(
               guideColor: colors.writingGuide,
               reference: showXray ? _reference!.glyphFor(glyph) : null,
               outlineColor: colors.referenceInk,
               strokeOrderColor: colors.strokeOrder,
               onStrokeOrderColor: colors.onStrokeOrder,
+              mutedColor: colors.strokeOrderMuted,
+              // The next stroke to write: as many as you've drawn so far.
+              activeStroke: practice ? _strokes.length : null,
             ),
           ),
         ),

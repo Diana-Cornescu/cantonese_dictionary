@@ -10,11 +10,13 @@ import '../data/stroke_reference.dart';
 ///  - each stroke's outline, filled in pale grey,
 ///  - its centre line, with an **arrowhead** where the pen lifts, so you
 ///    can see the direction,
-///  - a numbered **badge** where the pen goes down: ①, ②, ③… in stroke
-///    order.
+///  - a numbered **badge** on that line, a short way in from where the pen
+///    goes down: 1, 2, 3… in stroke order.
 ///
 /// Memory mode shows the X-ray after Check; Practice mode shows it from
-/// the start, to write over (2026-09-26).
+/// the start, to write over (2026-09-26). In Practice mode [activeStroke]
+/// highlights the stroke to write next: its line, arrow and badge in
+/// [strokeOrderColor], every other stroke's in [mutedColor].
 ///
 /// Used as `HandwritingCanvas.backgroundPainter`, so it sits on the paper
 /// and under the strokes. Expects a square box; the reference is scaled to
@@ -25,7 +27,9 @@ class WritingGuidePainter extends CustomPainter {
     required this.outlineColor,
     required this.strokeOrderColor,
     required this.onStrokeOrderColor,
+    required this.mutedColor,
     this.reference,
+    this.activeStroke,
   });
 
   final Color guideColor;
@@ -33,14 +37,22 @@ class WritingGuidePainter extends CustomPainter {
   /// The character's reference form, or null to show only the guide.
   final ReferenceGlyph? reference;
 
+  /// Which stroke (0-based) to highlight, or null to show every stroke in
+  /// [strokeOrderColor]. At or past the last stroke (the character is
+  /// finished) everything is shown in [strokeOrderColor] again.
+  final int? activeStroke;
+
   /// Fill for the stroke outlines.
   final Color outlineColor;
 
   /// The centre lines, arrowheads and number badges…
   final Color strokeOrderColor;
 
-  /// …and the numbers inside the badges.
+  /// …and the numbers inside the badges, and the ring around each badge.
   final Color onStrokeOrderColor;
+
+  /// Lines, arrows and badges of the strokes that aren't highlighted.
+  final Color mutedColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -57,40 +69,61 @@ class WritingGuidePainter extends CustomPainter {
       canvas.drawPath(glyphStrokePath(stroke, side), fill);
     }
 
-    final line = Paint()
-      ..color = strokeOrderColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.5, side * 0.012)
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final solid = Paint()
-      ..color = strokeOrderColor
-      ..style = PaintingStyle.fill;
-
     final medians = [
       for (final median in glyph.medians)
         [for (final (x, y) in median) _toBox(x, y, side)],
     ];
+    final active = activeStroke;
+    final highlighting = active != null && active < medians.length;
+    bool isMuted(int i) => highlighting && i != active;
 
-    // Lines and arrows first, then every badge on top of them.
-    for (final points in medians) {
+    // Muted strokes first, so the highlighted one is drawn over them where
+    // they cross; within each group, lines and arrows before badges.
+    final order = [
+      for (var i = 0; i < medians.length; i++)
+        if (isMuted(i)) i,
+      for (var i = 0; i < medians.length; i++)
+        if (!isMuted(i)) i,
+    ];
+    final lineWidth = math.max(1.5, side * 0.012);
+    for (final i in order) {
+      final points = medians[i];
       if (points.length < 2) continue;
+      final color = isMuted(i) ? mutedColor : strokeOrderColor;
       final path = Path()..moveTo(points.first.dx, points.first.dy);
       for (final p in points.skip(1)) {
         path.lineTo(p.dx, p.dy);
       }
-      canvas.drawPath(path, line);
-      _paintArrowhead(canvas, points, side, solid);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = lineWidth
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+      _paintArrowhead(canvas, points, side, Paint()..color = color);
     }
 
+    // Badge positions are worked out in stroke order, so the nudging is
+    // the same whichever stroke is highlighted; then drawn muted-first.
     final radius = math.max(7.0, side * 0.03);
-    final placed = <Offset>[];
+    final centres = <int, Offset>{};
     for (var i = 0; i < medians.length; i++) {
-      final points = medians[i];
-      if (points.isEmpty) continue;
-      final centre = _badgeCentre(points, radius, side, placed);
-      placed.add(centre);
-      canvas.drawCircle(centre, radius, solid);
+      if (medians[i].isEmpty) continue;
+      centres[i] =
+          _badgeCentre(medians[i], radius, side, centres.values.toList());
+    }
+    for (final i in order) {
+      final centre = centres[i];
+      if (centre == null) continue;
+      // A ring in the number's color keeps the badge readable where it
+      // sits on top of another stroke's line.
+      canvas.drawCircle(
+          centre, radius + 1.5, Paint()..color = onStrokeOrderColor);
+      canvas.drawCircle(centre, radius,
+          Paint()..color = isMuted(i) ? mutedColor : strokeOrderColor);
       _paintNumber(canvas, '${i + 1}', centre, radius);
     }
   }
@@ -128,26 +161,29 @@ class WritingGuidePainter extends CustomPainter {
       ..lineTo(wing(0.45).dx, wing(0.45).dy)
       ..lineTo(wing(-0.45).dx, wing(-0.45).dy)
       ..close();
-    canvas.drawPath(arrow, paint);
+    canvas.drawPath(arrow, paint..style = PaintingStyle.fill);
   }
 
-  /// Where a stroke's number goes: just before the point where the pen goes
-  /// down, back along the stroke's starting direction, as in a textbook.
-  /// Nudged further back if it would sit on a badge already placed (two
-  /// strokes of 口 start at the same corner), and kept inside the box.
+  /// Where a stroke's number goes: **on its own centre line**, a short way
+  /// in from where the pen goes down (2026-09-26). A badge sitting on a
+  /// line plainly belongs to that line, and strokes that start at the same
+  /// point (目's first two, at the top-left corner) separate as soon as
+  /// they head off in different directions. If it would still touch a
+  /// badge already placed, it slides further along its own stroke.
+  ///
+  /// (The first version put it just *before* the start, off the stroke,
+  /// which left it ambiguous at shared corners and crossings.)
   Offset _badgeCentre(
       List<Offset> points, double radius, double side, List<Offset> placed) {
-    final start = points.first;
-    // Points from further along the stroke back towards its start, i.e.
-    // against the direction of travel.
-    final back = _direction(points.skip(1), start, side * 0.02,
-            fallbackFrom: points.last) ??
-        const Offset(-1, 0);
-    var centre = start + back * (radius * 1.3);
-    for (var tries = 0; tries < 3; tries++) {
-      final clash = placed.any((p) => (p - centre).distance < radius * 1.9);
+    final length = _pathLength(points);
+    if (length == 0) return points.first;
+    var fraction = math.min(0.3, radius * 2.2 / length);
+    var centre = _pointAlong(points, length * fraction);
+    for (var tries = 0; tries < 4; tries++) {
+      final clash = placed.any((p) => (p - centre).distance < radius * 2);
       if (!clash) break;
-      centre += back * (radius * 2);
+      fraction = math.min(0.9, fraction + 0.12);
+      centre = _pointAlong(points, length * fraction);
     }
     return Offset(
       centre.dx.clamp(radius, side - radius).toDouble(),
@@ -178,10 +214,35 @@ class WritingGuidePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant WritingGuidePainter oldDelegate) =>
       oldDelegate.reference != reference ||
+      oldDelegate.activeStroke != activeStroke ||
       oldDelegate.guideColor != guideColor ||
       oldDelegate.outlineColor != outlineColor ||
       oldDelegate.strokeOrderColor != strokeOrderColor ||
-      oldDelegate.onStrokeOrderColor != onStrokeOrderColor;
+      oldDelegate.onStrokeOrderColor != onStrokeOrderColor ||
+      oldDelegate.mutedColor != mutedColor;
+}
+
+double _pathLength(List<Offset> points) {
+  var total = 0.0;
+  for (var i = 1; i < points.length; i++) {
+    total += (points[i] - points[i - 1]).distance;
+  }
+  return total;
+}
+
+/// The point [distance] along the polyline [points] from its start.
+Offset _pointAlong(List<Offset> points, double distance) {
+  var travelled = 0.0;
+  for (var i = 1; i < points.length; i++) {
+    final a = points[i - 1];
+    final b = points[i];
+    final segment = (b - a).distance;
+    if (segment > 0 && travelled + segment >= distance) {
+      return Offset.lerp(a, b, (distance - travelled) / segment)!;
+    }
+    travelled += segment;
+  }
+  return points.last;
 }
 
 /// The unit vector from the first of [others] at least [minDistance] away

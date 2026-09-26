@@ -32,6 +32,7 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     required this.writingGuide,
     required this.strokeOrder,
     required this.onStrokeOrder,
+    required this.strokeOrderMuted,
   });
 
   /// Something switched off or not filled in yet: an off filter or flag
@@ -95,6 +96,10 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
   /// The number inside a [strokeOrder] badge.
   final Color onStrokeOrder;
 
+  /// In Practice mode, every stroke except the one to write next: its
+  /// line, arrow and badge step back to grey (2026-09-26).
+  final Color strokeOrderMuted;
+
   /// Light mode — everything the app looked like before dark mode.
   static const light = AppColorRoles(
     inactive: AppRawColors.silverGrey,
@@ -113,6 +118,7 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     writingGuide: AppRawColors.guideGrey,
     strokeOrder: AppRawColors.strokeOrderBlue,
     onStrokeOrder: AppRawColors.white,
+    strokeOrderMuted: AppRawColors.midGrey,
   );
 
   /// Dark mode (2026-09-25). Same roles, lighter greys: icons and the "on"
@@ -135,6 +141,7 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     writingGuide: AppRawColors.guideGrey,
     strokeOrder: AppRawColors.strokeOrderBlue,
     onStrokeOrder: AppRawColors.white,
+    strokeOrderMuted: AppRawColors.midGrey,
   );
 
   @override
@@ -155,6 +162,7 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
     Color? writingGuide,
     Color? strokeOrder,
     Color? onStrokeOrder,
+    Color? strokeOrderMuted,
   }) {
     return AppColorRoles(
       inactive: inactive ?? this.inactive,
@@ -173,6 +181,7 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
       writingGuide: writingGuide ?? this.writingGuide,
       strokeOrder: strokeOrder ?? this.strokeOrder,
       onStrokeOrder: onStrokeOrder ?? this.onStrokeOrder,
+      strokeOrderMuted: strokeOrderMuted ?? this.strokeOrderMuted,
     );
   }
 
@@ -199,6 +208,8 @@ class AppColorRoles extends ThemeExtension<AppColorRoles> {
       writingGuide: Color.lerp(writingGuide, other.writingGuide, t)!,
       strokeOrder: Color.lerp(strokeOrder, other.strokeOrder, t)!,
       onStrokeOrder: Color.lerp(onStrokeOrder, other.onStrokeOrder, t)!,
+      strokeOrderMuted:
+          Color.lerp(strokeOrderMuted, other.strokeOrderMuted, t)!,
     );
   }
 }
