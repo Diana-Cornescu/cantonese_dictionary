@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_color_roles.dart';
 import '../theme/app_colors.dart';
+import 'language_icon.dart';
 
 /// The **Cantonese / Mandarin** pair for the optional Language field
 /// (2026-09-26). Two independent toggles: one on marks the word as that
@@ -14,6 +15,10 @@ import '../theme/app_colors.dart';
 /// buttons (see `_toggleButtonStyle` in the character screen and
 /// `FilterIconButton`), without a meaning color of their own: a language
 /// isn't good or bad, so it gets no gold or red.
+///
+/// Each carries a small emblem ([LanguageIcon], 2026-09-26): a bauhinia
+/// for Cantonese, five stars for Mandarin. Black or white by mode when on,
+/// grey when off, the same as the Favorite star and Hard flame.
 class LanguageToggles extends StatelessWidget {
   const LanguageToggles({
     super.key,
@@ -37,8 +42,10 @@ class LanguageToggles extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _toggle(context, 'Cantonese', isCantonese, onCantonese),
-        _toggle(context, 'Mandarin', isMandarin, onMandarin),
+        _toggle(context, 'Cantonese', LanguageEmblem.cantonese, isCantonese,
+            onCantonese),
+        _toggle(context, 'Mandarin', LanguageEmblem.mandarin, isMandarin,
+            onMandarin),
       ],
     );
   }
@@ -46,6 +53,7 @@ class LanguageToggles extends StatelessWidget {
   Widget _toggle(
     BuildContext context,
     String label,
+    LanguageEmblem emblem,
     bool selected,
     VoidCallback onPressed,
   ) {
@@ -63,7 +71,9 @@ class LanguageToggles extends StatelessWidget {
         ),
       ),
       onPressed: onPressed,
-      icon: Icon(selected ? Icons.check_box : Icons.check_box_outline_blank),
+      // Takes the button's icon color (set by iconColor above) and size
+      // from the IconTheme, like the star and flame do.
+      icon: LanguageIcon(emblem),
       label: Text(label),
     );
   }

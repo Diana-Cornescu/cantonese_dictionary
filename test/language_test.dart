@@ -4,10 +4,12 @@ import 'package:cantonese_dictionary_app/data/app_database.dart';
 import 'package:cantonese_dictionary_app/data/character_entry.dart';
 import 'package:cantonese_dictionary_app/data/dictionary_store.dart';
 import 'package:cantonese_dictionary_app/widgets/language_filter_options.dart';
+import 'package:cantonese_dictionary_app/widgets/language_toggles.dart';
 import 'package:cantonese_dictionary_app/widgets/list_filter_button.dart';
 // See dictionary_store_test.dart for why drift.dart is imported with `show`.
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The optional Language field (schema version 4, 2026-09-26).
@@ -207,5 +209,22 @@ void main() {
       // Nothing to enforce.
       expect(LanguageFilterOptions.enforceLanguageRule(none, none).on, isEmpty);
     });
+  });
+
+  testWidgets('the Cantonese / Mandarin buttons draw their emblems',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: LanguageToggles(
+          isCantonese: true,
+          isMandarin: false,
+          onCantonese: () {},
+          onMandarin: () {},
+        ),
+      ),
+    ));
+    expect(find.text('Cantonese'), findsOneWidget);
+    expect(find.text('Mandarin'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
