@@ -9,6 +9,7 @@ import 'features/shell/app_shell.dart';
 import 'theme/app_palettes.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_theme_mode.dart';
+import 'widgets/ink_settings.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +58,15 @@ class CantoneseDictionaryApp extends StatelessWidget {
           // version yet (see AppPalette.darkReady).
           darkTheme: AppTheme.dark(palette),
           themeMode: mode.themeMode,
+          // Pen size and smoothing (Settings → Handwriting), for every
+          // drawing box, dialogs included.
+          builder: (context, child) => InkSettingsScope(
+            settings: InkSettings.fromStored(
+              store.setting(InkSettings.widthKey),
+              store.setting(InkSettings.smoothKey),
+            ),
+            child: child!,
+          ),
           home: AppShell(store: store),
         );
       },

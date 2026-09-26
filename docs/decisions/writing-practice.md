@@ -1,6 +1,6 @@
 # Writing practice (the Write tab)
 
-**Decided 2026-09-25; X-ray added 2026-09-26. Built for 1.7.0.** Code:
+**Decided 2026-09-25; X-ray added 2026-09-26. Shipped in 1.7.0.** Code:
 `features/write/write_practice_screen.dart`, `data/stroke_reference.dart`,
 `widgets/reference_glyph_painter.dart`.
 

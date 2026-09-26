@@ -20,13 +20,12 @@ logs hold the reasoning.
 
 ---
 
-## Next up — 1.7.0
+## Next up — 1.8.0
 
 _Draft. Move things in and out freely — that's the point of the cap._
 
-| What | Notes |
-|------|-------|
-| **Writing practice (Write tab)** | **Built 2026-09-25, not yet released.** Write a character from a definition, writing over its X-ray (outline, stroke order and direction, next stroke highlighted; an eye button hides it to try from memory), from bundled open stroke data. Takes the Tags tab's slot; Tags moves into Settings. No scoring yet. Decisions: `decisions/writing-practice.md`. Before release: compile, run the tests, try it on the phone, and read the skipped list in the Write options for how much of your real dictionary is covered. |
+_Nothing scheduled yet. 1.7.0 shipped 2026-09-26 (see `CHANGELOG.md`);
+promote up to four items from "After that"._
 
 ---
 
