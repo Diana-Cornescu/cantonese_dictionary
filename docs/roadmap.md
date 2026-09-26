@@ -20,11 +20,11 @@ logs hold the reasoning.
 
 ---
 
-## Next up — 1.8.0
+## Next up — 1.9.0
 
 _Draft. Move things in and out freely — that's the point of the cap._
 
-_Nothing scheduled yet. 1.7.0 shipped 2026-09-26 (see `CHANGELOG.md`);
+_Nothing scheduled yet. 1.8.0 shipped 2026-09-26 (see `CHANGELOG.md`);
 promote up to four items from "After that"._
 
 ---

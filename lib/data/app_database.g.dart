@@ -125,8 +125,8 @@ class $DbCharactersTable extends DbCharacters
       'is_cantonese', aliasedName, false,
       type: DriftSqlType.bool,
       requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_cantonese" IN (0, 1))'),
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_cantonese" IN (0, 1))'),
       defaultValue: const Constant(false));
   static const VerificationMeta _isMandarinMeta =
       const VerificationMeta('isMandarin');
@@ -319,6 +319,14 @@ class CharacterRow extends DataClass implements Insertable<CharacterRow> {
   final int timesCorrect;
   final int timesIncorrect;
   final DateTime? lastReviewedAt;
+
+  /// Which language the word belongs to (schema version 4). Both can be on
+  /// (a word shared by Cantonese and Mandarin), and both off means "not
+  /// set" — the field is optional. Two flags rather than one text column,
+  /// so "show Cantonese words" is simply `is_cantonese = 1` and naturally
+  /// includes the shared ones. Declared last because the v3 -> v4
+  /// migration appends them to the end of existing tables, and a fresh
+  /// install should come out the same shape.
   final bool isCantonese;
   final bool isMandarin;
   const CharacterRow(

@@ -4,7 +4,7 @@ What changed in each release installed on the phone. Newest first.
 How to release: `docs/setup_manual.md`, Phase 6.
 Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
 
-## Unreleased
+## 1.8.0 — 2026-09-26
 
 - **Language: Cantonese, Mandarin or both.** An optional field for each character. Set it with the **Cantonese** and **Mandarin** buttons, the first line of the **Tags** section on the Add character screen and the character screen, with your tags on the line below. Each has a small emblem, a bauhinia flower for Cantonese and five stars for Mandarin, in black (white in dark mode) when on. Both buttons are always there, grey when off, like Favorite and Hard; turn both on for a word the two share. On the character screen tapping one asks you to confirm first. They aren't real tags, so the tags ✎ doesn't change them. Characters you already have start with neither.
   - **Filter by it everywhere.** The filter sheet on the home list, the Archive and Photos has a new **Language** group: **Cantonese**, **Mandarin** and **Not set**. Cantonese includes words marked both, and so does Mandarin; tick both to see only the shared words. Not set finds the ones you haven't labelled yet. In Photos it means "shows a character that is…", like ⭐ and 🔥.
