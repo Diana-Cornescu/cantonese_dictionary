@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/character_entry.dart';
 import '../theme/app_color_roles.dart';
+import 'ink_settings.dart';
 
 /// A canvas for capturing or displaying a single handwritten character
 /// sample, selected by the [readOnly] constructor flag:
@@ -18,6 +19,11 @@ import '../theme/app_color_roles.dart';
 ///
 /// Either mode can paint a [backgroundPainter] on the paper, under the
 /// ink: the Write tab's guide lines and reference character (2026-09-25).
+///
+/// **Pen size and smoothing** come from Settings → Handwriting via
+/// [InkSettings.of] (2026-09-26), in both modes, so they apply to every
+/// drawing in the app. They only change how the ink is *drawn*; the points
+/// recorded and saved are the same either way.
 class HandwritingCanvas extends StatefulWidget {
   const HandwritingCanvas({
     super.key,
@@ -25,7 +31,7 @@ class HandwritingCanvas extends StatefulWidget {
     this.initialStrokes,
     this.onStrokesChanged,
     this.strokeColor,
-    this.strokeWidth = 4.0,
+    this.strokeWidth,
     this.fitToBox = false,
     this.backgroundPainter,
   });
@@ -47,7 +53,10 @@ class HandwritingCanvas extends StatefulWidget {
 
   /// Defaults to the theme's ink color (`context.appColors.ink`).
   final Color? strokeColor;
-  final double strokeWidth;
+
+  /// Overrides the pen size from Settings. Only the Settings preview uses
+  /// it, to show the size being dragged before it's saved.
+  final double? strokeWidth;
 
   /// Painted on the paper, under the strokes. Not scaled by [fitToBox].
   final CustomPainter? backgroundPainter;
@@ -121,10 +130,12 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
 
   @override
   Widget build(BuildContext context) {
+    final ink = InkSettings.of(context);
     final painter = _StrokesPainter(
       strokes: _strokes,
       color: widget.strokeColor ?? context.appColors.ink,
-      strokeWidth: widget.strokeWidth,
+      strokeWidth: widget.strokeWidth ?? ink.width,
+      smooth: ink.smooth,
       fitToBox: widget.readOnly && widget.fitToBox,
     );
     // Clipped to its own bounds: on desktop a drag can carry the pointer
@@ -199,12 +210,14 @@ class _StrokesPainter extends CustomPainter {
     required this.strokes,
     required this.color,
     required this.strokeWidth,
+    required this.smooth,
     this.fitToBox = false,
   });
 
   final List<List<StrokePoint>> strokes;
   final Color color;
   final double strokeWidth;
+  final bool smooth;
   final bool fitToBox;
 
   /// Scales and centers the drawing's bounding box inside [size], keeping
@@ -265,11 +278,7 @@ class _StrokesPainter extends CustomPainter {
         );
         continue;
       }
-      final path = Path()..moveTo(stroke[0].x, stroke[0].y);
-      for (var i = 1; i < stroke.length; i++) {
-        path.lineTo(stroke[i].x, stroke[i].y);
-      }
-      canvas.drawPath(path, linePaint);
+      canvas.drawPath(inkPath(stroke, smooth: smooth), linePaint);
     }
     if (fitToBox) canvas.restore();
   }
@@ -280,4 +289,28 @@ class _StrokesPainter extends CustomPainter {
   // strokes. Repaint cost is negligible for a single small canvas.
   @override
   bool shouldRepaint(covariant _StrokesPainter oldDelegate) => true;
+}
+
+/// One stroke as a [Path] (it needs at least two points).
+///
+/// Straight segments between the recorded points, or with [smooth] a
+/// curve through them: each point becomes the control point of a
+/// quadratic curve between the midpoints on either side of it, so the
+/// line still starts and ends exactly where the pen did but corners and
+/// finger jitter are rounded off. Cheap enough to redo on every frame.
+Path inkPath(List<StrokePoint> stroke, {required bool smooth}) {
+  final path = Path()..moveTo(stroke[0].x, stroke[0].y);
+  if (!smooth || stroke.length < 3) {
+    for (var i = 1; i < stroke.length; i++) {
+      path.lineTo(stroke[i].x, stroke[i].y);
+    }
+    return path;
+  }
+  for (var i = 1; i < stroke.length - 1; i++) {
+    final p = stroke[i];
+    final next = stroke[i + 1];
+    path.quadraticBezierTo(p.x, p.y, (p.x + next.x) / 2, (p.y + next.y) / 2);
+  }
+  path.lineTo(stroke.last.x, stroke.last.y);
+  return path;
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -6,11 +7,15 @@ import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
 import '../../data/backup_service.dart';
+import '../../data/character_entry.dart';
 import '../../data/dictionary_store.dart';
+import '../../theme/app_color_roles.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_palettes.dart';
 import '../../theme/app_theme_mode.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../../widgets/handwriting_canvas.dart';
+import '../../widgets/ink_settings.dart';
 import '../dictionary_list/dictionary_list_screen.dart';
 import '../tags/tags_screen.dart';
 
@@ -46,6 +51,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   BackupService? _backups;
   bool _busy = false;
   bool _canUndo = false;
+
+  /// The pen size while the slider is being dragged; saved (and cleared)
+  /// when it's let go, so dragging doesn't write to the database on every
+  /// step.
+  double? _penDraft;
 
   @override
   void initState() {
@@ -204,6 +214,92 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// A wavy sample line with deliberately few, far-apart points, so the
+  /// preview shows both the pen size and what smoothing does to corners.
+  static final List<List<StrokePoint>> _penSample = [
+    [
+      for (var i = 0; i <= 10; i++)
+        StrokePoint(
+          x: i * 24.0,
+          y: 30 + 22 * math.sin(i * 1.25),
+          t: 0,
+        ),
+    ],
+  ];
+
+  /// Pen size and smoothing for every drawing in the app (2026-09-26).
+  /// Display only: what's saved for a drawing doesn't change. See
+  /// `widgets/ink_settings.dart`.
+  Widget _buildHandwritingSection() {
+    final ink = InkSettings.fromStored(
+      widget.store.setting(InkSettings.widthKey),
+      widget.store.setting(InkSettings.smoothKey),
+    );
+    final width = _penDraft ?? ink.width;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Handwriting', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Text('Pen size'),
+              Expanded(
+                child: Slider(
+                  value: width,
+                  min: InkSettings.minWidth,
+                  max: InkSettings.maxWidth,
+                  divisions:
+                      (InkSettings.maxWidth - InkSettings.minWidth).round(),
+                  label: width.round().toString(),
+                  onChanged: (value) => setState(() => _penDraft = value),
+                  onChangeEnd: (value) async {
+                    await widget.store
+                        .setSetting(InkSettings.widthKey, '${value.round()}');
+                    if (mounted) setState(() => _penDraft = null);
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 24,
+                child: Text('${width.round()}', textAlign: TextAlign.end),
+              ),
+            ],
+          ),
+          // Live preview, on the same paper as every drawing box.
+          Container(
+            height: 72,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              border: Border.all(color: context.appColors.frame),
+            ),
+            child: HandwritingCanvas(
+              readOnly: true,
+              fitToBox: true,
+              initialStrokes: _penSample,
+              strokeWidth: width,
+            ),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Smooth strokes'),
+            subtitle: const Text(
+                'Rounds off corners and wobbles in the ink. Your saved '
+                "drawings aren't changed, so you can turn it off again."),
+            value: ink.smooth,
+            onChanged: (on) async {
+              await widget.store.setSetting(InkSettings.smoothKey, '$on');
+              if (mounted) setState(() {});
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   /// A row of round color swatches; tap one to switch the app's colors.
   /// See `lib/theme/app_palettes.dart` for why these colors were chosen.
   ///
@@ -343,6 +439,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (_busy) const LinearProgressIndicator(),
             _buildAppearanceSection(),
             _buildColorThemeSection(),
+            _buildHandwritingSection(),
             const Divider(height: 32),
             ListenableBuilder(
               listenable: widget.store,

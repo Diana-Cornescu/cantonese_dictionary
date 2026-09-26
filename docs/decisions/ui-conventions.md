@@ -58,6 +58,13 @@ Decided 2026-09-25.
   and fades the others while dark.
 - **Handwriting stays on light paper** (`paper` / `onPaper` roles): black
   ink on a light sheet in dark mode, so a drawing looks the same in both.
+- **Pen size and smoothing are display settings** (Settings →
+  Handwriting, 2026-09-26; `widgets/ink_settings.dart`). Every drawing box
+  reads them through `InkSettings.of`, and they never change the points
+  that are saved, so old drawings redraw with the new look and turning
+  smoothing off loses nothing. Pen size is 2–10 (default 4, the old fixed
+  size), capped so strokes don't merge in small boxes. Smoothing is on by
+  default.
 - **Red, gold and green are the same in both modes for now.** Red is dim
   on dark (2.4:1) — see the roadmap.
 

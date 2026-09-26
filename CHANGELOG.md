@@ -14,6 +14,7 @@ Version format: `MAJOR.MINOR.PATCH` (see `pubspec.yaml`).
   - **…** (the round button) also picks All, Hard or Favorites, like Flashcards.
   - The correct forms come from a free set of about 9,500 common characters built into the app, so it works offline. **Many Cantonese-only characters (咗 冇 佢 啲 嚟 喺…) aren't in it**; those entries are skipped, and the **…** panel lists which.
 - **Tags moved into Settings**, to make room for Write in the bar. **Settings → Tags** opens the same screen as before, with a **+** at the top to create a tag.
+- **Settings → Handwriting: pen size and smooth strokes.** A slider sets how thick your ink is, from 2 to 10 (4 is the size it's always been), with a preview. **Smooth strokes** rounds off corners and wobbles, and is **on** unless you turn it off. Both change how every drawing looks, old ones included, but not what's saved, so you can change them back any time. Remembered, and included in backups.
 - **Settings → Licences** lists the licences for the built-in stroke data and the packages the app uses.
 - The app is about 11 MB bigger because of the stroke data.
 
