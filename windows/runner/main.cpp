@@ -26,7 +26,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
+ // Pixel 8 shape (412 x 915 screen + Windows title bar and borders).
+  Win32Window::Size size(428, 759);
   if (!window.Create(L"cantonese_dictionary", origin, size)) {
     return EXIT_FAILURE;
   }

@@ -53,6 +53,7 @@ class CantoneseDictionaryApp extends StatelessWidget {
             AppThemeMode.byId(store.setting(AppThemeMode.settingKey));
         return MaterialApp(
           title: 'Cantonese Dictionary',
+          debugShowCheckedModeBanner: false,
           theme: AppTheme.light(palette),
           // Falls back to Cerulean for a color theme without a dark
           // version yet (see AppPalette.darkReady).
